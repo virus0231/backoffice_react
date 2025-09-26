@@ -3,7 +3,9 @@
     "allow": [
       "Bash(md-tree:*)",
       "Bash(npx tailwindcss init:*)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []
