@@ -32,13 +32,17 @@
     "autoprefixer": "^10.4.21",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "mysql2": "^3.15.1",
     "next": "^15.5.4",
     "postcss": "^8.5.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "recharts": "^3.2.1",
+    "sequelize": "^6.37.7",
+    "sequelize-typescript": "^2.1.6",
     "tailwindcss": "^4.1.13",
     "typescript": "^5.9.2",
+    "winston": "^3.17.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

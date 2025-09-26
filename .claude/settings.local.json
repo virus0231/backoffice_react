@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(md-tree:*)",
-      "Bash(npx tailwindcss init:*)"
+      "Bash(npx tailwindcss init:*)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "ask": []

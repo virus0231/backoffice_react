@@ -130,3 +130,36 @@ $RECYCLE.BIN/
 
 # Project specific
 .ai/debug-log.md
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.sqlite
+
+# Database connection strings and secrets
+.env.database
+.env.db
+
+# Local configuration overrides
+.claude/settings.local.json
+
+# QA and testing artifacts
+docs/qa/temp/
+docs/qa/cache/
+*.qa-temp
+
+# Analytics data exports
+exports/
+data-exports/
+*.csv.local
+*.xlsx.local
+
+# Performance monitoring logs
+performance-*.log
+query-*.log
+
+# Backup files
+*.backup
+*.bak
+backup/
