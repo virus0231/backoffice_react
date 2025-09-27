@@ -1,96 +1,96 @@
 /**
  * API endpoint for funds filter data
- * Returns list of available funds with optional appeal-based filtering
+ * Returns list of available funds from pw_fundlist based on appeal_id
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { createErrorResponse, logDatabaseError } from '@/lib/database/errorHandler';
+import { getSequelizeInstance } from '@/lib/database/sequelize';
+import { QueryTypes } from 'sequelize';
 
 interface FundResponse {
-  id: string;
+  id: number;
   fund_name: string;
   is_active: boolean;
-  category?: string;
-  appeal_id?: string;
+  appeal_id: number;
 }
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const appealId = searchParams.get('appeal_id');
-    const includeInactive = searchParams.get('include_inactive') === 'true';
+    const appealIds = searchParams.get('appeal_ids');
 
-    // Build query conditions
-    const whereConditions: any = {};
-    if (!includeInactive) {
-      whereConditions.isActive = true;
-    }
+    // Fetch funds from database using the exact query you specified
+    let funds: any[] = [];
+    try {
+      const sequelize = getSequelizeInstance();
 
-    let funds;
+      if (appealIds) {
+        // Handle multiple appeal IDs (comma-separated)
+        const appealIdArray = appealIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
 
-    if (appealId) {
-      // Get funds that have been used with the specific appeal
-      // This creates a cascading relationship based on actual donation data
-      const { FundModel } = await import('@/lib/database/models/Fund');
-      const { DonationModel } = await import('@/lib/database/models/Donation');
-      funds = await FundModel.findAll({
-        where: whereConditions,
-        include: [{
-          model: DonationModel,
-          where: {
-            campaignId: appealId
-          },
-          attributes: [], // We don't need donation attributes, just the join
-          required: true  // INNER JOIN to only get funds used with this appeal
-        }],
-        order: [
-          ['isActive', 'DESC'],
-          ['displayOrder', 'ASC'],
-          ['fundName', 'ASC']
-        ],
-        attributes: ['id', 'fundName', 'isActive', 'category'],
-        group: ['FundModel.id'] // Group by fund to avoid duplicates
+        if (appealIdArray.length > 0) {
+          const placeholders = appealIdArray.map(() => '?').join(',');
+          const query = `SELECT * FROM pw_fundlist WHERE appeal_id IN (${placeholders})`;
+          funds = await sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            replacements: appealIdArray
+          });
+        } else {
+          // Invalid appeal IDs, return empty
+          funds = [];
+        }
+      } else if (appealId) {
+        // Handle single appeal ID (backward compatibility)
+        const query = 'SELECT * FROM pw_fundlist WHERE appeal_id = :appeal_id';
+        funds = await sequelize.query(query, {
+          type: QueryTypes.SELECT,
+          replacements: { appeal_id: appealId }
+        });
+      } else {
+        // Get all funds when no appeal is selected
+        const query = 'SELECT * FROM pw_fundlist';
+        funds = await sequelize.query(query, {
+          type: QueryTypes.SELECT
+        });
+      }
+    } catch (e) {
+      console.error('Database error:', e);
+      // DB unavailable: return empty list gracefully
+      const response = NextResponse.json({
+        success: true,
+        data: [],
+        count: 0,
+        filters: { appeal_id: appealId, appeal_ids: appealIds },
+        message: 'Database unavailable; returning empty funds list'
       });
-    } else {
-      // Get all funds (no appeal filter)
-      const { FundModel } = await import('@/lib/database/models/Fund');
-      funds = await FundModel.findAll({
-        where: whereConditions,
-        order: [
-          ['isActive', 'DESC'],
-          ['displayOrder', 'ASC'],
-          ['fundName', 'ASC']
-        ],
-        attributes: ['id', 'fundName', 'isActive', 'category']
-      });
+      response.headers.set('Cache-Control', 'no-cache');
+      return response;
     }
 
     // Transform data for frontend
-    const responseData: FundResponse[] = funds.map(fund => ({
+    const responseData: FundResponse[] = funds.map((fund: any) => ({
       id: fund.id,
-      fund_name: fund.fundName,
-      is_active: fund.isActive,
-      category: fund.category || undefined,
-      appeal_id: appealId || undefined
+      fund_name: fund.fund_name || fund.name || 'Unnamed Fund',
+      is_active: fund.disable === 0,
+      appeal_id: fund.appeal_id
     }));
 
-    // Set cache headers (shorter cache for appeal-specific requests)
-    const cacheMaxAge = appealId ? 1800 : 3600; // 30 min vs 1 hour
+    // Set cache headers for filter data
     const response = NextResponse.json({
       success: true,
       data: responseData,
       count: responseData.length,
-      filters: {
-        appeal_id: appealId,
-        include_inactive: includeInactive
-      },
-      message: appealId
-        ? `Retrieved ${responseData.length} funds for appeal ${appealId}`
-        : `Retrieved ${responseData.length} funds`
+      filters: { appeal_id: appealId, appeal_ids: appealIds },
+      message: `Retrieved ${responseData.length} funds${
+        appealIds ? ` for ${appealIds.split(',').length} appeals` :
+        appealId ? ` for appeal ${appealId}` : ''
+      }`
     });
 
-    response.headers.set('Cache-Control', `public, max-age=${cacheMaxAge}, stale-while-revalidate=600`);
+    response.headers.set('Cache-Control', 'public, max-age=1800, stale-while-revalidate=300');
     return response;
 
   } catch (error) {
@@ -98,7 +98,9 @@ export async function GET(request: NextRequest) {
 
     logDatabaseError(error, {
       operation: 'fetchFunds',
-      requestId: crypto.randomUUID()
+      requestId: crypto.randomUUID(),
+      appealId: request.nextUrl.searchParams.get('appeal_id'),
+      appealIds: request.nextUrl.searchParams.get('appeal_ids')
     });
 
     const errorResponse = createErrorResponse(error);
@@ -111,8 +113,12 @@ export async function GET(request: NextRequest) {
  */
 export async function HEAD() {
   try {
-    const { FundModel } = await import('@/lib/database/models/Fund');
-    const count = await FundModel.count();
+    const sequelize = getSequelizeInstance();
+    const result = await sequelize.query('SELECT COUNT(*) as count FROM pw_fundlist', {
+      type: QueryTypes.SELECT
+    }) as any[];
+
+    const count = result[0]?.count || 0;
     return new NextResponse(null, {
       status: 200,
       headers: {

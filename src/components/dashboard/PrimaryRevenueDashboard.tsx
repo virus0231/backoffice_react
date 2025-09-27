@@ -2,44 +2,54 @@
 
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import DateRangePicker from '@/components/charts/DateRangePicker';
+import DateRangePicker from '@/components/filters/DateRangePicker';
 import ComparisonDatePicker from '@/components/charts/ComparisonDatePicker';
 import { useRevenueData } from '@/hooks/useRevenueData';
 import { useFilterContext } from '@/providers/FilterProvider';
-
-interface DateRange {
-  startDate: Date;
-  endDate: Date;
-}
+import { DateRange } from '@/types/filters';
 
 export default function PrimaryRevenueDashboard() {
-  // Use global filter context for main date range
-  const { dateRange, setDateRange, isHydrated } = useFilterContext();
+  // Get global filter context
+  const {
+    dateRange: globalDateRange,
+    selectedAppeals,
+    selectedFunds,
+    frequency,
+    isHydrated
+  } = useFilterContext();
 
-  // Local state for comparison range and granularity
+  // Local state for chart's own overrides (optional - falls back to global)
+  const [localDateRange, setLocalDateRange] = useState<DateRange | null>(null);
   const [comparisonRange, setComparisonRange] = useState<DateRange | null>(null);
   const [granularity, setGranularity] = useState<'daily' | 'weekly'>('daily');
 
+  // Use local date range if set, otherwise use global
+  const effectiveDateRange = localDateRange || globalDateRange;
+
   // Only fetch data if filters are hydrated
   const { totalRaised, firstInstallments, oneTime, isLoading, hasError } = useRevenueData(
-    isHydrated ? dateRange : { startDate: new Date(), endDate: new Date() },
+    isHydrated ? effectiveDateRange : { startDate: new Date(), endDate: new Date() },
     granularity
   );
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat(undefined, {
       style: 'currency',
-      currency: 'GBP',
+      currency: 'USD',
       minimumFractionDigits: 2,
     }).format(amount);
   };
 
   const formatShortCurrency = (amount: number) => {
-    if (amount >= 1000) {
-      return `£${(amount / 1000).toFixed(0)}K`;
-    }
-    return `£${amount.toFixed(0)}`;
-  };
+  const formatter = new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    compactDisplay: 'short',
+    maximumFractionDigits: 0
+  });
+  return formatter.format(amount);
+};
 
   // Don't render until filters are hydrated
   if (!isHydrated) {
@@ -81,22 +91,40 @@ export default function PrimaryRevenueDashboard() {
     <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
+        {/* Left side - Date Range Picker */}
         <div className="flex items-center gap-2">
-          <span className="text-lg">📊</span>
-          <h2 className="text-lg font-semibold text-gray-900">Raised</h2>
+          <DateRangePicker
+            value={effectiveDateRange}
+            onChange={(range) => setLocalDateRange(range)}
+          />
+          <ComparisonDatePicker
+            value={comparisonRange}
+            onChange={setComparisonRange}
+            mainDateRange={effectiveDateRange}
+          />
+          {/* Reset to Global button */}
+          {localDateRange && (
+            <button
+              onClick={() => setLocalDateRange(null)}
+              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded text-gray-600"
+              title="Reset to global date range"
+            >
+              Reset
+            </button>
+          )}
         </div>
+
+        {/* Center - Title and Status */}
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900">Raised</h2>
+          {localDateRange ? (
+            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">Custom Range</span>
+          ) : (
+            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Global Range</span>
+          )}
+        </div>
+        {/* Right side - Granularity */}
         <div className="flex items-center gap-3">
-          {/* Date Range Picker - Connected to Global Filter */}
-          <div className="flex items-center gap-2">
-            <DateRangePicker
-              value={dateRange}
-              onChange={setDateRange}
-            />
-            <ComparisonDatePicker
-              value={comparisonRange}
-              onChange={setComparisonRange}
-            />
-          </div>
           {/* Daily/Weekly Toggle */}
           <div className="flex items-center gap-1">
             <button
@@ -136,7 +164,7 @@ export default function PrimaryRevenueDashboard() {
               {formatCurrency(totalRaised.totalAmount)}
             </div>
             <div className="text-sm text-gray-600">
-              {totalRaised.totalCount.toLocaleString()} donations
+              {(Number(totalRaised?.totalCount ?? 0)).toLocaleString()} donations
             </div>
           </>
         )}
@@ -289,3 +317,9 @@ export default function PrimaryRevenueDashboard() {
     </div>
   );
 }
+
+
+
+
+
+

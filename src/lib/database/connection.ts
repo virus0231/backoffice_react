@@ -24,8 +24,7 @@ function validateEnvironment(): void {
   const required = [
     'DB_HOST',
     'DB_NAME',
-    'DB_USER',
-    'DB_PASSWORD'
+    'DB_USER'
   ];
 
   const missing = required.filter(key => !process.env[key]);
@@ -74,7 +73,7 @@ export function getDatabaseConfig(): DatabaseConfig {
     host: process.env.DB_HOST!,
     database: process.env.DB_NAME!,
     username: process.env.DB_USER!,
-    password: process.env.DB_PASSWORD!,
+    password: process.env.DB_PASSWORD || '', // Allow empty password
     port: parseInt(process.env.DB_PORT || '3306', 10),
     pool: {
       max: parseInt(process.env.DB_POOL_MAX || '10', 10),

@@ -6,51 +6,56 @@ export type FrequencyFilter = 'all' | 'one-time' | 'recurring' | 'recurring-firs
 interface BaseParams {
   startDate: Date;
   endDate: Date;
-  appealId?: number | null;
-  fundId?: number | null;
+  appealId?: number | string | null;
+  fundId?: number | string | null;
   frequency?: FrequencyFilter;
 }
 
-const dateCol = 'donation_date';
+// We will reference model attributes for WHERE clauses
+const ATTR = {
+  date: 'donationDate',
+  amount: 'amount',
+  status: 'status',
+  orderId: 'orderId',
+  frequency: 'frequency',
+  campaignId: 'campaignId',
+  fundId: 'fundId',
+} as const;
 
 function buildBaseWhere(p: BaseParams): WhereOptions {
   const where: WhereOptions = {
-    status: 'completed',
-    [dateCol]: {
+    [ATTR.status]: 'completed',
+    [ATTR.date]: {
       [Op.gte]: p.startDate,
       [Op.lte]: p.endDate,
     },
   } as any;
 
-  if (p.appealId) (where as any).appeal_id = p.appealId;
-  if (p.fundId) (where as any).fundlist_id = p.fundId;
+  if (p.appealId) (where as any)[ATTR.campaignId] = String(p.appealId);
+  if (p.fundId) (where as any)[ATTR.fundId] = String(p.fundId);
   return where;
 }
 
 function whereForOneTime(): WhereOptions {
-  return { freq: 0 } as any;
+  return { [ATTR.frequency]: 0 } as any;
 }
 
 function whereForFirstInstallments(): WhereOptions {
   return {
-    freq: 1,
-    order_id: { [Op.notRegexp]: '_' },
+    [ATTR.frequency]: 1,
+    [ATTR.orderId]: { [Op.notRegexp]: '_' },
   } as any;
 }
 
 function whereForNextInstallments(): WhereOptions {
   return {
-    [Op.or]: [
-      { freq: { [Op.gt]: 1 } },
-      { order_id: { [Op.regexp]: '_' } },
-    ],
+    [ATTR.frequency]: 1,
+    [ATTR.orderId]: { [Op.regexp]: '_' },
   } as any;
 }
 
 function whereForRecurringAll(): WhereOptions {
-  return {
-    [Op.or]: [whereForFirstInstallments(), whereForNextInstallments()],
-  } as any;
+  return { [ATTR.frequency]: 1 } as any;
 }
 
 function mergeAnd(...clauses: WhereOptions[]): WhereOptions {
@@ -88,10 +93,10 @@ export async function aggregateRevenue(
   const where = mergeAnd(base, typeWhere);
 
   const [totalAmount, donationCount, avg] = await Promise.all([
-    DonationModel.sum('amount', { where }),
+    DonationModel.sum(ATTR.amount, { where }),
     DonationModel.count({ where }),
     DonationModel.findOne({
-      attributes: [[DonationModel.sequelize!.fn('AVG', DonationModel.sequelize!.col('amount')), 'avgAmount']],
+      attributes: [[DonationModel.sequelize!.fn('AVG', DonationModel.sequelize!.col(ATTR.amount)), 'avgAmount']],
       where,
       raw: true,
     }),
@@ -131,18 +136,18 @@ export async function revenueTrend(
   const where = mergeAnd(base, typeWhere);
 
   const fmt = granularity === 'weekly' ? '%Y-%u' : '%Y-%m-%d';
+  const dateField = (DonationModel as any).rawAttributes?.[ATTR.date]?.field || 'donation_date';
   const rows = await DonationModel.findAll({
     attributes: [
-      [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateCol), fmt), 'period'],
-      [DonationModel.sequelize!.fn('SUM', DonationModel.sequelize!.col('amount')), 'amount'],
+      [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt), 'period'],
+      [DonationModel.sequelize!.fn('SUM', DonationModel.sequelize!.col(ATTR.amount)), 'amount'],
       [DonationModel.sequelize!.fn('COUNT', '*'), 'count'],
     ],
     where,
-    group: [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateCol), fmt)],
-    order: [[DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateCol), fmt), 'ASC']],
+    group: [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt)],
+    order: [[DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt), 'ASC']],
     raw: true,
   });
 
   return rows.map((r: any) => ({ date: r.period, amount: Number(r.amount || 0), count: Number(r.count || 0) }));
 }
-

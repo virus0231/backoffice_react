@@ -1,249 +1,212 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
-
-interface DateRange {
-  startDate: Date;
-  endDate: Date;
-}
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { DateRange } from '@/types/filters';
+import DateRangePicker from '@/components/filters/DateRangePicker';
 
 interface ComparisonDatePickerProps {
   value: DateRange | null;
   onChange: (range: DateRange | null) => void;
+  mainDateRange: DateRange;
   className?: string;
 }
 
-const comparisonOptions = [
-  { label: 'Previous period', value: 'previous' },
-  { label: 'A month ago', value: 'monthAgo' },
-  { label: 'A quarter ago', value: 'quarterAgo' },
-  { label: 'A year ago', value: 'yearAgo' },
-];
+// Helper function to create comparison date ranges
+const getComparisonDateRange = (option: string, baseRange: DateRange): DateRange => {
+  const { startDate, endDate } = baseRange;
+  const duration = endDate.getTime() - startDate.getTime();
 
-export default function ComparisonDatePicker({ value, onChange, className = '' }: ComparisonDatePickerProps) {
+  switch (option) {
+    case 'previous':
+      const prevStart = new Date(startDate.getTime() - duration - 24 * 60 * 60 * 1000);
+      const prevEnd = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+      return { startDate: prevStart, endDate: prevEnd, preset: 'custom' };
+
+    case 'monthAgo':
+      const monthAgoStart = new Date(startDate);
+      monthAgoStart.setMonth(monthAgoStart.getMonth() - 1);
+      const monthAgoEnd = new Date(endDate);
+      monthAgoEnd.setMonth(monthAgoEnd.getMonth() - 1);
+      return { startDate: monthAgoStart, endDate: monthAgoEnd, preset: 'custom' };
+
+    case 'quarterAgo':
+      const quarterAgoStart = new Date(startDate);
+      quarterAgoStart.setMonth(quarterAgoStart.getMonth() - 3);
+      const quarterAgoEnd = new Date(endDate);
+      quarterAgoEnd.setMonth(quarterAgoEnd.getMonth() - 3);
+      return { startDate: quarterAgoStart, endDate: quarterAgoEnd, preset: 'custom' };
+
+    case 'yearAgo':
+      const yearAgoStart = new Date(startDate);
+      yearAgoStart.setFullYear(yearAgoStart.getFullYear() - 1);
+      const yearAgoEnd = new Date(endDate);
+      yearAgoEnd.setFullYear(yearAgoEnd.getFullYear() - 1);
+      return { startDate: yearAgoStart, endDate: yearAgoEnd, preset: 'custom' };
+
+    default:
+      return { ...baseRange, preset: 'custom' };
+  }
+};
+
+export default function ComparisonDatePicker({ value, onChange, mainDateRange, className = '' }: ComparisonDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectingStart, setSelectingStart] = useState(true);
-  const [tempRange, setTempRange] = useState<DateRange | null>(value);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const getComparisonDateRange = (option: string, baseRange: DateRange): DateRange => {
-    const { startDate, endDate } = baseRange;
-    const duration = endDate.getTime() - startDate.getTime();
-
-    switch (option) {
-      case 'previous':
-        const prevStart = new Date(startDate.getTime() - duration - 24 * 60 * 60 * 1000);
-        const prevEnd = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
-        return { startDate: prevStart, endDate: prevEnd };
-
-      case 'monthAgo':
-        const monthAgoStart = new Date(startDate);
-        monthAgoStart.setMonth(monthAgoStart.getMonth() - 1);
-        const monthAgoEnd = new Date(endDate);
-        monthAgoEnd.setMonth(monthAgoEnd.getMonth() - 1);
-        return { startDate: monthAgoStart, endDate: monthAgoEnd };
-
-      case 'quarterAgo':
-        const quarterAgoStart = new Date(startDate);
-        quarterAgoStart.setMonth(quarterAgoStart.getMonth() - 3);
-        const quarterAgoEnd = new Date(endDate);
-        quarterAgoEnd.setMonth(quarterAgoEnd.getMonth() - 3);
-        return { startDate: quarterAgoStart, endDate: quarterAgoEnd };
-
-      case 'yearAgo':
-        const yearAgoStart = new Date(startDate);
-        yearAgoStart.setFullYear(yearAgoStart.getFullYear() - 1);
-        const yearAgoEnd = new Date(endDate);
-        yearAgoEnd.setFullYear(yearAgoEnd.getFullYear() - 1);
-        return { startDate: yearAgoStart, endDate: yearAgoEnd };
-
-      default:
-        return baseRange;
+  // Create comparison-specific presets based on main date range
+  const comparisonPresets = [
+    {
+      label: 'Previous period',
+      value: 'previous' as const,
+      range: () => getComparisonDateRange('previous', mainDateRange)
+    },
+    {
+      label: 'A month ago',
+      value: 'monthAgo' as const,
+      range: () => getComparisonDateRange('monthAgo', mainDateRange)
+    },
+    {
+      label: 'A quarter ago',
+      value: 'quarterAgo' as const,
+      range: () => getComparisonDateRange('quarterAgo', mainDateRange)
+    },
+    {
+      label: 'A year ago',
+      value: 'yearAgo' as const,
+      range: () => getComparisonDateRange('yearAgo', mainDateRange)
     }
-  };
+  ];
 
-  const handleOptionClick = (option: string) => {
-    if (option === 'none') {
-      onChange(null);
-    } else {
-      // For now, use a default base range - this should come from the main date picker
-      const baseRange = {
-        startDate: new Date(2025, 8, 1), // Sep 1, 2025
-        endDate: new Date(2025, 8, 30)   // Sep 30, 2025
-      };
-      const range = getComparisonDateRange(option, baseRange);
-      onChange(range);
-    }
+  const handlePresetSelect = (preset: typeof comparisonPresets[0]) => {
+    const range = preset.range();
+    onChange(range);
     setIsOpen(false);
   };
 
-  const handleDateClick = (date: Date) => {
-    if (selectingStart) {
-      setTempRange({ startDate: date, endDate: date });
-      setSelectingStart(false);
-    } else {
-      const newRange = {
-        startDate: tempRange?.startDate || date,
-        endDate: date < (tempRange?.startDate || date) ? (tempRange?.startDate || date) : date
-      };
-      if (date < (tempRange?.startDate || date)) {
-        newRange.startDate = date;
-        newRange.endDate = tempRange?.startDate || date;
-      }
-      setTempRange(newRange);
-      onChange(newRange);
-      setIsOpen(false);
-      setSelectingStart(true);
-    }
+  const handleCustomDateChange = (range: DateRange) => {
+    onChange(range);
+    setShowCustomPicker(false);
   };
 
-  const handleNoComparison = () => {
+  const handleRemoveComparison = () => {
     onChange(null);
     setIsOpen(false);
   };
 
-  const renderCalendar = (monthOffset: number = 0) => {
-    const month = addMonths(currentMonth, monthOffset);
-    const monthStart = startOfMonth(month);
-    const monthEnd = endOfMonth(month);
-    const calendarStart = startOfWeek(monthStart);
-    const calendarEnd = endOfWeek(monthEnd);
-
-    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    return (
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          {monthOffset === 0 && (
-            <button
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-          <h3 className="font-medium text-sm">
-            {format(month, 'MMM yyyy')}
-          </h3>
-          {monthOffset === 1 && (
-            <button
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {weekDays.map(day => (
-            <div key={day} className="text-xs text-gray-500 text-center p-1 font-medium">
-              {day}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {days.map(day => {
-            const isCurrentMonth = isSameMonth(day, month);
-            const isSelected = tempRange && (isSameDay(day, tempRange.startDate) || isSameDay(day, tempRange.endDate));
-            const isInRange = tempRange && day >= tempRange.startDate && day <= tempRange.endDate;
-
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => handleDateClick(day)}
-                className={`
-                  text-sm p-1 rounded text-center h-8 w-8 hover:bg-gray-100
-                  ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-900'}
-                  ${isSelected ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
-                  ${isInRange && !isSelected ? 'bg-blue-100' : ''}
-                `}
-              >
-                {format(day, 'd')}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          px-3 py-1 text-sm border rounded hover:bg-gray-50 flex items-center gap-2
-          ${value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'}
+          flex items-center gap-2 px-3 py-2 text-sm border rounded-lg shadow-sm transition-all duration-200
+          ${value
+            ? 'border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100'
+            : 'border-gray-300 text-gray-700 bg-white hover:border-gray-400 hover:bg-gray-50'
+          }
         `}
       >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
         {value ? (
-          <span>Compare to {format(value.startDate, 'MMM d')} – {format(value.endDate, 'MMM d')}</span>
+          <div className="flex flex-col items-start">
+            <span className="font-medium">Compare</span>
+            <span className="text-xs opacity-75">
+              {format(value.startDate, 'MMM d')} – {format(value.endDate, 'MMM d')}
+            </span>
+          </div>
         ) : (
-          <span>No comparison</span>
+          <span>Compare</span>
         )}
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[500px]">
-          <div className="flex">
-            {/* Options Sidebar */}
-            <div className="w-40 border-r border-gray-200 p-3">
-              <div className="space-y-1">
-                <button
-                  onClick={handleNoComparison}
-                  className="w-full text-left px-2 py-2 text-sm hover:bg-gray-100 rounded text-gray-700 border-b border-gray-200 mb-2"
-                >
-                  No comparison
-                </button>
-                {comparisonOptions.map(option => (
+        <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 w-80">
+          {/* Quick Comparison Presets */}
+          <div className="p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Comparisons</h3>
+            <div className="space-y-2">
+              {comparisonPresets.map(preset => {
+                const previewRange = preset.range();
+                return (
                   <button
-                    key={option.value}
-                    onClick={() => handleOptionClick(option.value)}
-                    className="w-full text-left px-2 py-1 text-sm hover:bg-gray-100 rounded text-gray-700"
+                    key={preset.value}
+                    onClick={() => handlePresetSelect(preset)}
+                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-150 group"
                   >
-                    {option.label}
+                    <div className="font-medium text-gray-900 group-hover:text-blue-900 mb-1">
+                      {preset.label}
+                    </div>
+                    <div className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                      {format(previewRange.startDate, 'MMM d')} – {format(previewRange.endDate, 'MMM d')}
+                    </div>
                   </button>
-                ))}
-              </div>
-
-              {/* No comparison button at bottom */}
-              <div className="mt-4 pt-3 border-t border-gray-200">
-                <button
-                  onClick={handleNoComparison}
-                  className="w-full px-3 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  No comparison
-                </button>
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Calendar */}
-            <div className="flex">
-              {renderCalendar(0)}
-              {renderCalendar(1)}
+          {/* Divider */}
+          <div className="border-t border-gray-200"></div>
+
+          {/* Custom Range Option */}
+          <div className="p-4">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setShowCustomPicker(true);
+              }}
+              className="w-full text-left p-3 rounded-lg border border-dashed border-gray-300 hover:border-blue-300 hover:bg-blue-50 transition-all duration-150 group"
+            >
+              <div className="font-medium text-gray-900 group-hover:text-blue-900 mb-1">
+                Custom Range
+              </div>
+              <div className="text-xs text-gray-500">
+                Select specific dates
+              </div>
+            </button>
+          </div>
+
+          {/* Remove comparison option */}
+          <div className="border-t border-gray-200 p-4">
+            <button
+              onClick={handleRemoveComparison}
+              className="w-full p-3 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-150"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Remove comparison
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Date Picker Modal */}
+      {showCustomPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Select Custom Comparison Range</h3>
+            </div>
+            <div className="p-4">
+              <DateRangePicker
+                value={value || { startDate: new Date(), endDate: new Date(), preset: 'custom' }}
+                onChange={handleCustomDateChange}
+              />
+            </div>
+            <div className="p-4 border-t border-gray-200 flex gap-2 justify-end">
+              <button
+                onClick={() => setShowCustomPicker(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

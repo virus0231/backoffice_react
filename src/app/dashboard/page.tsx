@@ -1,14 +1,11 @@
 import FilterBar from '@/components/filters/FilterBar';
 import PrimaryRevenueDashboard from '@/components/dashboard/PrimaryRevenueDashboard';
+import { FilterProvider } from '@/providers/FilterProvider';
 
 export default function DashboardPage() {
   return (
+    <FilterProvider>
     <div className='max-w-none space-y-8'>
-      {/* Page Title */}
-      <div className='mb-8'>
-        <h1 className='text-3xl font-bold text-gray-900 mb-2'>Fundraising Dashboard</h1>
-        <p className='text-gray-600'>Fundraising Dashboard allows you to track your campaign metrics</p>
-      </div>
 
       {/* Global Filters */}
       <div className='bg-white rounded-lg border border-gray-200 p-6 mb-8'>
@@ -335,7 +332,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Footer info */}
+        {/* Footer info
         <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8'>
           <div className='flex items-start'>
             <div className='flex-shrink-0'>
@@ -350,8 +347,9 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
+    </FilterProvider>
   );
 }

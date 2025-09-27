@@ -1,4 +1,3 @@
-import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import { FilterProvider } from '@/providers/FilterProvider';
 
@@ -14,9 +13,6 @@ export default function DashboardLayout({
 
       {/* Main content area */}
       <div className='dashboard-main'>
-        {/* Header */}
-        <Header />
-
         {/* Page content */}
         <main className='dashboard-content'>
           <FilterProvider>

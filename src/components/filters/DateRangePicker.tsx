@@ -7,7 +7,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { format } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
 import { DateRange, DatePreset } from '@/types/filters';
 import {
@@ -31,13 +31,20 @@ export default function DateRangePicker({
   disabled = false
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [customStartDate, setCustomStartDate] = useState(
-    value.preset === 'custom' ? format(value.startDate, 'yyyy-MM-dd') : ''
-  );
-  const [customEndDate, setCustomEndDate] = useState(
-    value.preset === 'custom' ? format(value.endDate, 'yyyy-MM-dd') : ''
-  );
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectingDate, setSelectingDate] = useState<'start' | 'end' | null>(null);
+  const [tempRange, setTempRange] = useState<{start: Date | null, end: Date | null}>({
+    start: value.startDate,
+    end: value.endDate
+  });
+  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [activePreset, setActivePreset] = useState<DatePreset | null>(value.preset);
+
+  // Update internal state when value prop changes
+  useEffect(() => {
+    setTempRange({ start: value.startDate, end: value.endDate });
+    setActivePreset(value.preset || null);
+  }, [value.startDate, value.endDate, value.preset]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -55,69 +62,146 @@ export default function DateRangePicker({
       }
     };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      switch (event.key) {
+        case 'Escape':
+          setIsOpen(false);
+          resetSelection();
+          break;
+        case 'ArrowLeft':
+          event.preventDefault();
+          handlePrevMonth();
+          break;
+        case 'ArrowRight':
+          event.preventDefault();
+          handleNextMonth();
+          break;
+        case 'Enter':
+          if (selectingDate === 'end' && tempRange.start && hoveredDate) {
+            handleDateClick(hoveredDate);
+          }
+          break;
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, selectingDate, tempRange.start, hoveredDate]);
 
   const handlePresetSelect = (preset: DatePreset) => {
-    setValidationError(null);
+    console.log('Preset selected:', preset);
     const newRange = getDateRangeForPreset(preset);
+    console.log('New range:', newRange);
+    console.log('Calling onChange with:', newRange);
+    onChange(newRange);
+    console.log('onChange called, updating internal state');
+    setTempRange({ start: newRange.startDate, end: newRange.endDate });
+    setActivePreset(preset);
+    setSelectingDate(null);
+    setHoveredDate(null);
+    setIsOpen(false);
+  };
 
-    if (preset === 'custom') {
-      // Initialize custom dates with current range
-      setCustomStartDate(format(value.startDate, 'yyyy-MM-dd'));
-      setCustomEndDate(format(value.endDate, 'yyyy-MM-dd'));
-    } else {
+  const handlePrevMonth = () => {
+    setCurrentDate(prev => subMonths(prev, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(prev => addMonths(prev, 1));
+  };
+
+  const handleDateClick = (date: Date) => {
+    if (!selectingDate) {
+      // Start new selection
+      setTempRange({ start: date, end: null });
+      setSelectingDate('end');
+      setActivePreset('custom');
+    } else if (selectingDate === 'end') {
+      // Complete the range
+      const start = tempRange.start!;
+      const end = date;
+
+      const newRange: DateRange = {
+        startDate: start <= end ? start : end,
+        endDate: start <= end ? end : start,
+        preset: 'custom'
+      };
+
       onChange(newRange);
+      setTempRange({ start: newRange.startDate, end: newRange.endDate });
+      setSelectingDate(null);
+      setHoveredDate(null);
+      setActivePreset('custom');
       setIsOpen(false);
     }
   };
 
-  const handleCustomDateChange = (type: 'start' | 'end', dateString: string) => {
-    if (type === 'start') {
-      setCustomStartDate(dateString);
-    } else {
-      setCustomEndDate(dateString);
-    }
-
-    // Validate and apply custom date range if both dates are provided
-    if (dateString && (type === 'start' ? customEndDate : customStartDate)) {
-      const startDate = new Date(type === 'start' ? dateString : customStartDate);
-      const endDate = new Date(type === 'end' ? dateString : customEndDate);
-
-      const customRange: DateRange = {
-        startDate,
-        endDate,
-        preset: 'custom'
-      };
-
-      const validation = validateDateRange(customRange);
-      if (validation.isValid) {
-        setValidationError(null);
-        onChange(customRange);
-      } else {
-        setValidationError(validation.error || 'Invalid date range');
-      }
+  const handleDateHover = (date: Date) => {
+    if (selectingDate === 'end' && tempRange.start) {
+      setHoveredDate(date);
     }
   };
 
-  const handleApplyCustomRange = () => {
-    if (customStartDate && customEndDate) {
-      const customRange: DateRange = {
-        startDate: new Date(customStartDate),
-        endDate: new Date(customEndDate),
-        preset: 'custom'
-      };
+  const handleDateLeave = () => {
+    setHoveredDate(null);
+  };
 
-      const validation = validateDateRange(customRange);
-      if (validation.isValid) {
-        setValidationError(null);
-        onChange(customRange);
-        setIsOpen(false);
-      } else {
-        setValidationError(validation.error || 'Invalid date range');
-      }
-    }
+  const resetSelection = () => {
+    setSelectingDate(null);
+    setHoveredDate(null);
+    setTempRange({ start: value.startDate, end: value.endDate });
+  };
+
+  const getCalendarDays = (date: Date) => {
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+    const days = eachDayOfInterval({ start, end });
+
+    // Add empty cells for days before the first day of month
+    const startDayOfWeek = getDay(start);
+    const emptyDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; // Monday = 0
+
+    return {
+      emptyDays,
+      days
+    };
+  };
+
+  const isDateSelected = (date: Date) => {
+    if (!tempRange.start || !tempRange.end) return false;
+    return isSameDay(date, tempRange.start) || isSameDay(date, tempRange.end);
+  };
+
+  const isDateInRange = (date: Date) => {
+    if (!tempRange.start || !tempRange.end) return false;
+    return date >= tempRange.start && date <= tempRange.end;
+  };
+
+  const isDateInHoverRange = (date: Date) => {
+    if (!tempRange.start || !hoveredDate || !selectingDate) return false;
+    const start = tempRange.start;
+    const end = hoveredDate;
+    const minDate = start <= end ? start : end;
+    const maxDate = start <= end ? end : start;
+    return date >= minDate && date <= maxDate;
+  };
+
+  const isStartDate = (date: Date) => {
+    return tempRange.start && isSameDay(date, tempRange.start);
+  };
+
+  const isEndDate = (date: Date) => {
+    return tempRange.end && isSameDay(date, tempRange.end);
+  };
+
+  const isToday = (date: Date) => {
+    return isSameDay(date, new Date());
   };
 
   return (
@@ -136,9 +220,14 @@ export default function DateRangePicker({
           disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed'
         )}
       >
-        <span className="text-gray-900">
-          {formatDateRangeDisplay(value)}
-        </span>
+        <div className="flex items-center">
+          <svg className="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span className="text-gray-700">
+            {formatDateRangeDisplay(value)}
+          </span>
+        </div>
         <svg
           className={clsx(
             'w-4 h-4 text-gray-500 transition-transform duration-200',
@@ -152,92 +241,237 @@ export default function DateRangePicker({
         </svg>
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dual Month Calendar Dropdown */}
       {isOpen && !disabled && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-80 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg"
+          className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg"
         >
-          <div className="p-4">
-            {/* Preset Options */}
-            <div className="space-y-1 mb-4">
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Quick Select</h4>
-              <div className="grid grid-cols-2 gap-1">
-                {datePresetOptions.map((option) => (
+          <div className="flex">
+            {/* Calendar Section */}
+            <div className="p-6">
+              {/* Header with navigation and selection info */}
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={handlePrevMonth}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                  title="Previous month"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex flex-col items-center">
+                  <div className="flex space-x-16 mb-1">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {format(currentDate, 'MMM yyyy')}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {format(addMonths(currentDate, 1), 'MMM yyyy')}
+                    </span>
+                  </div>
+                  {selectingDate === 'end' && tempRange.start && (
+                    <div className="text-xs text-blue-600 font-medium">
+                      Select end date
+                    </div>
+                  )}
+                  {selectingDate === null && tempRange.start && tempRange.end && (
+                    <div className="text-xs text-green-600 font-medium">
+                      {formatDateRangeDisplay({startDate: tempRange.start, endDate: tempRange.end, preset: 'custom'})}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleNextMonth}
+                  className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+                  title="Next month"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Reset button */}
+              {selectingDate && (
+                <div className="flex justify-center mb-3">
+                  <button
+                    onClick={resetSelection}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                  >
+                    Cancel selection
+                  </button>
+                </div>
+              )}
+
+              <div className="flex space-x-8">
+                {/* First Month Calendar */}
+                {(() => {
+                  const { emptyDays, days } = getCalendarDays(currentDate);
+                  return (
+                    <div className="w-56">
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                          <div key={day} className="text-xs text-gray-500 text-center py-1">{day}</div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Empty cells for start of month */}
+                        {Array.from({length: emptyDays}, (_, i) => (
+                          <div key={`empty-${i}`} className="w-8 h-8"></div>
+                        ))}
+                        {/* Month days */}
+                        {days.map((day) => {
+                          const isSelected = isDateSelected(day);
+                          const isInRange = isDateInRange(day);
+                          const isInHoverRange = isDateInHoverRange(day);
+                          const isStart = isStartDate(day);
+                          const isEnd = isEndDate(day);
+                          const isTodayDate = isToday(day);
+
+                          return (
+                            <button
+                              key={day.toISOString()}
+                              onClick={() => handleDateClick(day)}
+                              onMouseEnter={() => handleDateHover(day)}
+                              onMouseLeave={handleDateLeave}
+                              className={clsx(
+                                "w-8 h-8 text-sm flex items-center justify-center transition-all duration-150 relative",
+                                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+                                // Base styling
+                                !isSelected && !isInRange && !isInHoverRange && "text-gray-700 hover:bg-gray-100 rounded",
+                                // Today styling
+                                isTodayDate && !isSelected && "bg-blue-50 text-blue-600 font-semibold rounded",
+                                // Range styling
+                                (isInRange || isInHoverRange) && !isSelected && "bg-green-50 text-green-700",
+                                // Selected dates (start/end)
+                                isSelected && "bg-green-500 text-white font-semibold shadow-sm",
+                                // Rounded corners for range
+                                isStart && isEnd && "rounded",
+                                isStart && !isEnd && "rounded-l",
+                                isEnd && !isStart && "rounded-r",
+                                isSelected && "rounded",
+                                // Hover preview for range selection
+                                isInHoverRange && selectingDate === 'end' && "bg-green-100 text-green-800"
+                              )}
+                            >
+                              {format(day, 'd')}
+                              {isTodayDate && !isSelected && (
+                                <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Second Month Calendar */}
+                {(() => {
+                  const nextMonth = addMonths(currentDate, 1);
+                  const { emptyDays, days } = getCalendarDays(nextMonth);
+                  return (
+                    <div className="w-56">
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                          <div key={day} className="text-xs text-gray-500 text-center py-1">{day}</div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Empty cells for start of month */}
+                        {Array.from({length: emptyDays}, (_, i) => (
+                          <div key={`empty-${i}`} className="w-8 h-8"></div>
+                        ))}
+                        {/* Month days */}
+                        {days.map((day) => {
+                          const isSelected = isDateSelected(day);
+                          const isInRange = isDateInRange(day);
+                          const isInHoverRange = isDateInHoverRange(day);
+                          const isStart = isStartDate(day);
+                          const isEnd = isEndDate(day);
+                          const isTodayDate = isToday(day);
+
+                          return (
+                            <button
+                              key={day.toISOString()}
+                              onClick={() => handleDateClick(day)}
+                              onMouseEnter={() => handleDateHover(day)}
+                              onMouseLeave={handleDateLeave}
+                              className={clsx(
+                                "w-8 h-8 text-sm flex items-center justify-center transition-all duration-150 relative",
+                                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+                                // Base styling
+                                !isSelected && !isInRange && !isInHoverRange && "text-gray-700 hover:bg-gray-100 rounded",
+                                // Today styling
+                                isTodayDate && !isSelected && "bg-blue-50 text-blue-600 font-semibold rounded",
+                                // Range styling
+                                (isInRange || isInHoverRange) && !isSelected && "bg-green-50 text-green-700",
+                                // Selected dates (start/end)
+                                isSelected && "bg-green-500 text-white font-semibold shadow-sm",
+                                // Rounded corners for range
+                                isStart && isEnd && "rounded",
+                                isStart && !isEnd && "rounded-l",
+                                isEnd && !isStart && "rounded-r",
+                                isSelected && "rounded",
+                                // Hover preview for range selection
+                                isInHoverRange && selectingDate === 'end' && "bg-green-100 text-green-800"
+                              )}
+                            >
+                              {format(day, 'd')}
+                              {isTodayDate && !isSelected && (
+                                <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Preset Options Sidebar */}
+            <div className="border-l border-gray-200 py-4 px-4 bg-gray-50 min-w-[140px]">
+              <div className="space-y-1">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Select</div>
+                {datePresetOptions.filter(option => option.value !== 'custom').map((option) => (
                   <button
                     key={option.value}
-                    type="button"
                     onClick={() => handlePresetSelect(option.value)}
                     className={clsx(
-                      'px-3 py-2 text-sm text-left rounded-md transition-colors duration-150',
-                      value.preset === option.value
-                        ? 'bg-blue-100 text-blue-900 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
+                      "w-full text-left text-sm py-2 px-3 rounded-md transition-all duration-150",
+                      "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+                      activePreset === option.value
+                        ? "bg-blue-500 text-white font-medium shadow-sm"
+                        : "text-gray-700 hover:bg-white hover:shadow-sm"
                     )}
                   >
                     {option.label}
                   </button>
                 ))}
+                {/* Separator */}
+                <div className="border-t border-gray-300 my-2"></div>
+                {/* Custom option for manual selection */}
+                <button
+                  onClick={() => {
+                    setActivePreset('custom');
+                    setSelectingDate(null);
+                    setHoveredDate(null);
+                  }}
+                  className={clsx(
+                    "w-full text-left text-sm py-2 px-3 rounded-md transition-all duration-150",
+                    "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+                    activePreset === 'custom'
+                      ? "bg-blue-500 text-white font-medium shadow-sm"
+                      : "text-gray-700 hover:bg-white hover:shadow-sm"
+                  )}
+                >
+                  Custom Range
+                </button>
               </div>
             </div>
-
-            {/* Custom Date Range */}
-            {value.preset === 'custom' && (
-              <div className="border-t border-gray-200 pt-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Custom Range</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label htmlFor="custom-start-date" className="block text-xs font-medium text-gray-700 mb-1">
-                      Start Date
-                    </label>
-                    <input
-                      id="custom-start-date"
-                      type="date"
-                      value={customStartDate}
-                      onChange={(e) => handleCustomDateChange('start', e.target.value)}
-                      max={format(new Date(), 'yyyy-MM-dd')}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="custom-end-date" className="block text-xs font-medium text-gray-700 mb-1">
-                      End Date
-                    </label>
-                    <input
-                      id="custom-end-date"
-                      type="date"
-                      value={customEndDate}
-                      onChange={(e) => handleCustomDateChange('end', e.target.value)}
-                      max={format(new Date(), 'yyyy-MM-dd')}
-                      min={customStartDate}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Validation Error */}
-                  {validationError && (
-                    <div className="p-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md">
-                      {validationError}
-                    </div>
-                  )}
-
-                  {/* Apply Button */}
-                  <button
-                    type="button"
-                    onClick={handleApplyCustomRange}
-                    disabled={!customStartDate || !customEndDate || !!validationError}
-                    className={clsx(
-                      'w-full px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200',
-                      !customStartDate || !customEndDate || !!validationError
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20'
-                    )}
-                  >
-                    Apply Range
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

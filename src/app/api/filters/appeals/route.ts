@@ -1,14 +1,16 @@
 /**
  * API endpoint for appeals filter data
- * Returns list of available appeals/campaigns for filter dropdown
+ * Returns list of available appeals from pw_appeal table for filter dropdown
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { createErrorResponse, logDatabaseError } from '@/lib/database/errorHandler';
+import { getSequelizeInstance } from '@/lib/database/sequelize';
+import { QueryTypes } from 'sequelize';
 
 interface AppealResponse {
-  id: string;
+  id: number;
   appeal_name: string;
   status: 'active' | 'inactive';
   start_date: string | null;
@@ -20,30 +22,38 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const includeInactive = searchParams.get('include_inactive') === 'true';
 
-    // Build query conditions
-    const whereConditions: any = {};
-    if (!includeInactive) {
-      whereConditions.isActive = true;
+    // Fetch appeals from database using the exact query you specified
+    let appeals: any[] = [];
+    try {
+      const sequelize = getSequelizeInstance();
+
+      // Use the exact query you specified
+      const query = 'SELECT * FROM pw_appeal';
+
+      appeals = await sequelize.query(query, {
+        type: QueryTypes.SELECT
+      });
+    } catch (e) {
+      console.error('Database error:', e);
+      // DB unavailable: return empty list gracefully
+      const response = NextResponse.json({
+        success: true,
+        data: [],
+        count: 0,
+        message: 'Database unavailable; returning empty appeals list'
+      });
+      response.headers.set('Cache-Control', 'no-cache');
+      return response;
     }
 
-    // Fetch appeals from database
-    const { CampaignModel } = await import('@/lib/database/models/Campaign');
-    const appeals = await CampaignModel.findAll({
-      where: whereConditions,
-      order: [
-        ['isActive', 'DESC'], // Active appeals first
-        ['appealName', 'ASC']  // Then alphabetical
-      ],
-      attributes: ['id', 'appealName', 'isActive', 'startDate', 'endDate']
-    });
-
     // Transform data for frontend
-    const responseData: AppealResponse[] = appeals.map(appeal => ({
+    const responseData: AppealResponse[] = appeals.map((appeal: any) => ({
       id: appeal.id,
-      appeal_name: appeal.appealName,
-      status: appeal.isActive ? 'active' : 'inactive',
-      start_date: appeal.startDate ? appeal.startDate.toISOString() : null,
-      end_date: appeal.endDate ? appeal.endDate.toISOString() : null
+      appeal_name: appeal.appeal_name || appeal.name || 'Unnamed Appeal',
+      // Fix status logic: disable = 0 means active, disable = 1 means inactive
+      status: (appeal.disable === 0 || appeal.disable === null || appeal.disable === undefined) ? 'active' : 'inactive',
+      start_date: appeal.start_date ? new Date(appeal.start_date).toISOString() : null,
+      end_date: appeal.end_date ? new Date(appeal.end_date).toISOString() : null
     }));
 
     // Set cache headers for filter data (1 hour cache)
@@ -75,8 +85,12 @@ export async function GET(request: NextRequest) {
  */
 export async function HEAD() {
   try {
-    const { CampaignModel } = await import('@/lib/database/models/Campaign');
-    const count = await CampaignModel.count();
+    const sequelize = getSequelizeInstance();
+    const result = await sequelize.query('SELECT COUNT(*) as count FROM pw_appeal', {
+      type: QueryTypes.SELECT
+    }) as any[];
+
+    const count = result[0]?.count || 0;
     return new NextResponse(null, {
       status: 200,
       headers: {

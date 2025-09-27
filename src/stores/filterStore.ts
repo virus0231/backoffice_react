@@ -36,10 +36,10 @@ interface FilterStore extends FilterState {
 /**
  * Default filter state
  */
-const getDefaultState = (): Omit<FilterState, 'setDateRange' | 'setAppeal' | 'setFund' | 'setFrequency' | 'clearAllFilters' | 'resetToDefaults'> => ({
+const getDefaultState = (): Omit<FilterState, 'setDateRange' | 'setAppeals' | 'setFunds' | 'setFrequency' | 'clearAllFilters' | 'resetToDefaults'> => ({
   dateRange: getDefaultDateRange(),
-  selectedAppeal: null,
-  selectedFund: null,
+  selectedAppeals: [],
+  selectedFunds: [],
   frequency: 'all'
 });
 
@@ -66,32 +66,39 @@ export const useFilterStore = create<FilterStore>()(
 
       // Date range actions
       setDateRange: (range: DateRange) => {
+        console.log('Store setDateRange called with:', range);
         const validation = validateDateRange(range);
+        console.log('Validation result:', validation);
         if (!validation.isValid) {
+          console.log('Validation failed:', validation.error);
           set({ lastValidationError: validation.error || 'Invalid date range' });
           return;
         }
 
+        console.log('Validation passed, updating store');
         set({
           dateRange: range,
           lastValidationError: null
         });
       },
 
-      // Appeal actions
-      setAppeal: (appeal: Appeal | null) => {
+      // Appeals actions
+      setAppeals: (appeals: Appeal[]) => {
         set(state => ({
-          selectedAppeal: appeal,
-          // Clear fund selection when appeal changes (cascading logic)
-          selectedFund: appeal && state.selectedFund?.appeal_id !== appeal.id ? null : state.selectedFund,
+          selectedAppeals: appeals,
+          // Clear funds selection when appeals change (cascading logic)
+          selectedFunds: appeals.length > 0 && state.selectedFunds.length > 0 &&
+            !state.selectedFunds.some(fund =>
+              appeals.some(appeal => appeal.id === fund.appeal_id)
+            ) ? [] : state.selectedFunds,
           lastValidationError: null
         }));
       },
 
-      // Fund actions
-      setFund: (fund: Fund | null) => {
+      // Funds actions
+      setFunds: (funds: Fund[]) => {
         set({
-          selectedFund: fund,
+          selectedFunds: funds,
           lastValidationError: null
         });
       },

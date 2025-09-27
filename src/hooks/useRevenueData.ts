@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { format } from 'date-fns';
 
 interface DateRange {
@@ -59,7 +59,7 @@ export function useRevenueData(dateRange: DateRange, granularity: 'daily' | 'wee
     error: null
   });
 
-  const fetchData = async (endpoint: string, setData: (data: RevenueData) => void) => {
+  const fetchData = async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>) => {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: null }));
 
@@ -69,7 +69,7 @@ export function useRevenueData(dateRange: DateRange, granularity: 'daily' | 'wee
         granularity: granularity
       });
 
-      const response = await fetch(`/api/analytics/${endpoint}?${params}`);
+      const response = await fetch(`/api/v2/analytics/${endpoint}?${params}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch ${endpoint} data`);
@@ -77,15 +77,15 @@ export function useRevenueData(dateRange: DateRange, granularity: 'daily' | 'wee
 
       const result: RevenueResponse = await response.json();
 
-      const chartData = result.data.trendData.map(point => ({
+      const chartData = (result.data.trendData || []).map((point: any) => ({
         date: point.period,
         amount: point.amount,
         count: point.count
       }));
 
       setData({
-        totalAmount: result.data.totalAmount,
-        totalCount: result.data.totalCount,
+        totalAmount: Number(result.data.totalAmount || 0),
+        totalCount: Number(result.data.totalCount || 0),
         chartData,
         isLoading: false,
         error: null

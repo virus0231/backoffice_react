@@ -32,6 +32,13 @@ export const getDateRangeForPreset = (preset: DatePreset): DateRange => {
   const today = new Date();
 
   switch (preset) {
+    case 'all':
+      // All time - from 2 years ago to today (reasonable for most analytics)
+      return {
+        startDate: subYears(today, 2),
+        endDate: endOfToday(),
+        preset
+      };
     case 'today':
       return {
         startDate: startOfToday(),
@@ -127,6 +134,11 @@ export const getDateRangeForPreset = (preset: DatePreset): DateRange => {
  */
 export const datePresetOptions: DatePresetOption[] = [
   {
+    label: 'All',
+    value: 'all',
+    range: () => getDateRangeForPreset('all')
+  },
+  {
     label: 'Today',
     value: 'today',
     range: () => getDateRangeForPreset('today')
@@ -210,20 +222,20 @@ export const validateDateRange = (dateRange: DateRange): { isValid: boolean; err
     };
   }
 
-  // Check if end date is in the future
-  if (isAfter(endDate, endOfToday())) {
+  // Check if end date is too far in the future (allow up to end of current year)
+  if (isAfter(endDate, endOfYear(new Date()))) {
     return {
       isValid: false,
-      error: 'End date cannot be in the future'
+      error: 'End date cannot be beyond current year'
     };
   }
 
-  // Check if date range is too large (more than 5 years)
+  // Check if date range is too large (more than 3 years)
   const daysDifference = differenceInDays(endDate, startDate);
-  if (daysDifference > 1825) { // 5 years approximately
+  if (daysDifference > 1095) { // 3 years approximately
     return {
       isValid: false,
-      error: 'Date range cannot exceed 5 years'
+      error: 'Date range cannot exceed 3 years'
     };
   }
 

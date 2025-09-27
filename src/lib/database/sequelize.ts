@@ -4,6 +4,8 @@
  */
 
 import { Sequelize, Options } from 'sequelize';
+// Ensure bundler includes mysql2 driver and avoid dynamic require inside Sequelize
+import mysql2 from 'mysql2';
 import { getDatabaseConfig, getConnectionString } from './connection';
 import { logger } from './logger';
 
@@ -23,10 +25,10 @@ export function createSequelizeInstance(): Sequelize {
     host: config.host,
     port: config.port,
     dialect: 'mysql',
+    dialectModule: mysql2 as any,
     dialectOptions: {
+      // mysql2 supports connectTimeout; pool handles acquire/timeouts
       connectTimeout: config.queryTimeout,
-      acquireTimeout: config.queryTimeout,
-      timeout: config.queryTimeout,
     },
     pool: {
       max: config.pool.max,

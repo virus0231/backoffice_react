@@ -9,6 +9,7 @@ export interface DateRange {
 }
 
 export type DatePreset =
+  | 'all'
   | 'today'
   | 'yesterday'
   | 'last7days'
@@ -60,14 +61,14 @@ export interface FrequencyOption {
 
 export interface FilterState {
   dateRange: DateRange;
-  selectedAppeal: Appeal | null;
-  selectedFund: Fund | null;
+  selectedAppeals: Appeal[]; // Array for multiselect
+  selectedFunds: Fund[]; // Array for multiselect
   frequency: FrequencyType;
 
   // Actions
   setDateRange: (range: DateRange) => void;
-  setAppeal: (appeal: Appeal | null) => void;
-  setFund: (fund: Fund | null) => void;
+  setAppeals: (appeals: Appeal[]) => void; // Handle array
+  setFunds: (funds: Fund[]) => void; // Handle array
   setFrequency: (frequency: FrequencyType) => void;
   clearAllFilters: () => void;
   resetToDefaults: () => void;

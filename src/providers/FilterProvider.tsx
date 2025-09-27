@@ -32,12 +32,12 @@ export function FilterProvider({ children }: FilterProviderProps) {
 
   const {
     dateRange,
-    selectedAppeal,
-    selectedFund,
+    selectedAppeals,
+    selectedFunds,
     frequency,
     setDateRange,
-    setAppeal,
-    setFund,
+    setAppeals,
+    setFunds,
     setFrequency,
     clearAllFilters,
     resetToDefaults,
@@ -81,14 +81,14 @@ export function FilterProvider({ children }: FilterProviderProps) {
   const contextValue: FilterContextValue = {
     // Core filter state
     dateRange,
-    selectedAppeal,
-    selectedFund,
+    selectedAppeals,
+    selectedFunds,
     frequency,
 
     // Actions
     setDateRange,
-    setAppeal: setAppeal,
-    setFund,
+    setAppeals,
+    setFunds,
     setFrequency,
     clearAllFilters,
     resetToDefaults,

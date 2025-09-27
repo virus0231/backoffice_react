@@ -22,27 +22,27 @@ const frequencyOptions: FrequencyOption[] = [
   {
     label: 'All Donations',
     value: 'all',
-    description: 'Show all donation types without filtering'
+    description: 'Show all donation types'
   },
   {
-    label: 'One-time Donations',
+    label: 'One-time',
     value: 'one-time',
-    description: 'Single donations with no recurring schedule'
+    description: 'Single donations only'
   },
   {
-    label: 'Recurring Donations',
+    label: 'Recurring',
     value: 'recurring',
-    description: 'All donations with recurring schedules'
+    description: 'All recurring donations'
   },
   {
-    label: 'Recurring (First Installments)',
+    label: 'First Installments',
     value: 'recurring-first',
-    description: 'Initial donations in recurring series'
+    description: 'Initial recurring donations'
   },
   {
-    label: 'Recurring (Next Installments)',
+    label: 'Next Installments',
     value: 'recurring-next',
-    description: 'Follow-up donations in recurring series'
+    description: 'Follow-up recurring donations'
   }
 ];
 
@@ -95,22 +95,22 @@ export default function FrequencyFilter({
         onClick={handleToggleDropdown}
         disabled={disabled}
         className={clsx(
-          'flex items-center justify-between w-full px-4 py-2.5 text-sm',
+          'flex items-center justify-between min-w-48 px-4 py-2.5 text-sm',
           'bg-white border border-gray-300 rounded-lg shadow-sm',
           'hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
-          'transition-colors duration-200',
+          'transition-all duration-200',
           disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed'
         )}
       >
-        <div className="flex items-center">
-          <span className="text-gray-900">
-            {selectedOption?.label || 'All Donations'}
-          </span>
+        <div className="flex items-center min-w-0">
           {value !== 'all' && (
-            <span className="ml-2 px-2 py-0.5 text-xs text-blue-700 bg-blue-100 rounded-full">
-              Filtered
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
+              ✓
             </span>
           )}
+          <span className="text-gray-700 truncate">
+            {value !== 'all' ? selectedOption?.label : 'Frequency'}
+          </span>
         </div>
         <svg
           className={clsx(
@@ -174,16 +174,13 @@ export default function FrequencyFilter({
             ))}
           </div>
 
-          {/* Frequency Information */}
-          <div className="border-t border-gray-200 p-3 bg-gray-50">
-            <div className="text-xs text-gray-600">
-              <div className="font-medium mb-1">Filter Information:</div>
-              <div className="space-y-1">
-                <div>• <strong>One-time:</strong> freq = 0 in database</div>
-                <div>• <strong>Recurring:</strong> freq &gt; 0 in database</div>
-                <div>• <strong>First installments:</strong> freq = 1 without order_id pattern</div>
-                <div>• <strong>Next installments:</strong> freq &gt; 1 or order_id pattern</div>
-              </div>
+          {/* Quick Info */}
+          <div className="border-t border-gray-200 px-3 py-2 bg-blue-50">
+            <div className="text-xs text-blue-700 flex items-center">
+              <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Filter donations by payment frequency
             </div>
           </div>
         </div>
