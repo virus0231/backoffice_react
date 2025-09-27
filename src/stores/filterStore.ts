@@ -8,6 +8,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { FilterState, DateRange, Appeal, Fund, FrequencyType } from '@/types/filters';
 import { getDefaultDateRange, validateDateRange } from '@/lib/utils/dateHelpers';
+import type { ChartComparison, ComparisonMapping } from '@/types/charts';
+import { validateComparisonRange, coerceComparisonAwayFromMain } from '@/lib/validation/comparisonDates';
+import { differenceInDays, subDays } from 'date-fns';
 
 interface FilterStore extends FilterState {
   // Loading states
@@ -21,6 +24,13 @@ interface FilterStore extends FilterState {
   // Persistence helpers
   hydrated: boolean;
   setHydrated: (hydrated: boolean) => void;
+
+  // Comparison state (per-chart)
+  comparisons: ComparisonMapping;
+  setChartComparison: (chartId: string, comparison: ChartComparison) => void;
+  clearChartComparison: (chartId: string) => void;
+  toggleChartComparison: (chartId: string, enabled?: boolean) => void;
+  getChartComparison: (chartId: string) => ChartComparison | null;
 }
 
 /**
@@ -33,6 +43,15 @@ const getDefaultState = (): Omit<FilterState, 'setDateRange' | 'setAppeal' | 'se
   frequency: 'all'
 });
 
+const getDefaultComparisons = (): ComparisonMapping => ({ });
+
+const buildPreviousPeriod = (main: DateRange): { startDate: Date; endDate: Date } => {
+  const length = Math.max(1, differenceInDays(main.endDate, main.startDate));
+  const endDate = subDays(main.startDate, 1);
+  const startDate = subDays(endDate, length);
+  return { startDate, endDate };
+};
+
 /**
  * Filter store with persistence
  */
@@ -43,6 +62,7 @@ export const useFilterStore = create<FilterStore>()(
       isLoading: false,
       lastValidationError: null,
       hydrated: false,
+      comparisons: getDefaultComparisons(),
 
       // Date range actions
       setDateRange: (range: DateRange) => {
@@ -88,7 +108,8 @@ export const useFilterStore = create<FilterStore>()(
       clearAllFilters: () => {
         set({
           ...getDefaultState(),
-          lastValidationError: null
+          lastValidationError: null,
+          comparisons: getDefaultComparisons()
         });
       },
 
@@ -113,6 +134,83 @@ export const useFilterStore = create<FilterStore>()(
       // Hydration state
       setHydrated: (hydrated: boolean) => {
         set({ hydrated });
+      },
+
+      // Comparison state actions
+      setChartComparison: (chartId: string, comparison: ChartComparison) => {
+        const main = get().dateRange;
+        if (comparison.enabled && comparison.startDate && comparison.endDate) {
+          const result = validateComparisonRange(main, {
+            startDate: comparison.startDate,
+            endDate: comparison.endDate,
+            preset: comparison.preset || 'custom'
+          });
+          if (!result.isValid) {
+            set({ lastValidationError: result.error || 'Invalid comparison selection' });
+            return;
+          }
+        }
+
+        set(state => ({
+          comparisons: {
+            ...state.comparisons,
+            [chartId]: { ...comparison }
+          },
+          lastValidationError: null
+        }));
+      },
+
+      clearChartComparison: (chartId: string) => {
+        set(state => {
+          const next = { ...state.comparisons };
+          delete next[chartId];
+          return { comparisons: next, lastValidationError: null } as Partial<FilterStore> as any;
+        });
+      },
+
+      toggleChartComparison: (chartId: string, enabled?: boolean) => {
+        const state = get();
+        const current = state.comparisons[chartId];
+        const nextEnabled = enabled ?? !(current?.enabled ?? false);
+
+        if (!nextEnabled) {
+          set(state => ({
+            comparisons: {
+              ...state.comparisons,
+              [chartId]: { enabled: false, startDate: null, endDate: null, preset: 'custom' }
+            }
+          }));
+          return;
+        }
+
+        // When enabling, if no range, default to previous period with same length
+        let startDate = current?.startDate ?? null;
+        let endDate = current?.endDate ?? null;
+        if (!startDate || !endDate) {
+          const prev = buildPreviousPeriod(state.dateRange);
+          startDate = prev.startDate;
+          endDate = prev.endDate;
+        }
+
+        // Coerce away from main if overlapping
+        const adjusted = coerceComparisonAwayFromMain(state.dateRange, {
+          startDate,
+          endDate,
+          preset: current?.preset || 'custom'
+        });
+
+        set(s => ({
+          comparisons: {
+            ...s.comparisons,
+            [chartId]: { enabled: true, startDate: adjusted.startDate, endDate: adjusted.endDate, preset: adjusted.preset }
+          },
+          lastValidationError: null
+        }));
+      },
+
+      getChartComparison: (chartId: string) => {
+        const c = get().comparisons[chartId];
+        return c ? { ...c } : null;
       }
     }),
     {
@@ -123,7 +221,8 @@ export const useFilterStore = create<FilterStore>()(
         dateRange: state.dateRange,
         selectedAppeal: state.selectedAppeal,
         selectedFund: state.selectedFund,
-        frequency: state.frequency
+        frequency: state.frequency,
+        comparisons: state.comparisons
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
@@ -139,6 +238,39 @@ export const useFilterStore = create<FilterStore>()(
               console.warn('Invalid persisted date range, resetting to default');
               state.dateRange = getDefaultDateRange();
             }
+          }
+
+          // Sanitize comparison ranges
+          if ((state as any).comparisons) {
+            const comps = (state as any).comparisons as ComparisonMapping;
+            const sanitized: ComparisonMapping = {};
+            for (const key of Object.keys(comps)) {
+              const c = comps[key]!;
+              if (!c || !c.enabled || !c.startDate || !c.endDate) {
+                sanitized[key] = { enabled: false, startDate: null, endDate: null, preset: 'custom' };
+                continue;
+              }
+              const check = validateComparisonRange(state.dateRange!, {
+                startDate: new Date(c.startDate),
+                endDate: new Date(c.endDate),
+                preset: c.preset || 'custom'
+              });
+              if (!check.isValid) {
+                // Default to previous period
+                const prev = buildPreviousPeriod(state.dateRange!);
+                sanitized[key] = { enabled: true, startDate: prev.startDate, endDate: prev.endDate, preset: 'custom' };
+              } else {
+                sanitized[key] = {
+                  enabled: true,
+                  startDate: new Date(c.startDate),
+                  endDate: new Date(c.endDate),
+                  preset: c.preset || 'custom'
+                };
+              }
+            }
+            (state as any).comparisons = sanitized;
+          } else {
+            (state as any).comparisons = getDefaultComparisons();
           }
 
           // Set hydrated flag

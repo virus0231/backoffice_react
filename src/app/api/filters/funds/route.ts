@@ -4,9 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { Op } from 'sequelize';
-import { FundModel } from '@/lib/database/models/Fund';
-import { DonationModel } from '@/lib/database/models/Donation';
+export const dynamic = 'force-dynamic';
 import { createErrorResponse, logDatabaseError } from '@/lib/database/errorHandler';
 
 interface FundResponse {
@@ -34,6 +32,8 @@ export async function GET(request: NextRequest) {
     if (appealId) {
       // Get funds that have been used with the specific appeal
       // This creates a cascading relationship based on actual donation data
+      const { FundModel } = await import('@/lib/database/models/Fund');
+      const { DonationModel } = await import('@/lib/database/models/Donation');
       funds = await FundModel.findAll({
         where: whereConditions,
         include: [{
@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Get all funds (no appeal filter)
+      const { FundModel } = await import('@/lib/database/models/Fund');
       funds = await FundModel.findAll({
         where: whereConditions,
         order: [
@@ -110,6 +111,7 @@ export async function GET(request: NextRequest) {
  */
 export async function HEAD() {
   try {
+    const { FundModel } = await import('@/lib/database/models/Fund');
     const count = await FundModel.count();
     return new NextResponse(null, {
       status: 200,

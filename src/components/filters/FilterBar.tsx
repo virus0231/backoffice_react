@@ -13,6 +13,8 @@ import DateRangePicker from './DateRangePicker';
 import AppealsFilter from './AppealsFilter';
 import FundsFilter from './FundsFilter';
 import FrequencyFilter from './FrequencyFilter';
+import { useFilterStore } from '@/stores/filterStore';
+import { formatDateRangeDisplay } from '@/lib/utils/dateHelpers';
 
 interface FilterBarProps {
   className?: string;
@@ -43,6 +45,7 @@ export default function FilterBar({
   } = useFilterContext();
 
   const isFiltering = useIsFiltering();
+  const { comparisons } = useFilterStore();
 
   // Don't render until store is hydrated to prevent hydration mismatch
   if (!isHydrated) {
@@ -189,6 +192,17 @@ export default function FilterBar({
               {dateRange.preset !== 'last30days' && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                   Date: {dateRange.preset || 'Custom'}
+                </span>
+              )}
+              {/* Comparison summary */}
+              {Object.keys(comparisons || {}).filter(id => comparisons[id]?.enabled && comparisons[id]?.startDate && comparisons[id]?.endDate).length > 0 && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  {Object.entries(comparisons)
+                    .filter(([, c]) => c?.enabled && c.startDate && c.endDate)
+                    .slice(0, 3)
+                    .map(([id, c]) => `${id}: ${formatDateRangeDisplay({ startDate: new Date(c!.startDate!), endDate: new Date(c!.endDate!), preset: c!.preset || 'custom' })}`)
+                    .join(' • ')}
+                  {Object.keys(comparisons).filter(id => comparisons[id]?.enabled && comparisons[id]?.startDate && comparisons[id]?.endDate).length > 3 ? '…' : ''}
                 </span>
               )}
             </div>

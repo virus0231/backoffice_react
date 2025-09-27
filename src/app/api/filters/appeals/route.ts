@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { CampaignModel } from '@/lib/database/models/Campaign';
+export const dynamic = 'force-dynamic';
 import { createErrorResponse, logDatabaseError } from '@/lib/database/errorHandler';
 
 interface AppealResponse {
@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch appeals from database
+    const { CampaignModel } = await import('@/lib/database/models/Campaign');
     const appeals = await CampaignModel.findAll({
       where: whereConditions,
       order: [
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
  */
 export async function HEAD() {
   try {
+    const { CampaignModel } = await import('@/lib/database/models/Campaign');
     const count = await CampaignModel.count();
     return new NextResponse(null, {
       status: 200,

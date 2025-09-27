@@ -41,6 +41,8 @@ export interface Fund {
   fund_name: string;
   is_active: boolean;
   appeal_id?: number;
+  // Optional categorization used by Filters UI grouping
+  category?: string;
 }
 
 export type FrequencyType =

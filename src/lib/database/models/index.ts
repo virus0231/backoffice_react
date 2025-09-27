@@ -17,7 +17,9 @@ export {
   DonationModel,
   DonorModel,
   CampaignModel,
-  FundModel
+  FundModel,
+  // Alias for tests expecting named `Fund`
+  FundModel as Fund
 };
 
 // Export model interfaces

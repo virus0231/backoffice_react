@@ -4,11 +4,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { testDatabaseConnection, getConnectionPoolStatus } from '@/lib/database/sequelize';
-import { checkDatabaseHealth } from '@/lib/database/errorHandler';
-import { performanceMonitor } from '@/lib/database/performanceMonitor';
 import { withDatabaseMiddleware } from '@/lib/database/errorHandler';
 import { logger } from '@/lib/database/logger';
+export const dynamic = 'force-dynamic';
 
 // Test result interface
 interface DatabaseTestResult {
@@ -80,6 +78,7 @@ async function testConnection(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
+    const { testDatabaseConnection } = await import('@/lib/database/sequelize');
     const isConnected = await testDatabaseConnection();
     const duration = Date.now() - startTime;
 
@@ -116,6 +115,7 @@ async function testConnectionPool(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
+    const { getConnectionPoolStatus } = await import('@/lib/database/sequelize');
     const poolStatus = getConnectionPoolStatus();
     const duration = Date.now() - startTime;
 
@@ -263,6 +263,7 @@ async function testPerformance(): Promise<TestResult> {
   const startTime = Date.now();
 
   try {
+    const { performanceMonitor } = await import('@/lib/database/performanceMonitor');
     const stats = performanceMonitor.getPerformanceStatistics();
     const trends = performanceMonitor.getPerformanceTrends(30); // Last 30 minutes
     const duration = Date.now() - startTime;

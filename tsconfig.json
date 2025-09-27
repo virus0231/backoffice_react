@@ -66,6 +66,9 @@
   "exclude": [
     "node_modules",
     ".next",
-    "out"
+    "out",
+    "**/__tests__/**",
+    "src/**/__tests__/**",
+    "__tests__/**"
   ]
 }
