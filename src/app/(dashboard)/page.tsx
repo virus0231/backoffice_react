@@ -1,3 +1,6 @@
+import FilterBar from '@/components/filters/FilterBar';
+import PrimaryRevenueDashboard from '@/components/dashboard/PrimaryRevenueDashboard';
+
 export default function DashboardPage() {
   return (
     <div className='space-y-6'>
@@ -47,7 +50,23 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Key Metrics Cards */}
+      {/* Global Filters */}
+      <div>
+        {/* Filter bar for universal filters */}
+        {/** Uses FilterProvider from layout */}
+        {/** Keep simple horizontal layout */}
+        <div className='filter-container'>
+          <div className='mb-3'>
+            <p className='text-sm text-gray-600'>Adjust filters below to update all charts.</p>
+          </div>
+          <FilterBar layout='horizontal' />
+        </div>
+      </div>
+
+      {/* Primary Revenue Dashboard */}
+      <PrimaryRevenueDashboard />
+
+      {/* Key Metrics Cards (placeholder) */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
         <div className='metric-card'>
           <div className='flex items-center justify-between'>

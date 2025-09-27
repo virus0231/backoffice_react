@@ -31,37 +31,25 @@ This project addresses the critical gap between raw data availability and action
 **FR4:** The system shall provide individual chart comparison controls with calendar picker that excludes currently selected main date range
 **FR5:** The system shall implement smart date validation preventing overlapping date selections between main filter and comparison periods
 **FR6:** The system shall display dual-line chart visualization showing current and comparison periods with percentage change indicators
-**FR7:** The system shall provide the primary "Raised" chart showing total revenue with area-fill time-series visualization including:
-- Total raised amount display (e.g., £23,931.59)
-- Total donations count (e.g., 435 donations)
-- Date range selector with comparison toggle
-- Daily/Weekly view toggle controls
-- Area chart with gradient fill and trend line
-**FR8:** The system shall display "First Installments" section showing recurring donation initiation analytics including:
-- Total first installment amount (e.g., £1,041.14)
-- Number of new recurring donors (e.g., 34 installments)
-- Dedicated time-series chart for first-time recurring donations
-- Same date range and comparison functionality as main chart
-**FR9:** The system shall provide "One-time donations" section showing single donation analytics including:
-- Total one-time donation amount (e.g., £16,691.65)
-- Count of one-time donations (e.g., 173 donations)
-- Separate time-series visualization for one-time giving patterns
-- Consistent styling and comparison overlay capabilities
-**FR10:** The system shall display Donations Count analytics with time-series chart showing donation count trends with comparison overlay
-**FR11:** The system shall generate Donor Retention analytics with time-series visualization showing repeat donor patterns and retention rates over time
-**FR12:** The system shall provide First Time Donors tracking with trend analysis and comparison capabilities
-**FR13:** The system shall display Recurring Revenue analytics showing subscription and recurring donation patterns with MRR calculations
-**FR14:** The system shall generate Donation Amount Distribution heatmap showing donation size patterns across time periods and ranges
-**FR15:** The system shall provide Geographic Analytics with interactive state/region heatmap visualization showing donation distribution by location
-**FR16:** The system shall display Traffic Source Analytics with multi-line chart showing donation attribution across different channels (direct, social, email, etc.)
-**FR17:** The system shall generate Campaign Performance tracking with multi-line visualization comparing effectiveness of different campaigns/appeals
-**FR18:** The system shall provide Device Analytics showing donation patterns across desktop, mobile, and tablet platforms
-**FR19:** The system shall display Payment Method Analytics tracking donation methods (credit card, bank transfer, PayPal, etc.) with trend analysis
-**FR20:** The system shall implement comprehensive donor segmentation analytics with demographic and behavioral visualizations
-**FR21:** The system shall provide donor lifetime value tracking with cohort analysis and predictive indicators
-**FR22:** The system shall display comprehensive data tables beneath each chart showing detailed metrics with sortable columns
-**FR23:** The system shall provide data export functionality for all visualizations including comparison data in CSV, Excel formats
-**FR24:** The system shall connect directly to existing phpMySQL database without requiring data migration or schema modifications
+**FR7:** The system shall provide a left sidebar navigation with 14 chart sections including smooth scroll functionality to navigate between sections
+**FR8:** The system shall implement the "Raised" section with revenue overview showing three-section layout (Total Raised, First Installments, One-time Donations) with area charts and metrics
+**FR9:** The system shall display "Performance" section with key performance metrics grid and trend visualization
+**FR10:** The system shall provide "Recurring plans" section showing recurring donation plan analytics and distribution
+**FR11:** The system shall implement "Recurring revenue" section with MRR tracking, growth metrics, and retention analytics
+**FR12:** The system shall display "Retention" section with donor retention analytics and audience breakdown
+**FR13:** The system shall provide "Day and time" section with donation heatmap showing daily/hourly patterns
+**FR14:** The system shall implement "Frequencies" section showing donation frequency patterns and trends
+**FR15:** The system shall display "Payment methods" section with payment method breakdown and trend analysis
+**FR16:** The system shall provide "Designations" section showing fund designation analytics and distribution
+**FR17:** The system shall implement "Countries" section with geographic analytics and donor distribution by location
+**FR18:** The system shall display "Tributes" section showing tribute donation analytics and patterns
+**FR19:** The system shall provide "Fundraisers" section with individual fundraiser performance tracking
+**FR20:** The system shall implement "URL" section showing URL-based analytics and traffic source attribution
+**FR21:** The system shall display "UTM" section with UTM parameter tracking and campaign attribution analytics
+**FR22:** The system shall provide individual comparison period toggles for each chart section with percentage change calculations
+**FR23:** The system shall display comprehensive data tables beneath each chart showing detailed metrics with sortable columns
+**FR24:** The system shall provide data export functionality for all visualizations including comparison data in CSV, Excel formats
+**FR25:** The system shall connect directly to existing phpMySQL database without requiring data migration or schema modifications
 
 ### Non-Functional Requirements
 
@@ -78,18 +66,18 @@ This project addresses the critical gap between raw data availability and action
 **Visual Replication Requirement**: 100% pixel-perfect replication of the FundraisUP dashboard interface as shown in the provided screenshot.
 
 ### Overall UX Vision
-Exact duplication of FundraisUP's sophisticated analytics platform interface including layout, spacing, typography, colors, and all interactive elements.
+Single-page scrollable dashboard with left sidebar navigation for chart sections, exactly replicating FundraisUP's layout with comprehensive analytics interface including all chart types, unified filtering, and smooth scroll navigation.
 
 ### Key Interaction Paradigms
-Mirror FundraisUP's exact interaction patterns including filter behaviors, chart hover states, comparison toggles, and data table interactions.
+Left sidebar navigation with smooth scroll to chart sections, unified filter controls affecting all charts, individual comparison toggles per chart, and real-time data updates across all visualizations.
 
 ### Core Screens and Views
-**Main Analytics Dashboard**: Comprehensive scrollable view containing all 15+ chart types with unified filtering and comparison controls
-**Revenue Overview Section**: Primary raised/first installments/one-time donations three-panel visualization at dashboard top
-**Operational Analytics Section**: Mid-dashboard charts covering donations, retention, new donors, recurring revenue patterns
-**Distribution Analytics Section**: Heatmaps for geographic and donation amount distribution patterns
-**Attribution Analytics Section**: Traffic sources, campaigns, devices, payment methods with trend analysis
-**Advanced Segmentation Section**: Donor demographics, lifetime value, and behavioral analytics
+**Main Dashboard Layout**: Left sidebar navigation (250px fixed width) with scrollable main content area
+**Sidebar Navigation**: 14 chart sections with icons - Raised, Performance, Recurring plans, Recurring revenue, Retention, Day and time, Frequencies, Payment methods, Designations, Countries, Tributes, Fundraisers, URL, UTM
+**Revenue Overview Section**: Primary three-section chart at top showing Raised, First Installments, One-time donations
+**Chart Sections**: Each section as separate scrollable component with individual headers, controls, and visualizations
+**Global Filters**: Horizontal filter bar affecting all chart sections simultaneously
+**Smooth Navigation**: Click sidebar items to scroll to corresponding chart sections
 
 ### Accessibility: WCAG AA
 WCAG AA compliance while maintaining visual fidelity to reference design

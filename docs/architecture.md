@@ -718,72 +718,156 @@ The frontend leverages Next.js 14+ App Router for optimal server-side rendering 
 
 ```
 apps/web/app/
-├── (dashboard)/                    # Route group for authenticated pages
-│   ├── layout.tsx                 # Dashboard layout with sidebar
-│   ├── page.tsx                   # Main dashboard page (/)
-│   ├── donors/
-│   │   ├── page.tsx              # Donor management (/donors)
-│   │   └── [id]/page.tsx         # Individual donor (/donors/[id])
-│   ├── campaigns/
-│   │   ├── page.tsx              # Campaign analytics (/campaigns)
-│   │   └── [id]/page.tsx         # Campaign details (/campaigns/[id])
-│   └── reports/
-│       ├── page.tsx              # Reports dashboard (/reports)
-│       └── export/page.tsx       # Export interface (/reports/export)
+├── dashboard/                      # Main dashboard application
+│   ├── layout.tsx                 # Dashboard layout with left sidebar navigation
+│   └── page.tsx                   # Single-page dashboard with all 14 chart sections
 ├── api/                          # API routes (covered in API section)
+│   └── v1/
+│       └── analytics/
+│           ├── total-raised/
+│           ├── first-installments/
+│           ├── one-time-donations/
+│           ├── performance/
+│           ├── recurring-plans/
+│           ├── recurring-revenue/
+│           ├── retention/
+│           ├── day-and-time/
+│           ├── frequencies/
+│           ├── payment-methods/
+│           ├── designations/
+│           ├── countries/
+│           ├── tributes/
+│           ├── fundraisers/
+│           ├── url/
+│           └── utm/
 ├── globals.css                   # Global Tailwind styles
 ├── layout.tsx                    # Root layout with providers
-└── page.tsx                      # Landing page
+└── page.tsx                      # Welcome/landing page
 ```
 
 ### Component Architecture
 
 #### Component Hierarchy
 ```
-Dashboard Layout
+Dashboard Layout (Fixed Height with Sidebar)
 ├── Header (Server Component)
 │   ├── UserMenu (Client Component)
 │   └── NotificationBell (Client Component)
-├── Sidebar (Server Component)
-│   └── NavigationMenu (Client Component)
-└── Main Content Area
-    ├── FilterBar (Client Component)
+├── Left Sidebar Navigation (Client Component)
+│   ├── Raised Section Link
+│   ├── Performance Section Link
+│   ├── Recurring Plans Section Link
+│   ├── Recurring Revenue Section Link
+│   ├── Retention Section Link
+│   ├── Day and Time Section Link
+│   ├── Frequencies Section Link
+│   ├── Payment Methods Section Link
+│   ├── Designations Section Link
+│   ├── Countries Section Link
+│   ├── Tributes Section Link
+│   ├── Fundraisers Section Link
+│   ├── URL Section Link
+│   └── UTM Section Link
+└── Main Content Area (Scrollable)
+    ├── Dashboard Title & Description
+    ├── Global FilterBar (Client Component)
     │   ├── DateRangePicker (Client Component)
     │   ├── CampaignSelector (Client Component)
     │   └── FundSelector (Client Component)
-    └── ChartGrid (Server Component wrapper)
-        ├── TotalRaisedChart (Client Component)
-        ├── DonationTrendsChart (Client Component)
-        ├── DonorSegmentationChart (Client Component)
-        └── CampaignPerformanceChart (Client Component)
+    └── Chart Sections (Vertical Stack)
+        ├── Raised Section (PrimaryRevenueDashboard)
+        ├── Performance Section (Metrics Grid + Chart)
+        ├── Recurring Plans Section
+        ├── Recurring Revenue Section (MRR + Charts)
+        ├── Retention Section (Metrics + Geography)
+        ├── Day and Time Section (Heatmap)
+        ├── Frequencies Section
+        ├── Payment Methods Section
+        ├── Designations Section
+        ├── Countries Section
+        ├── Tributes Section
+        ├── Fundraisers Section
+        ├── URL Section
+        └── UTM Section
 ```
 
 #### Core Components
 
 **Dashboard Layout Component**
 ```typescript
-// apps/web/app/(dashboard)/layout.tsx
-import { Sidebar } from '@/components/layout/Sidebar';
-import { Header } from '@/components/layout/Header';
+// apps/web/app/dashboard/layout.tsx
+'use client';
+
 import { FilterProvider } from '@/providers/FilterProvider';
+
+const chartSections = [
+  { id: 'raised', label: 'Raised', icon: '📊' },
+  { id: 'performance', label: 'Performance', icon: '📈' },
+  { id: 'recurring-plans', label: 'Recurring plans', icon: '🔄' },
+  { id: 'recurring-revenue', label: 'Recurring revenue', icon: '💰' },
+  { id: 'retention', label: 'Retention', icon: '🎯' },
+  { id: 'day-and-time', label: 'Day and time', icon: '📅' },
+  { id: 'frequencies', label: 'Frequencies', icon: '📊' },
+  { id: 'payment-methods', label: 'Payment methods', icon: '💳' },
+  { id: 'designations', label: 'Designations', icon: '🏷️' },
+  { id: 'countries', label: 'Countries', icon: '🌍' },
+  { id: 'tributes', label: 'Tributes', icon: '❤️' },
+  { id: 'fundraisers', label: 'Fundraisers', icon: '👥' },
+  { id: 'url', label: 'URL', icon: '🔗' },
+  { id: 'utm', label: 'UTM', icon: '📍' },
+];
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
-    <FilterProvider>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-auto p-6">
-            {children}
-          </main>
+    <div className='min-h-screen bg-gray-50'>
+      {/* Top header */}
+      <header className='bg-white border-b border-gray-200 px-6 py-4'>
+        <div className='flex items-center justify-between'>
+          <h1 className='text-xl font-semibold text-gray-900'>Insights</h1>
+          <div className='flex items-center gap-4'>
+            {/* User controls */}
+          </div>
         </div>
+      </header>
+
+      <div className='flex h-[calc(100vh-73px)]'>
+        {/* Left Sidebar Navigation */}
+        <aside className='w-64 bg-white border-r border-gray-200 overflow-y-auto'>
+          <div className='p-4'>
+            <nav className='space-y-1'>
+              {chartSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => scrollToSection(section.id)}
+                  className='w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-md transition-colors'
+                >
+                  <span className='text-base'>{section.icon}</span>
+                  <span>{section.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className='flex-1 overflow-y-auto px-6 py-6'>
+          <FilterProvider>
+            {children}
+          </FilterProvider>
+        </main>
       </div>
-    </FilterProvider>
+    </div>
   );
 }
 ```

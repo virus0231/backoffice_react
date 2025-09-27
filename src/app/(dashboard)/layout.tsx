@@ -1,5 +1,6 @@
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
+import { FilterProvider } from '@/providers/FilterProvider';
 
 export default function DashboardLayout({
   children,
@@ -18,7 +19,9 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className='dashboard-content'>
-          {children}
+          <FilterProvider>
+            {children}
+          </FilterProvider>
         </main>
       </div>
     </div>
