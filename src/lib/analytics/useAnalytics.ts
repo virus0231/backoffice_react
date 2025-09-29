@@ -17,14 +17,14 @@ export interface AnalyticsQueryParams {
 const responseCache = new Map<string, any>();
 
 export const buildAnalyticsQueryParams = (state: ReturnType<typeof useFilterStore.getState>, chartId?: string): AnalyticsQueryParams => {
-  const { dateRange, selectedAppeal, selectedFund, frequency, comparisons } = state;
+  const { dateRange, selectedAppeals, selectedFunds, frequency, comparisons } = state;
   const cmp = chartId ? comparisons[chartId] : undefined;
 
   return {
     startDate: dateRange.startDate.toISOString(),
     endDate: dateRange.endDate.toISOString(),
-    appealId: selectedAppeal?.id ?? null,
-    fundId: selectedFund?.id ?? null,
+    appealId: selectedAppeals[0]?.id ?? null,
+    fundId: selectedFunds[0]?.id ?? null,
     frequency,
     compareStartDate: cmp?.enabled && cmp.startDate ? new Date(cmp.startDate).toISOString() : null,
     compareEndDate: cmp?.enabled && cmp.endDate ? new Date(cmp.endDate).toISOString() : 
@@ -38,7 +38,7 @@ export function useAnalytics(endpoint: string, chartId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const params = useMemo(() => buildAnalyticsQueryParams(store, chartId), [store.dateRange, store.selectedAppeal, store.selectedFund, store.frequency, store.comparisons, chartId]);
+  const params = useMemo(() => buildAnalyticsQueryParams(store, chartId), [store.dateRange, store.selectedAppeals, store.selectedFunds, store.frequency, store.comparisons, chartId]);
 
   useEffect(() => {
     let cancelled = false;

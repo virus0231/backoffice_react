@@ -40,7 +40,7 @@ export default function DateRangePicker({
     end: value.endDate
   });
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
-  const [activePreset, setActivePreset] = useState<DatePreset | null>(value.preset);
+  const [activePreset, setActivePreset] = useState<DatePreset | null>(value.preset || null);
 
   // Update internal state when value prop changes
   useEffect(() => {

@@ -226,8 +226,8 @@ export const useFilterStore = create<FilterStore>()(
       partialize: (state) => ({
         // Only persist these fields
         dateRange: state.dateRange,
-        selectedAppeal: state.selectedAppeal,
-        selectedFund: state.selectedFund,
+        selectedAppeals: state.selectedAppeals,
+        selectedFunds: state.selectedFunds,
         frequency: state.frequency,
         comparisons: state.comparisons
       }),
@@ -292,13 +292,13 @@ export const useFilterStore = create<FilterStore>()(
  * Hook to get current filter parameters for API calls
  */
 export const useFilterParams = () => {
-  const { dateRange, selectedAppeal, selectedFund, frequency } = useFilterStore();
+  const { dateRange, selectedAppeals, selectedFunds, frequency } = useFilterStore();
 
   return {
     startDate: dateRange.startDate.toISOString(),
     endDate: dateRange.endDate.toISOString(),
-    appealId: selectedAppeal?.id || null,
-    fundId: selectedFund?.id || null,
+    appealId: selectedAppeals[0]?.id || null,
+    fundId: selectedFunds[0]?.id || null,
     frequency: frequency
   };
 };
@@ -307,11 +307,11 @@ export const useFilterParams = () => {
  * Hook to check if any filters are active
  */
 export const useHasActiveFilters = () => {
-  const { selectedAppeal, selectedFund, frequency, dateRange } = useFilterStore();
+  const { selectedAppeals, selectedFunds, frequency, dateRange } = useFilterStore();
 
   return (
-    selectedAppeal !== null ||
-    selectedFund !== null ||
+    selectedAppeals.length > 0 ||
+    selectedFunds.length > 0 ||
     frequency !== 'all' ||
     (dateRange.preset !== 'last30days' && dateRange.preset !== null)
   );
@@ -326,8 +326,8 @@ export const useFilterDebug = () => {
   return {
     currentState: {
       dateRange: state.dateRange,
-      selectedAppeal: state.selectedAppeal,
-      selectedFund: state.selectedFund,
+      selectedAppeals: state.selectedAppeals,
+      selectedFunds: state.selectedFunds,
       frequency: state.frequency,
       isLoading: state.isLoading,
       lastValidationError: state.lastValidationError,

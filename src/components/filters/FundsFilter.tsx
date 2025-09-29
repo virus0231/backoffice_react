@@ -191,7 +191,7 @@ export default function FundsFilter({
   const getDisplayText = () => {
     if (value.length > 0) {
       return value.length === 1
-        ? value[0].fund_name
+        ? value[0]?.fund_name
         : 'Funds Selected';
     }
     return 'Funds';
@@ -222,7 +222,7 @@ export default function FundsFilter({
           <span className="text-gray-700 truncate">
             {value.length > 0
               ? value.length === 1
-                ? value[0].fund_name
+                ? value[0]?.fund_name
                 : 'Funds Selected'
               : 'Funds'
             }
@@ -291,7 +291,7 @@ export default function FundsFilter({
                 <span>
                   Showing funds for:{' '}
                   {selectedAppeals.length === 1 ? (
-                    <span className="font-medium">{selectedAppeals[0].appeal_name}</span>
+                    <span className="font-medium">{selectedAppeals[0]?.appeal_name}</span>
                   ) : (
                     <span className="font-medium">{selectedAppeals.length} selected appeals</span>
                   )}
@@ -362,7 +362,7 @@ export default function FundsFilter({
                   </svg>
                   {selectedAppeals.length > 0
                     ? selectedAppeals.length === 1
-                      ? `All Funds (${selectedAppeals[0].appeal_name})`
+                      ? `All Funds (${selectedAppeals[0]?.appeal_name})`
                       : `All Funds (${selectedAppeals.length} Appeals)`
                     : 'All Funds'
                   }
@@ -450,7 +450,7 @@ export default function FundsFilter({
               {selectedAppeals.length > 0 && funds.length === 0 && !isLoading && !error && (
                 <div className="px-3 py-2 text-sm text-gray-500 text-center">
                   {selectedAppeals.length === 1
-                    ? `No funds available for ${selectedAppeals[0].appeal_name}`
+                    ? `No funds available for ${selectedAppeals[0]?.appeal_name}`
                     : `No funds available for selected appeals`
                   }
                 </div>

@@ -155,7 +155,7 @@ export function useFilterChanges(
  * Only returns parameters when filters are hydrated
  */
 export function useFilterApiParams() {
-  const { dateRange, selectedAppeal, selectedFund, frequency, isHydrated } = useFilterContext();
+  const { dateRange, selectedAppeals, selectedFunds, frequency, isHydrated } = useFilterContext();
 
   if (!isHydrated) {
     return null;
@@ -164,8 +164,8 @@ export function useFilterApiParams() {
   return {
     startDate: dateRange.startDate.toISOString(),
     endDate: dateRange.endDate.toISOString(),
-    appealId: selectedAppeal?.id || null,
-    fundId: selectedFund?.id || null,
+    appealId: selectedAppeals[0]?.id || null,
+    fundId: selectedFunds[0]?.id || null,
     frequency: frequency
   };
 }
@@ -174,11 +174,11 @@ export function useFilterApiParams() {
  * Hook to check if filters are actively filtering (not at defaults)
  */
 export function useIsFiltering() {
-  const { selectedAppeal, selectedFund, frequency, dateRange } = useFilterContext();
+  const { selectedAppeals, selectedFunds, frequency, dateRange } = useFilterContext();
 
   return (
-    selectedAppeal !== null ||
-    selectedFund !== null ||
+    selectedAppeals.length > 0 ||
+    selectedFunds.length > 0 ||
     frequency !== 'all' ||
     dateRange.preset !== 'last30days'
   );

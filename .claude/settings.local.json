@@ -5,7 +5,8 @@
       "Bash(npx tailwindcss init:*)",
       "Read(//c/**)",
       "Bash(tree:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(xargs rm:*)"
     ],
     "deny": [],
     "ask": []
