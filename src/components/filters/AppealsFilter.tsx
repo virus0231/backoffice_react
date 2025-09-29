@@ -158,7 +158,7 @@ export default function AppealsFilter({
           <span className="text-gray-700 truncate">
             {value.length > 0
               ? value.length === 1
-                ? value[0].appeal_name
+                ? value[0]?.appeal_name
                 : 'Appeals Selected'
               : 'Appeals'
             }

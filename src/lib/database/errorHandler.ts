@@ -100,6 +100,8 @@ export function logDatabaseError(
     parameters?: any;
     requestId?: string;
     userId?: string;
+    appealId?: string | null;
+    appealIds?: string | null;
   } = {}
 ): void {
   const errorType = classifyDatabaseError(error);
@@ -112,7 +114,9 @@ export function logDatabaseError(
     query: context.query,
     parameters: sanitizeQueryParams(context.parameters),
     requestId: context.requestId,
-    userId: context.userId
+    userId: context.userId,
+    appealId: context.appealId,
+    appealIds: context.appealIds
   });
 }
 

@@ -220,37 +220,37 @@ export default function DualMonthDatePicker({
                   Last 30 days
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('thisweek')}
+                  onClick={() => handlePresetSelect('thisWeek')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   This week
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('thismonth')}
+                  onClick={() => handlePresetSelect('thisMonth')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   This month
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('thisyear')}
+                  onClick={() => handlePresetSelect('thisYear')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   This year
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('lastweek')}
+                  onClick={() => handlePresetSelect('lastWeek')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   Last week
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('lastmonth')}
+                  onClick={() => handlePresetSelect('lastMonth')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   Last month
                 </button>
                 <button
-                  onClick={() => handlePresetSelect('lastyear')}
+                  onClick={() => handlePresetSelect('lastYear')}
                   className="w-full text-left text-sm py-1 px-2 hover:bg-gray-100 rounded"
                 >
                   Last year

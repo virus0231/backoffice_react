@@ -149,47 +149,47 @@ export const datePresetOptions: DatePresetOption[] = [
     range: () => getDateRangeForPreset('yesterday')
   },
   {
-    label: 'Last 7 Days',
+    label: 'Last 7 days',
     value: 'last7days',
     range: () => getDateRangeForPreset('last7days')
   },
   {
-    label: 'Last 14 Days',
+    label: 'Last 14 days',
     value: 'last14days',
     range: () => getDateRangeForPreset('last14days')
   },
   {
-    label: 'Last 30 Days',
+    label: 'Last 30 days',
     value: 'last30days',
     range: () => getDateRangeForPreset('last30days')
   },
   {
-    label: 'This Week',
+    label: 'This week',
     value: 'thisWeek',
     range: () => getDateRangeForPreset('thisWeek')
   },
   {
-    label: 'This Month',
+    label: 'This month',
     value: 'thisMonth',
     range: () => getDateRangeForPreset('thisMonth')
   },
   {
-    label: 'This Year',
+    label: 'This year',
     value: 'thisYear',
     range: () => getDateRangeForPreset('thisYear')
   },
   {
-    label: 'Last Week',
+    label: 'Last week',
     value: 'lastWeek',
     range: () => getDateRangeForPreset('lastWeek')
   },
   {
-    label: 'Last Month',
+    label: 'Last month',
     value: 'lastMonth',
     range: () => getDateRangeForPreset('lastMonth')
   },
   {
-    label: 'Last Year',
+    label: 'Last year',
     value: 'lastYear',
     range: () => getDateRangeForPreset('lastYear')
   },
@@ -271,3 +271,73 @@ export const formatDateRangeDisplay = (dateRange: DateRange): string => {
 export const getDefaultDateRange = (): DateRange => {
   return getDateRangeForPreset('last30days');
 };
+
+/**
+ * Generate comparison date range based on main date range
+ */
+export const getComparisonDateRange = (option: string, baseRange: DateRange): DateRange => {
+  const { startDate, endDate } = baseRange;
+  const duration = endDate.getTime() - startDate.getTime();
+
+  switch (option) {
+    case 'previousPeriod':
+      const prevStart = new Date(startDate.getTime() - duration - 24 * 60 * 60 * 1000);
+      const prevEnd = new Date(startDate.getTime() - 24 * 60 * 60 * 1000);
+      return { startDate: prevStart, endDate: prevEnd, preset: 'custom' };
+
+    case 'monthAgo':
+      const monthAgoStart = new Date(startDate);
+      monthAgoStart.setMonth(monthAgoStart.getMonth() - 1);
+      const monthAgoEnd = new Date(endDate);
+      monthAgoEnd.setMonth(monthAgoEnd.getMonth() - 1);
+      return { startDate: monthAgoStart, endDate: monthAgoEnd, preset: 'custom' };
+
+    case 'quarterAgo':
+      const quarterAgoStart = new Date(startDate);
+      quarterAgoStart.setMonth(quarterAgoStart.getMonth() - 3);
+      const quarterAgoEnd = new Date(endDate);
+      quarterAgoEnd.setMonth(quarterAgoEnd.getMonth() - 3);
+      return { startDate: quarterAgoStart, endDate: quarterAgoEnd, preset: 'custom' };
+
+    case 'yearAgo':
+      const yearAgoStart = new Date(startDate);
+      yearAgoStart.setFullYear(yearAgoStart.getFullYear() - 1);
+      const yearAgoEnd = new Date(endDate);
+      yearAgoEnd.setFullYear(yearAgoEnd.getFullYear() - 1);
+      return { startDate: yearAgoStart, endDate: yearAgoEnd, preset: 'custom' };
+
+    default:
+      return { ...baseRange, preset: 'custom' };
+  }
+};
+
+/**
+ * Comparison preset options based on main date range
+ */
+export const getComparisonPresetOptions = (mainDateRange: DateRange): DatePresetOption[] => [
+  {
+    label: 'Previous period',
+    value: 'previousPeriod' as any,
+    range: () => getComparisonDateRange('previousPeriod', mainDateRange)
+  },
+  {
+    label: 'A month ago',
+    value: 'monthAgo' as any,
+    range: () => getComparisonDateRange('monthAgo', mainDateRange)
+  },
+  {
+    label: 'A quarter ago',
+    value: 'quarterAgo' as any,
+    range: () => getComparisonDateRange('quarterAgo', mainDateRange)
+  },
+  {
+    label: 'A year ago',
+    value: 'yearAgo' as any,
+    range: () => getComparisonDateRange('yearAgo', mainDateRange)
+  },
+  {
+    label: 'No comparison',
+    value: 'noComparison' as any,
+    range: () => ({ startDate: mainDateRange.startDate, endDate: mainDateRange.startDate, preset: 'custom' })
+  }
+];

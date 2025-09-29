@@ -9,7 +9,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
-import { DateRange, DatePreset } from '@/types/filters';
+import { DateRange, DatePreset, DatePresetOption } from '@/types/filters';
 import {
   datePresetOptions,
   getDateRangeForPreset,
@@ -22,13 +22,15 @@ interface DateRangePickerProps {
   onChange: (range: DateRange) => void;
   className?: string;
   disabled?: boolean;
+  presetOptions?: DatePresetOption[];
 }
 
 export default function DateRangePicker({
   value,
   onChange,
   className,
-  disabled = false
+  disabled = false,
+  presetOptions = datePresetOptions
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -95,12 +97,8 @@ export default function DateRangePicker({
   }, [isOpen, selectingDate, tempRange.start, hoveredDate]);
 
   const handlePresetSelect = (preset: DatePreset) => {
-    console.log('Preset selected:', preset);
     const newRange = getDateRangeForPreset(preset);
-    console.log('New range:', newRange);
-    console.log('Calling onChange with:', newRange);
     onChange(newRange);
-    console.log('onChange called, updating internal state');
     setTempRange({ start: newRange.startDate, end: newRange.endDate });
     setActivePreset(preset);
     setSelectingDate(null);
@@ -292,17 +290,7 @@ export default function DateRangePicker({
                 </button>
               </div>
 
-              {/* Reset button */}
-              {selectingDate && (
-                <div className="flex justify-center mb-3">
-                  <button
-                    onClick={resetSelection}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline"
-                  >
-                    Cancel selection
-                  </button>
-                </div>
-              )}
+              {/* Selection helper hidden to match desired UI */}
 
               <div className="flex space-x-8">
                 {/* First Month Calendar */}
@@ -342,8 +330,8 @@ export default function DateRangePicker({
                                 !isSelected && !isInRange && !isInHoverRange && "text-gray-700 hover:bg-gray-100 rounded",
                                 // Today styling
                                 isTodayDate && !isSelected && "bg-blue-50 text-blue-600 font-semibold rounded",
-                                // Range styling
-                                (isInRange || isInHoverRange) && !isSelected && "bg-green-50 text-green-700",
+                                // Range styling (light gray fill like reference)
+                                (isInRange || isInHoverRange) && !isSelected && "bg-gray-100 text-gray-800",
                                 // Selected dates (start/end)
                                 isSelected && "bg-green-500 text-white font-semibold shadow-sm",
                                 // Rounded corners for range
@@ -352,8 +340,8 @@ export default function DateRangePicker({
                                 isEnd && !isStart && "rounded-r",
                                 isSelected && "rounded",
                                 // Hover preview for range selection
-                                isInHoverRange && selectingDate === 'end' && "bg-green-100 text-green-800"
-                              )}
+                                isInHoverRange && selectingDate === 'end' && "bg-gray-200 text-gray-900"
+                            )}
                             >
                               {format(day, 'd')}
                               {isTodayDate && !isSelected && (
@@ -405,8 +393,8 @@ export default function DateRangePicker({
                                 !isSelected && !isInRange && !isInHoverRange && "text-gray-700 hover:bg-gray-100 rounded",
                                 // Today styling
                                 isTodayDate && !isSelected && "bg-blue-50 text-blue-600 font-semibold rounded",
-                                // Range styling
-                                (isInRange || isInHoverRange) && !isSelected && "bg-green-50 text-green-700",
+                                // Range styling (light gray fill like reference)
+                                (isInRange || isInHoverRange) && !isSelected && "bg-gray-100 text-gray-800",
                                 // Selected dates (start/end)
                                 isSelected && "bg-green-500 text-white font-semibold shadow-sm",
                                 // Rounded corners for range
@@ -415,8 +403,8 @@ export default function DateRangePicker({
                                 isEnd && !isStart && "rounded-r",
                                 isSelected && "rounded",
                                 // Hover preview for range selection
-                                isInHoverRange && selectingDate === 'end' && "bg-green-100 text-green-800"
-                              )}
+                                isInHoverRange && selectingDate === 'end' && "bg-gray-200 text-gray-900"
+                            )}
                             >
                               {format(day, 'd')}
                               {isTodayDate && !isSelected && (
@@ -432,44 +420,25 @@ export default function DateRangePicker({
               </div>
             </div>
 
-            {/* Preset Options Sidebar */}
-            <div className="border-l border-gray-200 py-4 px-4 bg-gray-50 min-w-[140px]">
+            {/* Preset Options Sidebar (right) */}
+            <div className="border-l border-gray-200 py-4 px-3 bg-white w-44">
               <div className="space-y-1">
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Quick Select</div>
-                {datePresetOptions.filter(option => option.value !== 'custom').map((option) => (
+                {presetOptions
+                  .filter(option => option.value !== 'custom')
+                  .map((option) => (
                   <button
                     key={option.value}
                     onClick={() => handlePresetSelect(option.value)}
                     className={clsx(
-                      "w-full text-left text-sm py-2 px-3 rounded-md transition-all duration-150",
-                      "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+                      "w-full text-left text-sm py-1.5 px-2 rounded-md",
                       activePreset === option.value
-                        ? "bg-blue-500 text-white font-medium shadow-sm"
-                        : "text-gray-700 hover:bg-white hover:shadow-sm"
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
                     )}
                   >
                     {option.label}
                   </button>
                 ))}
-                {/* Separator */}
-                <div className="border-t border-gray-300 my-2"></div>
-                {/* Custom option for manual selection */}
-                <button
-                  onClick={() => {
-                    setActivePreset('custom');
-                    setSelectingDate(null);
-                    setHoveredDate(null);
-                  }}
-                  className={clsx(
-                    "w-full text-left text-sm py-2 px-3 rounded-md transition-all duration-150",
-                    "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
-                    activePreset === 'custom'
-                      ? "bg-blue-500 text-white font-medium shadow-sm"
-                      : "text-gray-700 hover:bg-white hover:shadow-sm"
-                  )}
-                >
-                  Custom Range
-                </button>
               </div>
             </div>
           </div>
