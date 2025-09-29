@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
+import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { format } from 'date-fns';
 import { buildAnalyticsUrl } from '@/lib/config/phpApi';
+import { safeFetch, parseAPIResponse, logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
+import { cachedFetch } from '@/lib/cache/apiCache';
 
 interface DateRange {
   startDate: Date;
@@ -25,6 +27,7 @@ interface RevenueData {
   chartData: RevenueDataPoint[];
   isLoading: boolean;
   error: string | null;
+  isRetriable?: boolean;
 }
 
 interface RevenueResponse {
@@ -71,9 +74,9 @@ export function useRevenueData(
     error: null
   });
 
-  const fetchData = async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>) => {
+  const fetchData = useCallback(async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>) => {
     try {
-      setData(prev => ({ ...prev, isLoading: true, error: null }));
+      setData(prev => ({ ...prev, isLoading: true, error: null, isRetriable: false }));
 
       // Fetch main data
       const params = new URLSearchParams({
@@ -94,11 +97,13 @@ export function useRevenueData(
       }
 
       const mainUrl = buildAnalyticsUrl(endpoint, params);
-      const mainResponse = await fetch(mainUrl);
-      if (!mainResponse.ok) {
-        throw new Error(`Failed to fetch ${endpoint} data`);
-      }
-      const mainResult: RevenueResponse = await mainResponse.json();
+
+      // Use cached fetch with 5-minute TTL
+      const mainResult: RevenueResponse = await cachedFetch(mainUrl, {}, {
+        ttl: 5 * 60 * 1000, // 5 minutes
+        useLocalStorage: true,
+        dedupe: true
+      });
 
       // Fetch comparison data if comparison range is provided
       let comparisonResult: RevenueResponse | null = null;
@@ -120,10 +125,18 @@ export function useRevenueData(
           comparisonParams.append('frequency', frequency);
         }
 
-        const comparisonUrl = buildAnalyticsUrl(endpoint, comparisonParams);
-        const comparisonResponse = await fetch(comparisonUrl);
-        if (comparisonResponse.ok) {
-          comparisonResult = await comparisonResponse.json();
+        try {
+          const comparisonUrl = buildAnalyticsUrl(endpoint, comparisonParams);
+
+          // Use cached fetch for comparison data too
+          comparisonResult = await cachedFetch(comparisonUrl, {}, {
+            ttl: 5 * 60 * 1000, // 5 minutes
+            useLocalStorage: true,
+            dedupe: true
+          });
+        } catch (comparisonError) {
+          // Log comparison error but don't fail main request
+          logError(comparisonError, `Comparison data fetch failed for ${endpoint}`);
         }
       }
 
@@ -142,10 +155,10 @@ export function useRevenueData(
         const comparisonPoint = comparisonMap.get(index);
         return {
           date: point.period,
-          amount: point.amount,
-          count: point.count,
-          comparisonAmount: comparisonPoint?.amount || 0,
-          comparisonCount: comparisonPoint?.count || 0
+          amount: Number(point.amount || 0),
+          count: Number(point.count || 0),
+          comparisonAmount: Number(comparisonPoint?.amount || 0),
+          comparisonCount: Number(comparisonPoint?.count || 0)
         };
       });
 
@@ -156,18 +169,22 @@ export function useRevenueData(
         comparisonTotalCount: comparisonResult ? Number(comparisonResult.data.totalCount || 0) : undefined,
         chartData,
         isLoading: false,
-        error: null
+        error: null,
+        isRetriable: false
       });
 
     } catch (error) {
-      console.error(`Error fetching ${endpoint} data:`, error);
+      logError(error, `Error fetching ${endpoint} data`);
+      const { message, isRetriable } = formatErrorForDisplay(error);
+
       setData(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: message,
+        isRetriable
       }));
     }
-  };
+  }, [dateRange.startDate, dateRange.endDate, granularity, appealId, fundId, frequency, comparisonRange]);
 
   useEffect(() => {
     // Fetch all three data sources in parallel
@@ -178,11 +195,20 @@ export function useRevenueData(
     ]);
   }, [dateRange.startDate, dateRange.endDate, granularity, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency, fetchData]);
 
+  const retry = useCallback(() => {
+    Promise.all([
+      fetchData('total-raised', setTotalRaisedData),
+      fetchData('first-installments', setFirstInstallmentsData),
+      fetchData('one-time-donations', setOneTimeData)
+    ]);
+  }, [fetchData]);
+
   return {
     totalRaised: totalRaisedData,
     firstInstallments: firstInstallmentsData,
     oneTime: oneTimeData,
     isLoading: totalRaisedData.isLoading || firstInstallmentsData.isLoading || oneTimeData.isLoading,
-    hasError: !!(totalRaisedData.error || firstInstallmentsData.error || oneTimeData.error)
+    hasError: !!(totalRaisedData.error || firstInstallmentsData.error || oneTimeData.error),
+    retry
   };
 }

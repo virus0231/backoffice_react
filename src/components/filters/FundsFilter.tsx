@@ -10,6 +10,9 @@ import { clsx } from 'clsx';
 
 import { Fund, Appeal } from '@/types/filters';
 import { buildFundsUrl } from '@/lib/config/phpApi';
+import { safeFetch, parseAPIResponse, logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { cachedFetch } from '@/lib/cache/apiCache';
 
 interface FundsFilterProps {
   value: Fund[];
@@ -80,25 +83,24 @@ export default function FundsFilter({
 
     try {
       const url = buildFundsUrl(appealIds);
-      const response = await fetch(url);
-      if (!response.ok) {
-        const message = `Unable to load funds (${response.status})`;
-        setError(message);
-        setFunds([]);
-        return; // graceful exit without throwing
-      }
 
-      const result: ApiResponse = await response.json();
+      // Use cached fetch with shorter TTL for funds (depends on selected appeals)
+      const result: ApiResponse = await cachedFetch(url, {}, {
+        ttl: 5 * 60 * 1000, // 5 minutes
+        useLocalStorage: true,
+        dedupe: true
+      });
+
       if (result && result.success) {
         setFunds(result.data || []);
       } else {
-        setError(result?.message || 'Failed to load funds');
-        setFunds([]);
+        throw new Error(result?.message || 'Failed to load funds');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load funds';
-      setError(errorMessage);
-      // Silently handle to avoid noisy console errors in production
+      logError(err, `Error loading funds for appeals: ${appealIds?.join(',')}`);
+      const { message } = formatErrorForDisplay(err);
+      setError(message);
+      setFunds([]);
     } finally {
       setIsLoading(false);
     }
@@ -300,7 +302,7 @@ export default function FundsFilter({
           {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+              <LoadingSpinner size="md" />
               <span className="ml-3 text-sm text-gray-600">Loading funds...</span>
             </div>
           )}

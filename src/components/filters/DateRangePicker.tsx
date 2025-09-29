@@ -5,7 +5,7 @@
  * Provides preset date options and custom date range selection
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -51,6 +51,46 @@ export default function DateRangePicker({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
+  const handleDateClick = useCallback((date: Date) => {
+    if (!selectingDate) {
+      // Start new selection
+      setTempRange({ start: date, end: null });
+      setSelectingDate('end');
+      setActivePreset('custom');
+    } else if (selectingDate === 'end') {
+      // Complete the range
+      const start = tempRange.start!;
+      const end = date;
+
+      const newRange: DateRange = {
+        startDate: start <= end ? start : end,
+        endDate: start <= end ? end : start,
+        preset: 'custom'
+      };
+
+      onChange(newRange);
+      setTempRange({ start: newRange.startDate, end: newRange.endDate });
+      setSelectingDate(null);
+      setHoveredDate(null);
+      setActivePreset('custom');
+      setIsOpen(false);
+    }
+  }, [selectingDate, tempRange.start, onChange]);
+
+  const resetSelection = useCallback(() => {
+    setSelectingDate(null);
+    setHoveredDate(null);
+    setTempRange({ start: value.startDate, end: value.endDate });
+  }, [value.startDate, value.endDate]);
+
+  const handlePrevMonth = useCallback(() => {
+    setCurrentDate(prev => subMonths(prev, 1));
+  }, []);
+
+  const handleNextMonth = useCallback(() => {
+    setCurrentDate(prev => addMonths(prev, 1));
+  }, []);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -94,7 +134,7 @@ export default function DateRangePicker({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, selectingDate, tempRange.start, hoveredDate, handleDateClick, resetSelection]);
+  }, [isOpen, selectingDate, tempRange.start, hoveredDate, handleDateClick, resetSelection, handlePrevMonth, handleNextMonth]);
 
   const handlePresetSelect = (preset: DatePreset) => {
     const newRange = getDateRangeForPreset(preset);
@@ -106,39 +146,6 @@ export default function DateRangePicker({
     setIsOpen(false);
   };
 
-  const handlePrevMonth = () => {
-    setCurrentDate(prev => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(prev => addMonths(prev, 1));
-  };
-
-  const handleDateClick = (date: Date) => {
-    if (!selectingDate) {
-      // Start new selection
-      setTempRange({ start: date, end: null });
-      setSelectingDate('end');
-      setActivePreset('custom');
-    } else if (selectingDate === 'end') {
-      // Complete the range
-      const start = tempRange.start!;
-      const end = date;
-
-      const newRange: DateRange = {
-        startDate: start <= end ? start : end,
-        endDate: start <= end ? end : start,
-        preset: 'custom'
-      };
-
-      onChange(newRange);
-      setTempRange({ start: newRange.startDate, end: newRange.endDate });
-      setSelectingDate(null);
-      setHoveredDate(null);
-      setActivePreset('custom');
-      setIsOpen(false);
-    }
-  };
 
   const handleDateHover = (date: Date) => {
     if (selectingDate === 'end' && tempRange.start) {
@@ -150,11 +157,6 @@ export default function DateRangePicker({
     setHoveredDate(null);
   };
 
-  const resetSelection = () => {
-    setSelectingDate(null);
-    setHoveredDate(null);
-    setTempRange({ start: value.startDate, end: value.endDate });
-  };
 
   const getCalendarDays = (date: Date) => {
     const start = startOfMonth(date);

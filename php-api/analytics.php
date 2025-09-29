@@ -16,7 +16,8 @@ if (!$kind || !$startDate || !$endDate) {
 }
 
 // Convert "one-time-donations" to internal mapping
-function kind_frequency_condition(string $kind): string {
+function kind_frequency_condition(string $kind): string
+{
   switch ($kind) {
     case 'one-time-donations':
       return ' AND d.freq = 0';
@@ -24,7 +25,7 @@ function kind_frequency_condition(string $kind): string {
       return ' AND d.freq = 1 AND t.order_id NOT REGEXP "_"';
     case 'total-raised':
     default:
-      return ' AND (d.freq = 0 OR (d.freq = 1 AND t.order_id NOT REGEXP "_"))';
+      return '';
   }
 }
 
@@ -67,7 +68,7 @@ try {
   $stmtAgg = $pdo->prepare($sqlAgg);
   foreach ($bindings as $k => $v) $stmtAgg->bindValue($k, $v);
   $stmtAgg->execute();
-  $agg = $stmtAgg->fetch() ?: [ 'totalAmount' => 0, 'donationCount' => 0, 'averageDonation' => 0 ];
+  $agg = $stmtAgg->fetch() ?: ['totalAmount' => 0, 'donationCount' => 0, 'averageDonation' => 0];
 
   // Trend query
   if ($granularity === 'weekly') {
@@ -85,7 +86,7 @@ try {
   $stmtTrend->execute();
   $trend = $stmtTrend->fetchAll();
 
-  $trendData = array_map(function($r) {
+  $trendData = array_map(function ($r) {
     return [
       'period' => $r['period'],
       'amount' => (float)($r['amount'] ?? 0),
@@ -103,7 +104,7 @@ try {
     'meta' => [
       'kind' => $kind,
       'granularity' => $granularity,
-      'filters' => [ 'appealId' => $appealId, 'fundId' => $fundId, 'frequency' => $frequency ],
+      'filters' => ['appealId' => $appealId, 'fundId' => $fundId, 'frequency' => $frequency],
       'start' => $startBound,
       'end' => $endBound,
     ]

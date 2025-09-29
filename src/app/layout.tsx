@@ -2,6 +2,7 @@ import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 
 import './globals.css';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,9 +37,11 @@ export default function RootLayout({
   return (
     <html lang='en' className={inter.variable}>
       <body className={`${inter.className} font-inter antialiased`}>
-        <div id='root'>
-          {children}
-        </div>
+        <ErrorBoundary>
+          <div id='root'>
+            {children}
+          </div>
+        </ErrorBoundary>
       </body>
     </html>
   );

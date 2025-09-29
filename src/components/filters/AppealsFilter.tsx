@@ -10,6 +10,9 @@ import { clsx } from 'clsx';
 
 import { Appeal } from '@/types/filters';
 import { buildAppealsUrl } from '@/lib/config/phpApi';
+import { safeFetch, parseAPIResponse, logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { cachedFetch } from '@/lib/cache/apiCache';
 
 interface AppealsFilterProps {
   value: Appeal[];
@@ -72,21 +75,22 @@ export default function AppealsFilter({
     setError(null);
 
     try {
-      const response = await fetch(buildAppealsUrl());
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      // Use cached fetch with 10-minute TTL for appeals (relatively static data)
+      const result: ApiResponse = await cachedFetch(buildAppealsUrl(), {}, {
+        ttl: 10 * 60 * 1000, // 10 minutes
+        useLocalStorage: true,
+        dedupe: true
+      });
 
-      const result: ApiResponse = await response.json();
       if (result.success) {
-        setAppeals(result.data);
+        setAppeals(result.data || []);
       } else {
-        throw new Error('Failed to load appeals');
+        throw new Error(result.message || 'Failed to load appeals');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load appeals';
-      setError(errorMessage);
-      console.error('Error loading appeals:', err);
+      logError(err, 'Error loading appeals');
+      const { message } = formatErrorForDisplay(err);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +225,7 @@ export default function AppealsFilter({
           {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+              <LoadingSpinner size="md" />
               <span className="ml-3 text-sm text-gray-600">Loading appeals...</span>
             </div>
           )}
