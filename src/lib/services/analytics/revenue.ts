@@ -1,4 +1,5 @@
-import { Op, WhereOptions } from 'sequelize';
+import { getSequelizeInstance } from '@/lib/database/sequelize';
+import { QueryTypes } from 'sequelize';
 
 export type Granularity = 'daily' | 'weekly';
 export type FrequencyFilter = 'all' | 'one-time' | 'recurring' | 'recurring-first' | 'recurring-next';
@@ -11,101 +12,94 @@ interface BaseParams {
   frequency?: FrequencyFilter;
 }
 
-// We will reference model attributes for WHERE clauses
-const ATTR = {
-  date: 'donationDate',
-  amount: 'amount',
-  status: 'status',
-  orderId: 'orderId',
-  frequency: 'frequency',
-  campaignId: 'campaignId',
-  fundId: 'fundId',
-} as const;
+function buildBaseWhereConditions(p: BaseParams): { whereClause: string; replacements: any } {
+  const conditions: string[] = [];
+  const replacements: any = {
+    startDate: p.startDate,
+    endDate: p.endDate
+  };
 
-function buildBaseWhere(p: BaseParams): WhereOptions {
-  const where: WhereOptions = {
-    [ATTR.status]: 'completed',
-    [ATTR.date]: {
-      [Op.gte]: p.startDate,
-      [Op.lte]: p.endDate,
-    },
-  } as any;
+  // Base conditions
+  conditions.push("t.status = 'completed'");
+  conditions.push("t.date >= :startDate");
+  conditions.push("t.date <= :endDate");
 
-  if (p.appealId) (where as any)[ATTR.campaignId] = String(p.appealId);
-  if (p.fundId) (where as any)[ATTR.fundId] = String(p.fundId);
-  return where;
-}
+  // Appeal filter
+  if (p.appealId) {
+    conditions.push("td.appeal_id = :appealId");
+    replacements.appealId = parseInt(String(p.appealId));
+  }
 
-function whereForOneTime(): WhereOptions {
-  return { [ATTR.frequency]: 0 } as any;
-}
+  // Fund filter
+  if (p.fundId) {
+    conditions.push("td.fundlist_id = :fundId");
+    replacements.fundId = parseInt(String(p.fundId));
+  }
 
-function whereForFirstInstallments(): WhereOptions {
   return {
-    [ATTR.frequency]: 1,
-    [ATTR.orderId]: { [Op.notRegexp]: '_' },
-  } as any;
+    whereClause: conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '',
+    replacements
+  };
 }
 
-function whereForNextInstallments(): WhereOptions {
-  return {
-    [ATTR.frequency]: 1,
-    [ATTR.orderId]: { [Op.regexp]: '_' },
-  } as any;
-}
-
-function whereForRecurringAll(): WhereOptions {
-  return { [ATTR.frequency]: 1 } as any;
-}
-
-function mergeAnd(...clauses: WhereOptions[]): WhereOptions {
-  return { [Op.and]: clauses };
+function getFrequencyCondition(frequency: FrequencyFilter): string {
+  switch (frequency) {
+    case 'one-time':
+      return 'AND td.freq = 0';
+    case 'recurring':
+      return 'AND td.freq = 1';
+    case 'recurring-first':
+      return 'AND td.freq = 1 AND t.order_id NOT REGEXP "_"';
+    case 'recurring-next':
+      return 'AND td.freq = 1 AND t.order_id REGEXP "_"';
+    default:
+      return '';
+  }
 }
 
 export async function aggregateRevenue(
   p: BaseParams,
   kind: 'total-raised' | 'first-installments' | 'one-time'
 ) {
-  // Lazy-load the model to handle database connection errors
-  const { DonationModel } = await import('@/lib/database/models');
+  const sequelize = getSequelizeInstance();
+  const { whereClause, replacements } = buildBaseWhereConditions(p);
 
-  const base = buildBaseWhere(p);
-  let typeWhere: WhereOptions;
-
-  if (kind === 'one-time') typeWhere = whereForOneTime();
-  else if (kind === 'first-installments') typeWhere = whereForFirstInstallments();
-  else {
+  let frequencyCondition = '';
+  if (kind === 'one-time') {
+    frequencyCondition = 'AND td.freq = 0';
+  } else if (kind === 'first-installments') {
+    frequencyCondition = 'AND td.freq = 1 AND t.order_id NOT REGEXP "_"';
+  } else {
     // total-raised = one-time + first installments
-    typeWhere = { [Op.or]: [whereForOneTime(), whereForFirstInstallments()] } as any;
+    frequencyCondition = 'AND (td.freq = 0 OR (td.freq = 1 AND t.order_id NOT REGEXP "_"))';
   }
 
-  // Apply optional global frequency override
+  // Apply global frequency override if specified
   if (p.frequency && p.frequency !== 'all') {
-    const map: Record<Exclude<FrequencyFilter, 'all'>, WhereOptions> = {
-      'one-time': whereForOneTime(),
-      'recurring': whereForRecurringAll(),
-      'recurring-first': whereForFirstInstallments(),
-      'recurring-next': whereForNextInstallments(),
-    } as any;
-    typeWhere = map[p.frequency as Exclude<FrequencyFilter, 'all'>] || typeWhere;
+    frequencyCondition = getFrequencyCondition(p.frequency);
   }
 
-  const where = mergeAnd(base, typeWhere);
+  const query = `
+    SELECT
+      COALESCE(SUM(t.totalamount), 0) as totalAmount,
+      COUNT(*) as donationCount,
+      COALESCE(AVG(t.totalamount), 0) as averageDonation
+    FROM pw_transactions t
+    JOIN pw_transaction_details td ON t.TID = td.TID
+    ${whereClause}
+    ${frequencyCondition}
+  `;
 
-  const [totalAmount, donationCount, avg] = await Promise.all([
-    DonationModel.sum(ATTR.amount, { where }),
-    DonationModel.count({ where }),
-    DonationModel.findOne({
-      attributes: [[DonationModel.sequelize!.fn('AVG', DonationModel.sequelize!.col(ATTR.amount)), 'avgAmount']],
-      where,
-      raw: true,
-    }),
-  ]);
+  const results = await sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    replacements
+  });
 
+  const result = results[0] as any;
   return {
-    totalAmount: Number(totalAmount || 0),
-    donationCount: Number(donationCount || 0),
-    averageDonation: avg ? Number((avg as any).avgAmount || 0) : 0,
+    totalAmount: Number(result.totalAmount || 0),
+    donationCount: Number(result.donationCount || 0),
+    averageDonation: Number(result.averageDonation || 0),
   };
 }
 
@@ -114,40 +108,47 @@ export async function revenueTrend(
   kind: 'total-raised' | 'first-installments' | 'one-time',
   granularity: Granularity
 ) {
-  // Lazy-load the model to handle database connection errors
-  const { DonationModel } = await import('@/lib/database/models');
+  const sequelize = getSequelizeInstance();
+  const { whereClause, replacements } = buildBaseWhereConditions(p);
 
-  const base = buildBaseWhere(p);
-  let typeWhere: WhereOptions;
-  if (kind === 'one-time') typeWhere = whereForOneTime();
-  else if (kind === 'first-installments') typeWhere = whereForFirstInstallments();
-  else typeWhere = { [Op.or]: [whereForOneTime(), whereForFirstInstallments()] } as any;
-
-  if (p.frequency && p.frequency !== 'all') {
-    const map: Record<Exclude<FrequencyFilter, 'all'>, WhereOptions> = {
-      'one-time': whereForOneTime(),
-      'recurring': whereForRecurringAll(),
-      'recurring-first': whereForFirstInstallments(),
-      'recurring-next': whereForNextInstallments(),
-    } as any;
-    typeWhere = map[p.frequency as Exclude<FrequencyFilter, 'all'>] || typeWhere;
+  let frequencyCondition = '';
+  if (kind === 'one-time') {
+    frequencyCondition = 'AND td.freq = 0';
+  } else if (kind === 'first-installments') {
+    frequencyCondition = 'AND td.freq = 1 AND t.order_id NOT REGEXP "_"';
+  } else {
+    // total-raised = one-time + first installments
+    frequencyCondition = 'AND (td.freq = 0 OR (td.freq = 1 AND t.order_id NOT REGEXP "_"))';
   }
 
-  const where = mergeAnd(base, typeWhere);
+  // Apply global frequency override if specified
+  if (p.frequency && p.frequency !== 'all') {
+    frequencyCondition = getFrequencyCondition(p.frequency);
+  }
 
-  const fmt = granularity === 'weekly' ? '%Y-%u' : '%Y-%m-%d';
-  const dateField = (DonationModel as any).rawAttributes?.[ATTR.date]?.field || 'donation_date';
-  const rows = await DonationModel.findAll({
-    attributes: [
-      [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt), 'period'],
-      [DonationModel.sequelize!.fn('SUM', DonationModel.sequelize!.col(ATTR.amount)), 'amount'],
-      [DonationModel.sequelize!.fn('COUNT', '*'), 'count'],
-    ],
-    where,
-    group: [DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt)],
-    order: [[DonationModel.sequelize!.fn('DATE_FORMAT', DonationModel.sequelize!.col(dateField), fmt), 'ASC']],
-    raw: true,
+  const dateFormat = granularity === 'weekly' ? '%Y-%u' : '%Y-%m-%d';
+
+  const query = `
+    SELECT
+      DATE_FORMAT(t.date, '${dateFormat}') as period,
+      COALESCE(SUM(t.totalamount), 0) as amount,
+      COUNT(*) as count
+    FROM pw_transactions t
+    JOIN pw_transaction_details td ON t.TID = td.TID
+    ${whereClause}
+    ${frequencyCondition}
+    GROUP BY DATE_FORMAT(t.date, '${dateFormat}')
+    ORDER BY DATE_FORMAT(t.date, '${dateFormat}') ASC
+  `;
+
+  const results = await sequelize.query(query, {
+    type: QueryTypes.SELECT,
+    replacements
   });
 
-  return rows.map((r: any) => ({ date: r.period, amount: Number(r.amount || 0), count: Number(r.count || 0) }));
+  return results.map((r: any) => ({
+    date: r.period,
+    amount: Number(r.amount || 0),
+    count: Number(r.count || 0)
+  }));
 }

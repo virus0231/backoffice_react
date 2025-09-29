@@ -6,7 +6,8 @@
       "Read(//c/**)",
       "Bash(tree:*)",
       "Bash(npx tsc:*)",
-      "Bash(xargs rm:*)"
+      "Bash(xargs rm:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

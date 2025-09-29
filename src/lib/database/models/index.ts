@@ -1,39 +1,38 @@
-/**
- * Database Models Index
- * Exports all database models and initializes associations
- */
-
-import { DonationModel } from './Donation';
-import { DonorModel } from './Donor';
-import { CampaignModel } from './Campaign';
-import { FundModel } from './Fund';
-import { initializeAssociations } from './associations';
-
-// Initialize associations
-initializeAssociations();
-
-// Export all models
+import PwAmount from './PwAmount';
+import PwAppeal from './PwAppeal';
+import PwAppealcountries from './PwAppealcountries';
+import PwCategory from './PwCategory';
+import PwCountry from './PwCountry';
+import PwDonors from './PwDonors';
+import PwFundlist from './PwFundlist';
+import PwSchedule from './PwSchedule';
+import PwStripeSchedule from './PwStripeSchedule';
+import PwTransactionDetails from './PwTransactionDetails';
+import PwTransactions from './PwTransactions';
 export {
-  DonationModel,
-  DonorModel,
-  CampaignModel,
-  FundModel,
-  // Alias for tests expecting named `Fund`
-  FundModel as Fund
+  PwAmount,
+  PwAppeal,
+  PwAppealcountries,
+  PwCategory,
+  PwCountry,
+  PwDonors,
+  PwFundlist,
+  PwSchedule,
+  PwStripeSchedule,
+  PwTransactionDetails,
+  PwTransactions
 };
 
-// Export model interfaces
-export type { DonationAttributes } from './Donation';
-export type { DonorAttributes } from './Donor';
-export type { CampaignAttributes } from './Campaign';
-export type { FundAttributes } from './Fund';
-
-// Export default for convenience
-const DatabaseModels = {
-  Donation: DonationModel,
-  Donor: DonorModel,
-  Campaign: CampaignModel,
-  Fund: FundModel
+export const models = {
+  PwAmount,
+  PwAppeal,
+  PwAppealcountries,
+  PwCategory,
+  PwCountry,
+  PwDonors,
+  PwFundlist,
+  PwSchedule,
+  PwStripeSchedule,
+  PwTransactionDetails,
+  PwTransactions
 };
-
-export default DatabaseModels;

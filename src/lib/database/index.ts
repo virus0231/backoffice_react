@@ -15,34 +15,21 @@ export {
 
 // Database models
 export {
-  DonationModel,
-  DonorModel,
-  CampaignModel,
-  FundModel
+  PwTransactions,
+  PwDonors,
+  PwAppeal,
+  PwFundlist,
+  PwAmount,
+  PwCategory,
+  PwCountry,
+  PwAppealcountries,
+  PwSchedule,
+  PwStripeSchedule,
+  PwTransactionDetails
 } from './models';
 
-export type {
-  DonationAttributes,
-  DonorAttributes,
-  CampaignAttributes,
-  FundAttributes
-} from './models';
-
-// Query utilities
-export {
-  queryDonations,
-  getDonationAggregations,
-  getDonationsByTimePeriod,
-  getFirstTimeDonors,
-  getRecurringDonations,
-  buildUniversalFilter,
-  buildDateRangeFilter
-} from './queryBuilder';
-
-export type {
-  UniversalFilter,
-  DateRangeFilter
-} from './queryBuilder';
+// Note: Legacy query utilities have been removed
+// Revenue analytics now use direct SQL queries via the revenue service
 
 // Error handling
 export {
