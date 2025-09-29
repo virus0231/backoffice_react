@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { format } from 'date-fns';
+import { buildAnalyticsUrl } from '@/lib/config/phpApi';
 
 interface DateRange {
   startDate: Date;
@@ -92,7 +93,8 @@ export function useRevenueData(
         params.append('frequency', frequency);
       }
 
-      const mainResponse = await fetch(`/api/v2/analytics/${endpoint}?${params}`);
+      const mainUrl = buildAnalyticsUrl(endpoint, params);
+      const mainResponse = await fetch(mainUrl);
       if (!mainResponse.ok) {
         throw new Error(`Failed to fetch ${endpoint} data`);
       }
@@ -118,7 +120,8 @@ export function useRevenueData(
           comparisonParams.append('frequency', frequency);
         }
 
-        const comparisonResponse = await fetch(`/api/v2/analytics/${endpoint}?${comparisonParams}`);
+        const comparisonUrl = buildAnalyticsUrl(endpoint, comparisonParams);
+        const comparisonResponse = await fetch(comparisonUrl);
         if (comparisonResponse.ok) {
           comparisonResult = await comparisonResponse.json();
         }
@@ -173,7 +176,7 @@ export function useRevenueData(
       fetchData('first-installments', setFirstInstallmentsData),
       fetchData('one-time-donations', setOneTimeData)
     ]);
-  }, [dateRange.startDate, dateRange.endDate, granularity, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency]);
+  }, [dateRange.startDate, dateRange.endDate, granularity, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency, fetchData]);
 
   return {
     totalRaised: totalRaisedData,

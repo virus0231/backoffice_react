@@ -94,7 +94,7 @@ export default function DateRangePicker({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, selectingDate, tempRange.start, hoveredDate]);
+  }, [isOpen, selectingDate, tempRange.start, hoveredDate, handleDateClick, resetSelection]);
 
   const handlePresetSelect = (preset: DatePreset) => {
     const newRange = getDateRangeForPreset(preset);

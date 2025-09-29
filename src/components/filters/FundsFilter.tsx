@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { clsx } from 'clsx';
 
 import { Fund, Appeal } from '@/types/filters';
+import { buildFundsUrl } from '@/lib/config/phpApi';
 
 interface FundsFilterProps {
   value: Fund[];
@@ -78,12 +79,8 @@ export default function FundsFilter({
     setError(null);
 
     try {
-      const url = new URL('/api/filters/funds', window.location.origin);
-      if (appealIds && appealIds.length > 0) {
-        url.searchParams.set('appeal_ids', appealIds.join(','));
-      }
-
-      const response = await fetch(url.toString());
+      const url = buildFundsUrl(appealIds);
+      const response = await fetch(url);
       if (!response.ok) {
         const message = `Unable to load funds (${response.status})`;
         setError(message);
@@ -134,7 +131,7 @@ export default function FundsFilter({
       setFunds([]);
       setError(null);
     }
-  }, [selectedAppeals, isOpen]);
+  }, [selectedAppeals, isOpen, funds.length]);
 
   // Filter funds based on search term
   const filteredFunds = funds.filter(fund =>

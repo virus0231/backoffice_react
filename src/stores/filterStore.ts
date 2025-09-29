@@ -66,16 +66,12 @@ export const useFilterStore = create<FilterStore>()(
 
       // Date range actions
       setDateRange: (range: DateRange) => {
-        console.log('Store setDateRange called with:', range);
         const validation = validateDateRange(range);
-        console.log('Validation result:', validation);
         if (!validation.isValid) {
-          console.log('Validation failed:', validation.error);
           set({ lastValidationError: validation.error || 'Invalid date range' });
           return;
         }
 
-        console.log('Validation passed, updating store');
         set({
           dateRange: range,
           lastValidationError: null

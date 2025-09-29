@@ -9,6 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 
 import { Appeal } from '@/types/filters';
+import { buildAppealsUrl } from '@/lib/config/phpApi';
 
 interface AppealsFilterProps {
   value: Appeal[];
@@ -71,7 +72,7 @@ export default function AppealsFilter({
     setError(null);
 
     try {
-      const response = await fetch('/api/filters/appeals');
+      const response = await fetch(buildAppealsUrl());
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
