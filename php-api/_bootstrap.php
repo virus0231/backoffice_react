@@ -7,6 +7,40 @@ ini_set('default_socket_timeout', '15'); // Network socket read timeout
 set_time_limit(30); // Hard cap script runtime
 ignore_user_abort(true);
 
+// Error logging: enable and route to local logs/php-api.log (best effort)
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+try {
+  $logDir = __DIR__ . '/logs';
+  if (!is_dir($logDir)) { @mkdir($logDir, 0775, true); }
+  $logFile = $logDir . '/php-api.log';
+  // Attempt to set custom error log file
+  @ini_set('error_log', $logFile);
+  // Mark request start for tracing
+  @error_log(sprintf('[php-api] %s %s?%s', $_SERVER['REQUEST_METHOD'] ?? 'GET', ($_SERVER['SCRIPT_NAME'] ?? ''), $_SERVER['QUERY_STRING'] ?? ''));
+} catch (Throwable $e) {
+  // Fallback: rely on default server error log
+}
+
+// Basic error/exception handlers (log only; response handling stays per-endpoint)
+set_error_handler(function($severity, $message, $file, $line) {
+  // Respect @-silenced errors
+  if (!(error_reporting() & $severity)) return false;
+  error_log(sprintf('[php-api][php-error] %s in %s:%d', $message, $file, $line));
+  return false; // Continue with default PHP handler
+});
+
+set_exception_handler(function($e) {
+  error_log(sprintf('[php-api][uncaught-exception] %s in %s:%d\n%s', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTraceAsString()));
+});
+
+register_shutdown_function(function() {
+  $err = error_get_last();
+  if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+    error_log(sprintf('[php-api][fatal] %s in %s:%d', $err['message'], $err['file'], $err['line']));
+  }
+});
+
 // CORS headers (adjust origin as needed)
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');

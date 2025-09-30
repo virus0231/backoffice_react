@@ -108,11 +108,29 @@ try {
     $freqCond = frequency_condition($frequency);
   }
 
+  // Split frequency condition: d.freq goes in subquery, t.order_id REGEXP goes in main WHERE
+  $freqCondSubquery = '';
+  $freqCondMain = '';
+
+  if ($frequency === 'recurring-first' || $kind === 'first-installments') {
+    $freqCondSubquery = ' AND d.freq = 1';
+    $freqCondMain = " AND t.order_id NOT REGEXP '_'";
+  } elseif ($frequency === 'recurring-next') {
+    $freqCondSubquery = ' AND d.freq = 1';
+    $freqCondMain = " AND t.order_id REGEXP '_'";
+  } elseif ($frequency === 'one-time') {
+    $freqCondSubquery = ' AND d.freq = 0';
+  } elseif ($frequency === 'recurring') {
+    $freqCondSubquery = ' AND d.freq = 1';
+  } elseif ($kind === 'one-time-donations') {
+    $freqCondSubquery = ' AND d.freq = 0';
+  }
+
   // Debug current filters
   error_log('[analytics] filters: appeals=' . (is_array($appealIds) ? count($appealIds) : 0) . ', funds=' . (is_array($fundIds) ? count($fundIds) : 0));
   error_log('[analytics] filterClause: ' . $filterClause);
 
-  $baseWhere = "WHERE t.status IN ('Completed','pending')\n                 AND t.date >= :start_dt\n                 AND t.date <= :end_dt_incl\n                 AND EXISTS (\n                   SELECT 1\n                   FROM pw_transaction_details d\n                   JOIN pw_appeal a   ON a.id = d.appeal_id\n                   JOIN pw_fundlist f ON f.id = d.fundlist_id\n                   WHERE d.TID = t.id\n                     {$filterClause}\n                     {$freqCond}\n                 )";
+  $baseWhere = "WHERE t.status IN ('Completed','pending')\n                 AND t.date >= :start_dt\n                 AND t.date <= :end_dt_incl\n                 {$freqCondMain}\n                 AND EXISTS (\n                   SELECT 1\n                   FROM pw_transaction_details d\n                   JOIN pw_appeal a   ON a.id = d.appeal_id\n                   JOIN pw_fundlist f ON f.id = d.fundlist_id\n                   WHERE d.TID = t.id\n                     {$filterClause}\n                     {$freqCondSubquery}\n                 )";
 
   // Aggregate query
   $sqlAgg = "SELECT\n               COALESCE(SUM(t.totalamount), 0) AS totalAmount,\n               COUNT(DISTINCT t.id) AS donationCount,\n               COALESCE(AVG(t.totalamount), 0) AS averageDonation\n             FROM pw_transactions t\n             {$baseWhere}";
