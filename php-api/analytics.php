@@ -147,18 +147,12 @@ try {
   error_log('[analytics] agg done');
   $agg = $stmtAgg->fetch() ?: ['totalAmount' => 0, 'donationCount' => 0, 'averageDonation' => 0];
 
-  // Trend query
+  // Trend query - use derived table to satisfy ONLY_FULL_GROUP_BY
   if ($granularity === 'weekly') {
-    $dateFormat = '%Y-%u';
-    $groupBy = 'YEARWEEK(t.date, 3)'; // ISO week (Monday)
-    $dayExpr = 'MIN(DATE(t.date))';
+    $sqlTrend = "SELECT\n                  DATE_FORMAT(MIN(day_date), '%Y-%u') AS period,\n                  MIN(day_date) AS day,\n                  SUM(amount) AS amount,\n                  SUM(cnt) AS count\n                FROM (\n                  SELECT\n                    YEARWEEK(t.date, 3) AS week_num,\n                    DATE(t.date) AS day_date,\n                    t.totalamount AS amount,\n                    1 AS cnt\n                  FROM pw_transactions t\n                  {$baseWhere}\n                ) AS daily_data\n                GROUP BY week_num\n                ORDER BY day ASC";
   } else {
-    $dateFormat = '%Y-%m-%d';
-    $groupBy = 'DATE(t.date)';
-    $dayExpr = 'DATE(t.date)';
+    $sqlTrend = "SELECT\n                  DATE_FORMAT(day_date, '%Y-%m-%d') AS period,\n                  day_date AS day,\n                  SUM(amount) AS amount,\n                  SUM(cnt) AS count\n                FROM (\n                  SELECT\n                    DATE(t.date) AS day_date,\n                    t.totalamount AS amount,\n                    1 AS cnt\n                  FROM pw_transactions t\n                  {$baseWhere}\n                ) AS daily_data\n                GROUP BY day_date\n                ORDER BY day ASC";
   }
-
-  $sqlTrend = "SELECT\n                  DATE_FORMAT({$dayExpr}, '{$dateFormat}') AS period,\n                  {$dayExpr} AS day,\n                  SUM(t.totalamount) AS amount,\n                  COUNT(DISTINCT t.id) AS count\n                FROM pw_transactions t\n                {$baseWhere}\n                GROUP BY {$groupBy}\n                ORDER BY day ASC";
 
   error_log('[analytics] preparing trend');
   $stmtTrend = $pdo->prepare($sqlTrend);
@@ -168,13 +162,53 @@ try {
   error_log('[analytics] trend done');
   $trend = $stmtTrend->fetchAll();
 
-  $trendData = array_map(function ($r) {
-    return [
+  // Convert to associative array keyed by period for easy lookup
+  $trendMap = [];
+  foreach ($trend as $r) {
+    $trendMap[$r['period']] = [
       'period' => $r['period'],
       'amount' => (float)($r['amount'] ?? 0),
       'count' => (int)($r['count'] ?? 0),
     ];
-  }, $trend);
+  }
+
+  // Fill in missing dates with zero values
+  $trendData = [];
+  if ($granularity === 'weekly') {
+    // For weekly, iterate through weeks
+    $current = parse_date_ymd($startDate);
+    $end = parse_date_ymd($endDate);
+    while ($current <= $end) {
+      $weekNum = $current->format('Y-W');
+      if (!isset($trendMap[$weekNum])) {
+        $trendData[] = [
+          'period' => $weekNum,
+          'amount' => 0.0,
+          'count' => 0,
+        ];
+      } else {
+        $trendData[] = $trendMap[$weekNum];
+      }
+      $current->modify('+1 week');
+    }
+  } else {
+    // For daily, iterate through each day
+    $current = parse_date_ymd($startDate);
+    $end = parse_date_ymd($endDate);
+    while ($current <= $end) {
+      $dateStr = $current->format('Y-m-d');
+      if (!isset($trendMap[$dateStr])) {
+        $trendData[] = [
+          'period' => $dateStr,
+          'amount' => 0.0,
+          'count' => 0,
+        ];
+      } else {
+        $trendData[] = $trendMap[$dateStr];
+      }
+      $current->modify('+1 day');
+    }
+  }
 
   error_log('[analytics] sending response');
   json_response([

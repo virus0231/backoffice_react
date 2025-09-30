@@ -1,133 +1,531 @@
-import Link from 'next/link';
+import FilterBar from "@/components/filters/FilterBar";
+import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashboard";
+import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
+import GenericBarChart from "@/components/charts/GenericBarChart";
+import DonutChart from "@/components/charts/DonutChart";
+import HeatmapGrid from "@/components/charts/HeatmapGrid";
 
-export default function HomePage() {
+export default function DashboardPage() {
+  // Mock data (replace with API wiring later)
+  const performanceTrend = [
+    { date: "2025-01-01", current: 22000, comparison: 20000 },
+    { date: "2025-02-01", current: 26000, comparison: 21000 },
+    { date: "2025-03-01", current: 24000, comparison: 23000 },
+    { date: "2025-04-01", current: 30000, comparison: 24000 },
+    { date: "2025-05-01", current: 28000, comparison: 25000 },
+    { date: "2025-06-01", current: 32000, comparison: 26000 },
+    { date: "2025-07-01", current: 34000, comparison: 27000 },
+    { date: "2025-08-01", current: 36000, comparison: 28000 },
+    { date: "2025-09-01", current: 38000, comparison: 30000 },
+  ];
+
+  const mrrTrend = [
+    { date: "2025-04-01", current: 12000, comparison: 10000 },
+    { date: "2025-05-01", current: 13000, comparison: 10500 },
+    { date: "2025-06-01", current: 15000, comparison: 11000 },
+    { date: "2025-07-01", current: 15500, comparison: 12000 },
+    { date: "2025-08-01", current: 16500, comparison: 12500 },
+    { date: "2025-09-01", current: 18000, comparison: 13000 },
+  ];
+
+  const recurringPlans = [
+    { plan: "Monthly", count: 640 },
+    { plan: "Quarterly", count: 120 },
+    { plan: "Annual", count: 85 },
+    { plan: "Weekly", count: 40 },
+  ];
+
+  const retentionCohort = [
+    [6, 5, 5, 4, 3, 2],
+    [7, 6, 5, 4, 3, 2],
+    [8, 7, 6, 5, 4, 3],
+    [9, 8, 7, 6, 5, 3],
+    [7, 6, 5, 4, 3, 2],
+    [6, 5, 4, 3, 2, 1],
+  ];
+
+  const dayTimeGrid = Array.from({ length: 7 }, () =>
+    Array.from({ length: 24 }, () => Math.floor(Math.random() * 7))
+  );
+
+  const frequenciesData = [
+    { label: "One-time", value: 54000 },
+    { label: "Monthly", value: 38000 },
+    { label: "Quarterly", value: 9000 },
+    { label: "Annual", value: 12000 },
+  ];
+
+  const paymentMethods = [
+    { name: "Card", value: 62 },
+    { name: "PayPal", value: 18 },
+    { name: "Bank Transfer", value: 12 },
+    { name: "Apple Pay", value: 8 },
+  ];
+
+  const designationsData = [
+    { designation: "General Fund", amount: 23000 },
+    { designation: "Education", amount: 14000 },
+    { designation: "Health", amount: 12000 },
+    { designation: "Relief", amount: 8000 },
+  ];
+
+  const countriesData = [
+    { country: "USA", amount: 54000 },
+    { country: "UK", amount: 22000 },
+    { country: "Canada", amount: 9000 },
+    { country: "Australia", amount: 7000 },
+    { country: "Germany", amount: 6000 },
+  ];
+
+  const tributesData = [
+    { type: "In Honor", count: 120 },
+    { type: "In Memory", count: 85 },
+    { type: "Other", count: 20 },
+  ];
+
+  const fundraisersData = [
+    { name: "Peer-to-Peer", amount: 18000 },
+    { name: "Events", amount: 12000 },
+    { name: "Teams", amount: 9000 },
+  ];
+
+  const urlData = [
+    { path: "/donate", visits: 12000 },
+    { path: "/campaign/spring", visits: 9800 },
+    { path: "/campaign/summer", visits: 8600 },
+    { path: "/blog/story-1", visits: 5400 },
+    { path: "/give/monthly", visits: 4200 },
+  ];
+
+  const utmData = [
+    { source: "Google", email: 3200, social: 4800, paid: 6200 },
+    { source: "Facebook", email: 1800, social: 5200, paid: 2100 },
+    { source: "Newsletter", email: 7400, social: 600, paid: 200 },
+    { source: "Twitter", email: 600, social: 2100, paid: 0 },
+  ];
+
   return (
-    <div className='min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100'>
-      <div className='container mx-auto px-4 py-16'>
-        <div className='max-w-4xl mx-auto text-center'>
-          {/* Header */}
-          <div className='mb-12'>
-            <h1 className='text-5xl font-bold text-gray-900 mb-6'>
-              Welcome to{' '}
-              <span className='bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent'>
-                Insights
-              </span>
-            </h1>
-            <p className='text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed'>
-              Transform your fundraising data into actionable insights with our
-              comprehensive analytics dashboard. Built for nonprofits who want
-              complete control over their data.
-            </p>
-          </div>
-
-          {/* Feature Grid */}
-          <div className='grid md:grid-cols-3 gap-8 mb-12'>
-            <div className='bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-200'>
-              <div className='w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4 mx-auto'>
-                <svg
-                  className='w-6 h-6 text-primary-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-                  />
-                </svg>
-              </div>
-              <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-                Advanced Analytics
-              </h3>
-              <p className='text-gray-600'>
-                Comprehensive charts and metrics for donations, donors, and
-                campaign performance analysis.
-              </p>
-            </div>
-
-            <div className='bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-200'>
-              <div className='w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center mb-4 mx-auto'>
-                <svg
-                  className='w-6 h-6 text-success-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
-                  />
-                </svg>
-              </div>
-              <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-                Data Ownership
-              </h3>
-              <p className='text-gray-600'>
-                Full control over your fundraising data with direct MySQL
-                database connections.
-              </p>
-            </div>
-
-            <div className='bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-200'>
-              <div className='w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center mb-4 mx-auto'>
-                <svg
-                  className='w-6 h-6 text-warning-600'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
-                  />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                  />
-                </svg>
-              </div>
-              <h3 className='text-lg font-semibold text-gray-900 mb-2'>
-                Customizable
-              </h3>
-              <p className='text-gray-600'>
-                Flexible filtering, comparison tools, and export capabilities
-                tailored to your needs.
-              </p>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-            <Link
-              href='/dashboard'
-              className='btn-primary px-8 py-3 text-base font-semibold'
-            >
-              Open Dashboard
-            </Link>
-            <Link
-              href='/dashboard'
-              className='btn-secondary px-8 py-3 text-base font-semibold'
-            >
-              View Analytics
-            </Link>
-          </div>
-
-          {/* Status Note */}
-          <div className='mt-12 p-4 bg-primary-50 rounded-lg border border-primary-200'>
-            <p className='text-sm text-primary-700'>
-              <span className='font-semibold'>Status:</span> Foundation setup
-              complete. Dashboard components are being implemented.
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Global Filters */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 mt-4 ml-4">Insights</h2>
         </div>
+        <div className="bg-gray-50 p-4 rounded">
+          <FilterBar layout="horizontal" />
+        </div>
+      </div>
+
+      {/* Chart Sections */}
+      <div className="space-y-8">
+        {/* Raised Section */}
+        <section
+          id="raised"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Revenue Overview
+            </h2>
+          </div>
+          <PrimaryRevenueDashboard />
+        </section>
+
+        {/* Performance Section */}
+        <section
+          id="performance"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Performance</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                All donations
+              </button>
+            </div>
+          </div>
+          {/* Metric tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">$38,000</div>
+              <div className="text-sm text-gray-600">Total raised</div>
+              <div className="text-xs text-green-600 mt-1">
+                +12% from previous period
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">1,245</div>
+              <div className="text-sm text-gray-600">Donations</div>
+              <div className="text-xs text-green-600 mt-1">
+                +5% from previous period
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">$31</div>
+              <div className="text-sm text-gray-600">Average</div>
+              <div className="text-xs text-green-600 mt-1">
+                +2% from previous period
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">3.2%</div>
+              <div className="text-sm text-gray-600">Conversion rate</div>
+              <div className="text-xs text-green-600 mt-1">
+                +0.3% from previous period
+              </div>
+            </div>
+          </div>
+          <AreaOverlayChart data={performanceTrend} granularity="weekly" />
+        </section>
+
+        {/* Recurring Plans Section */}
+        <section
+          id="recurring-plans"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Recurring plans
+            </h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={recurringPlans}
+            xKey="plan"
+            ySeries={[{ key: "count", name: "Plans", color: "#2563eb" }]}
+          />
+        </section>
+
+        {/* Recurring Revenue Section */}
+        <section
+          id="recurring-revenue"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Recurring revenue
+            </h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                All donations
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div>
+              <div className="text-lg font-semibold text-gray-900 mb-2">
+                Monthly recurring revenue
+              </div>
+              <div className="text-3xl font-bold text-gray-900">$18,000</div>
+              <div className="text-sm text-gray-600 mt-1">
+                1,042 active recurring donations
+              </div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900 mb-2">
+                Net new MRR
+              </div>
+              <div className="text-3xl font-bold text-gray-900">$1,250</div>
+              <div className="text-sm text-gray-600 mt-1">
+                Monthly change in recurring revenue
+              </div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900 mb-2">
+                Retention rate
+              </div>
+              <div className="text-3xl font-bold text-gray-900">92%</div>
+              <div className="text-sm text-gray-600 mt-1">
+                Percentage of recurring donors retained
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AreaOverlayChart data={mrrTrend} granularity="weekly" />
+            <div className="chart-container p-3">
+              <div className="chart-header">
+                <h3 className="chart-title">Retention Cohorts</h3>
+              </div>
+              <HeatmapGrid
+                data={retentionCohort}
+                rowLabels={["Apr", "May", "Jun", "Jul", "Aug", "Sep"]}
+                colLabels={["M0", "M1", "M2", "M3", "M4", "M5"]}
+                height={260}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Retention Section */}
+        <section
+          id="retention"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Retention</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                All time
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div>
+              <div className="text-lg font-semibold text-gray-900 mb-4">
+                Audience breakdown
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">New recurring donors</span>
+                  <span className="font-medium">324</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    Returning recurring donors
+                  </span>
+                  <span className="font-medium">718</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Cancelled subscriptions</span>
+                  <span className="font-medium">57</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-lg font-semibold text-gray-900 mb-4">
+                Geographic distribution
+              </div>
+              <HeatmapGrid
+                data={Array.from({ length: 5 }, () =>
+                  Array.from({ length: 10 }, () =>
+                    Math.floor(Math.random() * 6)
+                  )
+                )}
+                rowLabels={["NA", "EU", "AS", "SA", "AF"]}
+                colLabels={["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]}
+                height={200}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Day and Time Section */}
+        <section
+          id="day-and-time"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Day and time
+            </h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 365 days
+              </button>
+            </div>
+          </div>
+          <HeatmapGrid
+            data={dayTimeGrid}
+            rowLabels={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}
+            colLabels={Array.from({ length: 24 }, (_, i) => `${i}:00`)}
+            height={240}
+          />
+          <div className="flex items-center gap-2 text-sm text-gray-600 mt-3">
+            <span>Less</span>
+            <div className="flex gap-1">
+              <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-100 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-300 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-700 rounded-sm"></div>
+            </div>
+            <span>More</span>
+          </div>
+        </section>
+
+        {/* Frequencies Section */}
+        <section
+          id="frequencies"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Frequencies</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={frequenciesData}
+            xKey="label"
+            ySeries={[{ key: "value", name: "Amount", color: "#2563eb" }]}
+          />
+        </section>
+
+        {/* Payment Methods Section */}
+        <section
+          id="payment-methods"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Payment methods
+            </h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <DonutChart data={paymentMethods} />
+        </section>
+
+        {/* Designations Section */}
+        <section
+          id="designations"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Designations
+            </h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={designationsData}
+            xKey="designation"
+            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
+          />
+        </section>
+
+        {/* Countries Section */}
+        <section
+          id="countries"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Countries</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={countriesData}
+            xKey="country"
+            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
+            horizontal
+          />
+        </section>
+
+        {/* Tributes Section */}
+        <section
+          id="tributes"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Tributes</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={tributesData}
+            xKey="type"
+            ySeries={[{ key: "count", name: "Count", color: "#2563eb" }]}
+          />
+        </section>
+
+        {/* Fundraisers Section */}
+        <section
+          id="fundraisers"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">Fundraisers</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={fundraisersData}
+            xKey="name"
+            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
+          />
+        </section>
+
+        {/* URL Section */}
+        <section
+          id="url"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">URL</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={urlData}
+            xKey="path"
+            ySeries={[{ key: "visits", name: "Visits", color: "#2563eb" }]}
+            horizontal
+          />
+        </section>
+
+        {/* UTM Section */}
+        <section
+          id="utm"
+          className="bg-white rounded-lg border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">UTM</h2>
+            <div className="flex gap-2">
+              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <GenericBarChart
+            data={utmData}
+            xKey="source"
+            ySeries={[
+              { key: "email", name: "Email", color: "#2563eb", stackId: "utm" },
+              {
+                key: "social",
+                name: "Social",
+                color: "#16a34a",
+                stackId: "utm",
+              },
+              { key: "paid", name: "Paid", color: "#f59e0b", stackId: "utm" },
+            ]}
+          />
+        </section>
       </div>
     </div>
   );
