@@ -151,12 +151,14 @@ try {
   if ($granularity === 'weekly') {
     $dateFormat = '%Y-%u';
     $groupBy = 'YEARWEEK(t.date, 3)'; // ISO week (Monday)
+    $dayExpr = 'MIN(DATE(t.date))';
   } else {
     $dateFormat = '%Y-%m-%d';
     $groupBy = 'DATE(t.date)';
+    $dayExpr = 'DATE(t.date)';
   }
 
-  $sqlTrend = "SELECT\n                  DATE_FORMAT(t.date, '{$dateFormat}') AS period,\n                  MIN(DATE(t.date)) AS day,\n                  SUM(t.totalamount) AS amount,\n                  COUNT(DISTINCT t.id) AS count\n                FROM pw_transactions t\n                {$baseWhere}\n                GROUP BY {$groupBy}\n                ORDER BY day ASC";
+  $sqlTrend = "SELECT\n                  DATE_FORMAT({$dayExpr}, '{$dateFormat}') AS period,\n                  {$dayExpr} AS day,\n                  SUM(t.totalamount) AS amount,\n                  COUNT(DISTINCT t.id) AS count\n                FROM pw_transactions t\n                {$baseWhere}\n                GROUP BY {$groupBy}\n                ORDER BY day ASC";
 
   error_log('[analytics] preparing trend');
   $stmtTrend = $pdo->prepare($sqlTrend);
