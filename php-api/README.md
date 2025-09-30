@@ -30,4 +30,4 @@ CORS
 Frontend
 - Set `NEXT_PUBLIC_PHP_API_BASE_URL` to the URL where these endpoints are served (no trailing slash). Example:
   - `NEXT_PUBLIC_PHP_API_BASE_URL=https://example.com/api`
-
+- If this env var is not set, the frontend will default to `"/php-api"` so local setups that serve this folder directly will work out-of-the-box.

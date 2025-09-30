@@ -6,8 +6,10 @@ function normalizeBase(base?: string): string {
 }
 
 export function getPhpApiBase(): string {
-  const base = normalizeBase(process.env.NEXT_PUBLIC_PHP_API_BASE_URL);
-  return base || '';
+  const fromEnv = normalizeBase(process.env.NEXT_PUBLIC_PHP_API_BASE_URL);
+  // Default to '/php-api' when no env is provided so local setups that
+  // serve PHP from this repo's php-api folder work out of the box.
+  return fromEnv || '/php-api';
 }
 
 export function buildAppealsUrl(): string {
@@ -37,4 +39,3 @@ export function buildAnalyticsUrl(kind: string, searchParams: URLSearchParams): 
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
-

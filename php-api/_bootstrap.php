@@ -1,6 +1,12 @@
 <?php
 // Common bootstrap for PHP API endpoints
 
+// Fail-safe runtime guards
+ini_set('display_errors', '0');
+ini_set('default_socket_timeout', '15'); // Network socket read timeout
+set_time_limit(30); // Hard cap script runtime
+ignore_user_abort(true);
+
 // CORS headers (adjust origin as needed)
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -17,6 +23,14 @@ require_once __DIR__ . '/config.php';
 function json_response($data, int $status = 200): void {
   http_response_code($status);
   echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+  // Ensure the response is flushed and the connection can close
+  if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+  } else {
+    // Flush output buffers if any
+    while (ob_get_level() > 0) { @ob_end_flush(); }
+    @flush();
+  }
 }
 
 function error_response(string $message, int $status = 400, array $meta = []): void {
@@ -32,19 +46,37 @@ function get_env_or(array $arr, string $key, $default = null) {
 function get_pdo(): PDO {
   static $pdo = null;
   if ($pdo) return $pdo;
+
   $cfg = require __DIR__ . '/config.php';
   $host = get_env_or($cfg, 'DB_HOST', 'localhost');
   $db   = get_env_or($cfg, 'DB_NAME', '');
   $user = get_env_or($cfg, 'DB_USER', '');
   $pass = get_env_or($cfg, 'DB_PASSWORD', '');
   $port = (int)get_env_or($cfg, 'DB_PORT', 3306);
-  $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
 
-  $pdo = new PDO($dsn, $user, $pass, [
+  // Add connect_timeout to DSN for faster failures if DB is unreachable
+  $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4;";
+
+  $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,
-  ]);
+    PDO::ATTR_PERSISTENT => false,
+    PDO::ATTR_TIMEOUT => 10, // seconds; best-effort for MySQL
+  ];
+
+  // If available, set init commands to enforce reasonable query timeouts
+  if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+    // MySQL 5.7+: MAX_EXECUTION_TIME (milliseconds) — ignored on older versions
+    $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET SESSION wait_timeout=30, interactive_timeout=30, SQL_BIG_SELECTS=1';
+  }
+
+  $pdo = new PDO($dsn, $user, $pass, $options);
+
+  // Best-effort per-session limits (ignore failures quietly)
+  try { $pdo->exec('SET SESSION MAX_EXECUTION_TIME=15000'); } catch (Throwable $e) {}
+  try { $pdo->exec('SET SESSION innodb_lock_wait_timeout=15'); } catch (Throwable $e) {}
+
   return $pdo;
 }
 
@@ -85,4 +117,3 @@ function frequency_condition(string $frequency): string {
       return '';
   }
 }
-
