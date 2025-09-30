@@ -217,7 +217,8 @@ export default function DateRangePicker({
           'bg-white border border-gray-300 rounded-lg shadow-sm',
           'hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
           'transition-colors duration-200',
-          disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed'
+          disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed',
+          className
         )}
       >
         <div className="flex items-center">

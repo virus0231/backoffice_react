@@ -147,11 +147,12 @@ export default function AppealsFilter({
         onClick={handleToggleDropdown}
         disabled={disabled}
         className={clsx(
-          'flex items-center justify-between min-w-48 px-4 py-2.5 text-sm',
+          'flex items-center justify-between w-full px-4 py-2.5 text-sm',
           'bg-white border border-gray-300 rounded-lg shadow-sm',
           'hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
           'transition-all duration-200',
-          disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed'
+          disabled && 'bg-gray-50 text-gray-500 cursor-not-allowed',
+          className
         )}
       >
         <div className="flex items-center min-w-0">

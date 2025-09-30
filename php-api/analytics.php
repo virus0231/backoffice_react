@@ -6,9 +6,23 @@ $kind = isset($_GET['kind']) ? $_GET['kind'] : null; // 'total-raised' | 'first-
 $startDate = isset($_GET['startDate']) ? $_GET['startDate'] : null; // yyyy-mm-dd
 $endDate = isset($_GET['endDate']) ? $_GET['endDate'] : null; // yyyy-mm-dd
 $granularity = isset($_GET['granularity']) ? $_GET['granularity'] : 'daily'; // daily | weekly
-$appealId = isset($_GET['appealId']) ? (int)$_GET['appealId'] : null;
-$fundId = isset($_GET['fundId']) ? (int)$_GET['fundId'] : null;
+// Handle comma-separated IDs for appeals and funds
+$appealIdRaw = isset($_GET['appealId']) ? $_GET['appealId'] : null;
+$fundIdRaw = isset($_GET['fundId']) ? $_GET['fundId'] : null;
 $frequency = isset($_GET['frequency']) ? $_GET['frequency'] : 'all';
+
+// Parse comma-separated IDs into arrays
+$appealIds = null;
+if ($appealIdRaw) {
+  $appealIds = array_map('intval', array_filter(explode(',', $appealIdRaw)));
+  if (empty($appealIds)) $appealIds = null;
+}
+
+$fundIds = null;
+if ($fundIdRaw) {
+  $fundIds = array_map('intval', array_filter(explode(',', $fundIdRaw)));
+  if (empty($fundIds)) $fundIds = null;
+}
 
 if (!$kind || !$startDate || !$endDate) {
   error_response('Missing kind/startDate/endDate', 400);
@@ -45,13 +59,24 @@ try {
     ':end_dt_incl' => $endBound,
   ];
 
-  if ($appealId) {
-    $filterClause .= ' AND a.id = :appealId';
-    $bindings[':appealId'] = $appealId;
+  if ($appealIds) {
+    $placeholders = [];
+    foreach ($appealIds as $idx => $id) {
+      $key = ":appealId_{$idx}";
+      $placeholders[] = $key;
+      $bindings[$key] = $id;
+    }
+    $filterClause .= ' AND a.id IN (' . implode(',', $placeholders) . ')';
   }
-  if ($fundId) {
-    $filterClause .= ' AND f.id = :fundId';
-    $bindings[':fundId'] = $fundId;
+
+  if ($fundIds) {
+    $placeholders = [];
+    foreach ($fundIds as $idx => $id) {
+      $key = ":fundId_{$idx}";
+      $placeholders[] = $key;
+      $bindings[$key] = $id;
+    }
+    $filterClause .= ' AND f.id IN (' . implode(',', $placeholders) . ')';
   }
 
   // Frequency condition from kind, possibly overridden by explicit frequency param
@@ -104,7 +129,7 @@ try {
     'meta' => [
       'kind' => $kind,
       'granularity' => $granularity,
-      'filters' => ['appealId' => $appealId, 'fundId' => $fundId, 'frequency' => $frequency],
+      'filters' => ['appealIds' => $appealIds, 'fundIds' => $fundIds, 'frequency' => $frequency],
       'start' => $startBound,
       'end' => $endBound,
     ]

@@ -17,6 +17,7 @@ interface RevenueDataPoint {
   count: number;
   comparisonAmount?: number;
   comparisonCount?: number;
+  comparisonDate?: string;
 }
 
 interface RevenueData {
@@ -42,9 +43,68 @@ interface RevenueResponse {
   };
 }
 
+// Helper function to aggregate daily data into weekly
+function aggregateToWeekly(dailyData: RevenueDataPoint[]): RevenueDataPoint[] {
+  if (dailyData.length === 0) return [];
+
+  const weeklyMap = new Map<string, RevenueDataPoint>();
+
+  dailyData.forEach(point => {
+    const date = new Date(point.date);
+    // Get the start of the week (Monday)
+    const dayOfWeek = date.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust so Monday is start
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() + diff);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekKey = format(weekStart, 'yyyy-MM-dd');
+
+    // Calculate comparison week if comparison date exists
+    let comparisonWeekKey: string | undefined;
+    if (point.comparisonDate) {
+      const compDate = new Date(point.comparisonDate);
+      const compDayOfWeek = compDate.getDay();
+      const compDiff = compDayOfWeek === 0 ? -6 : 1 - compDayOfWeek;
+      const compWeekStart = new Date(compDate);
+      compWeekStart.setDate(compDate.getDate() + compDiff);
+      compWeekStart.setHours(0, 0, 0, 0);
+      comparisonWeekKey = format(compWeekStart, 'yyyy-MM-dd');
+    }
+
+    const existing = weeklyMap.get(weekKey);
+    if (existing) {
+      existing.amount += point.amount;
+      existing.count += point.count;
+      if (point.comparisonAmount !== undefined) {
+        existing.comparisonAmount = (existing.comparisonAmount || 0) + point.comparisonAmount;
+      }
+      if (point.comparisonCount !== undefined) {
+        existing.comparisonCount = (existing.comparisonCount || 0) + point.comparisonCount;
+      }
+      // Keep the first comparison date for the week
+      if (!existing.comparisonDate && comparisonWeekKey) {
+        existing.comparisonDate = comparisonWeekKey;
+      }
+    } else {
+      weeklyMap.set(weekKey, {
+        date: weekKey,
+        amount: point.amount,
+        count: point.count,
+        comparisonAmount: point.comparisonAmount,
+        comparisonCount: point.comparisonCount,
+        comparisonDate: comparisonWeekKey
+      });
+    }
+  });
+
+  return Array.from(weeklyMap.values()).sort((a, b) =>
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+}
+
 export function useRevenueData(
   dateRange: DateRange,
-  granularity: 'daily' | 'weekly' = 'daily',
   comparisonRange?: DateRange | null,
   appealId?: string | null,
   fundId?: string | null,
@@ -74,15 +134,15 @@ export function useRevenueData(
     error: null
   });
 
-  const fetchData = useCallback(async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>) => {
+  const fetchData = useCallback(async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>, endpointFrequency?: string) => {
     try {
       setData(prev => ({ ...prev, isLoading: true, error: null, isRetriable: false }));
 
-      // Fetch main data
+      // Fetch main data (always daily)
       const params = new URLSearchParams({
         startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
         endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
-        granularity: granularity
+        granularity: 'daily'
       });
 
       // Add filter parameters if provided
@@ -92,8 +152,11 @@ export function useRevenueData(
       if (fundId) {
         params.append('fundId', fundId);
       }
-      if (frequency && frequency !== 'all') {
-        params.append('frequency', frequency);
+
+      // Use endpoint-specific frequency if provided, otherwise use global frequency
+      const effectiveFrequency = endpointFrequency || frequency;
+      if (effectiveFrequency && effectiveFrequency !== 'all') {
+        params.append('frequency', effectiveFrequency);
       }
 
       const mainUrl = buildAnalyticsUrl(endpoint, params);
@@ -105,13 +168,13 @@ export function useRevenueData(
         dedupe: true
       });
 
-      // Fetch comparison data if comparison range is provided
+      // Fetch comparison data if comparison range is provided (always daily)
       let comparisonResult: RevenueResponse | null = null;
       if (comparisonRange) {
         const comparisonParams = new URLSearchParams({
           startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
           endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
-          granularity: granularity
+          granularity: 'daily'
         });
 
         // Add same filter parameters for comparison
@@ -121,8 +184,11 @@ export function useRevenueData(
         if (fundId) {
           comparisonParams.append('fundId', fundId);
         }
-        if (frequency && frequency !== 'all') {
-          comparisonParams.append('frequency', frequency);
+
+        // Use endpoint-specific frequency if provided, otherwise use global frequency
+        const effectiveFrequency = endpointFrequency || frequency;
+        if (effectiveFrequency && effectiveFrequency !== 'all') {
+          comparisonParams.append('frequency', effectiveFrequency);
         }
 
         try {
@@ -158,7 +224,8 @@ export function useRevenueData(
           amount: Number(point.amount || 0),
           count: Number(point.count || 0),
           comparisonAmount: Number(comparisonPoint?.amount || 0),
-          comparisonCount: Number(comparisonPoint?.count || 0)
+          comparisonCount: Number(comparisonPoint?.count || 0),
+          comparisonDate: comparisonPoint?.period
         };
       });
 
@@ -184,29 +251,56 @@ export function useRevenueData(
         isRetriable
       }));
     }
-  }, [dateRange.startDate, dateRange.endDate, granularity, appealId, fundId, frequency, comparisonRange]);
+  }, [dateRange.startDate, dateRange.endDate, appealId, fundId, frequency, comparisonRange]);
 
   useEffect(() => {
-    // Fetch all three data sources in parallel
+    // Fetch all three data sources in parallel (always daily data)
+    // Total raised uses global frequency filter
+    // First installments and one-time donations use their specific frequency types
     Promise.all([
-      fetchData('total-raised', setTotalRaisedData),
-      fetchData('first-installments', setFirstInstallmentsData),
-      fetchData('one-time-donations', setOneTimeData)
+      fetchData('total-raised', setTotalRaisedData), // Uses global frequency
+      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'), // Always recurring-first
+      fetchData('one-time-donations', setOneTimeData, 'one-time') // Always one-time
     ]);
-  }, [dateRange.startDate, dateRange.endDate, granularity, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency, fetchData]);
+  }, [dateRange.startDate, dateRange.endDate, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency, fetchData]);
 
   const retry = useCallback(() => {
     Promise.all([
-      fetchData('total-raised', setTotalRaisedData),
-      fetchData('first-installments', setFirstInstallmentsData),
-      fetchData('one-time-donations', setOneTimeData)
+      fetchData('total-raised', setTotalRaisedData), // Uses global frequency
+      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'), // Always recurring-first
+      fetchData('one-time-donations', setOneTimeData, 'one-time') // Always one-time
     ]);
   }, [fetchData]);
 
+  // Compute weekly aggregations from daily data
+  const totalRaisedWeekly = {
+    ...totalRaisedData,
+    chartData: aggregateToWeekly(totalRaisedData.chartData)
+  };
+
+  const firstInstallmentsWeekly = {
+    ...firstInstallmentsData,
+    chartData: aggregateToWeekly(firstInstallmentsData.chartData)
+  };
+
+  const oneTimeWeekly = {
+    ...oneTimeData,
+    chartData: aggregateToWeekly(oneTimeData.chartData)
+  };
+
   return {
-    totalRaised: totalRaisedData,
-    firstInstallments: firstInstallmentsData,
-    oneTime: oneTimeData,
+    totalRaised: {
+      daily: totalRaisedData,
+      weekly: totalRaisedWeekly
+    },
+    firstInstallments: {
+      daily: firstInstallmentsData,
+      weekly: firstInstallmentsWeekly
+    },
+    oneTime: {
+      daily: oneTimeData,
+      weekly: oneTimeWeekly
+    },
     isLoading: totalRaisedData.isLoading || firstInstallmentsData.isLoading || oneTimeData.isLoading,
     hasError: !!(totalRaisedData.error || firstInstallmentsData.error || oneTimeData.error),
     retry
