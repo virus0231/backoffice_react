@@ -47,7 +47,7 @@ export default function RecurringPlansDashboard() {
   const canceledPlansData = granularity === 'daily' ? plansData.canceledPlans.daily : plansData.canceledPlans.weekly;
 
   // Calculate totals for display
-  const activePlansTotal = activePlansData.length > 0 ? activePlansData[activePlansData.length - 1].value : 0;
+  const activePlansTotal = activePlansData.length > 0 ? (activePlansData[activePlansData.length - 1]?.value ?? 0) : 0;
   const newPlansTotal = newPlansData.reduce((sum, point) => sum + point.value, 0);
   const canceledPlansTotal = canceledPlansData.reduce((sum, point) => sum + point.value, 0);
 
@@ -145,9 +145,9 @@ export default function RecurringPlansDashboard() {
               </div>
               <div className="space-y-1">
                 <div className="text-3xl font-bold text-gray-900">{activePlansTotal}</div>
-                {comparisonRange && activePlansData.length > 0 && activePlansData[0].comparisonValue !== undefined && (
+                {comparisonRange && activePlansData.length > 0 && activePlansData[0]?.comparisonValue !== undefined && (
                   <div className="text-xs text-gray-500">
-                    vs {activePlansData[0].comparisonValue} (comparison period)
+                    vs {activePlansData[0]?.comparisonValue} (comparison period)
                   </div>
                 )}
               </div>

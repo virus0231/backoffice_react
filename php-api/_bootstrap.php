@@ -108,8 +108,8 @@ function get_pdo(): PDO {
   $pdo = new PDO($dsn, $user, $pass, $options);
 
   // Best-effort per-session limits (ignore failures quietly)
-  try { $pdo->exec('SET SESSION MAX_EXECUTION_TIME=15000'); } catch (Throwable $e) {}
-  try { $pdo->exec('SET SESSION innodb_lock_wait_timeout=15'); } catch (Throwable $e) {}
+  try { $pdo->exec('SET SESSION MAX_EXECUTION_TIME=60000'); } catch (Throwable $e) {}
+  try { $pdo->exec('SET SESSION innodb_lock_wait_timeout=30'); } catch (Throwable $e) {}
 
   return $pdo;
 }

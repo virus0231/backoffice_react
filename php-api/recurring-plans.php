@@ -47,7 +47,8 @@ try {
 
   if ($metric === 'active-plans') {
     // Build filter clause for appeals and funds
-    $filterClause = '';
+    $appealFilter = '';
+    $fundFilter = '';
     $bindings = [
       ':start_date' => $startDate,
       ':end_date' => $endDate,
@@ -60,7 +61,9 @@ try {
         $placeholders[] = $key;
         $bindings[$key] = (int)$id;
       }
-      $filterClause .= ' AND td.appeal_id IN (' . implode(',', $placeholders) . ')';
+      $appealFilter = 'appeal_id IN (' . implode(',', $placeholders) . ')';
+    } else {
+      $appealFilter = '1=1'; // No filter
     }
 
     if ($fundIds && !empty($fundIds)) {
@@ -70,7 +73,9 @@ try {
         $placeholders[] = $key;
         $bindings[$key] = (int)$id;
       }
-      $filterClause .= ' AND td.fundlist_id IN (' . implode(',', $placeholders) . ')';
+      $fundFilter = 'fundlist_id IN (' . implode(',', $placeholders) . ')';
+    } else {
+      $fundFilter = '1=1'; // No filter
     }
 
     $sql = "
@@ -84,27 +89,34 @@ try {
       all_schedules AS (
         SELECT s.startdate, s.nextrun_date, s.remainingcount, s.status
         FROM pw_schedule s
-        LEFT JOIN pw_transaction_details td ON s.td_id = td.id
-        WHERE s.status = 'ACTIVE'
-          AND (s.plan_id IS NOT NULL AND s.sub_id IS NOT NULL)
-          {$filterClause}
+        LEFT JOIN pw_transaction_details
+        ON s.td_id = pw_transaction_details.id
+        WHERE {$appealFilter} AND {$fundFilter} AND (plan_id IS NOT NULL AND sub_id IS NOT NULL)
       )
       SELECT
         ds.d AS date,
-        COUNT(s.startdate) AS value
+        COUNT(*) AS active_plans
       FROM date_series ds
-      LEFT JOIN all_schedules s ON s.startdate <= ds.d
+      JOIN all_schedules s
+        ON s.status = 'ACTIVE'
+       AND s.startdate <= ds.d
       GROUP BY ds.d
       ORDER BY ds.d
     ";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($bindings);
-    $trendData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Convert active_plans to value for consistency
+    $trendData = array_map(function($row) {
+      return ['date' => $row['date'], 'value' => (int)$row['active_plans']];
+    }, $rows);
 
   } elseif ($metric === 'new-plans') {
     // Build filter clause for appeals and funds
-    $filterClause = '';
+    $appealFilter = '';
+    $fundFilter = '';
     $bindings = [
       ':start_date' => $startDate,
       ':end_date' => $endDate,
@@ -117,7 +129,7 @@ try {
         $placeholders[] = $key;
         $bindings[$key] = (int)$id;
       }
-      $filterClause .= ' AND td.appeal_id IN (' . implode(',', $placeholders) . ')';
+      $appealFilter = 'AND td.appeal_id IN (' . implode(',', $placeholders) . ')';
     }
 
     if ($fundIds && !empty($fundIds)) {
@@ -127,7 +139,7 @@ try {
         $placeholders[] = $key;
         $bindings[$key] = (int)$id;
       }
-      $filterClause .= ' AND td.fundlist_id IN (' . implode(',', $placeholders) . ')';
+      $fundFilter = 'AND td.fundlist_id IN (' . implode(',', $placeholders) . ')';
     }
 
     $sql = "
@@ -137,13 +149,15 @@ try {
         SELECT d + INTERVAL 1 DAY FROM date_series WHERE d < :end_date
       ),
       filtered AS (
-        SELECT DATE(s.startdate) AS d, s.id
+        SELECT s.startdate AS d, s.id
         FROM pw_schedule s
-        JOIN pw_transaction_details td ON td.id = s.td_id
+        JOIN pw_transaction_details td
+          ON td.id = s.td_id
         WHERE s.status = 'ACTIVE'
-          {$filterClause}
+          {$appealFilter}
+          {$fundFilter}
       )
-      SELECT ds.d AS date, COALESCE(COUNT(f.id), 0) AS value
+      SELECT ds.d AS `date`, COALESCE(COUNT(f.id), 0) AS new_plans
       FROM date_series ds
       LEFT JOIN filtered f ON f.d = ds.d
       GROUP BY ds.d
@@ -152,35 +166,39 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($bindings);
-    $trendData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Convert new_plans to value for consistency
+    $trendData = array_map(fn($row) => ['date' => $row['date'], 'value' => (int)$row['new_plans']], $rows);
 
   } elseif ($metric === 'canceled-plans') {
     // Canceled plans - only date filter (no appeal/fund filters per requirements)
     $bindings = [
-      ':start_date' => $startDate,
-      ':end_date' => $endDate,
-      ':end_date_incl' => $endDate, // For the WHERE clause
+      ':start_date1' => $startDate,
+      ':end_date1' => $endDate,
+      ':start_date2' => $startDate,
+      ':end_date2' => $endDate,
     ];
 
     $sql = "
       WITH RECURSIVE dates AS (
-        SELECT DATE(:start_date) AS d
+        SELECT DATE(:start_date1) AS d
         UNION ALL
         SELECT d + INTERVAL 1 DAY
         FROM dates
-        WHERE d + INTERVAL 1 DAY <= :end_date
+        WHERE d + INTERVAL 1 DAY <= :end_date1
       ),
       agg AS (
         SELECT DATE(`date`) AS d, COUNT(*) AS cancellations
         FROM pw_stripewebhooks
         WHERE event IN ('subscription_schedule.canceled')
-          AND `date` >= :start_date
-          AND `date` < DATE_ADD(:end_date_incl, INTERVAL 1 DAY)
+          AND `date` >= :start_date2
+          AND `date` < DATE_ADD(:end_date2, INTERVAL 1 DAY)
         GROUP BY DATE(`date`)
       )
       SELECT
         dates.d AS `date`,
-        COALESCE(agg.cancellations, 0) AS value
+        COALESCE(agg.cancellations, 0) AS cancellations
       FROM dates
       LEFT JOIN agg ON agg.d = dates.d
       ORDER BY dates.d
@@ -188,7 +206,10 @@ try {
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($bindings);
-    $trendData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Convert cancellations to value for consistency
+    $trendData = array_map(fn($row) => ['date' => $row['date'], 'value' => (int)$row['cancellations']], $rows);
 
   } else {
     error_response('Invalid metric. Must be active-plans, new-plans, or canceled-plans', 400);

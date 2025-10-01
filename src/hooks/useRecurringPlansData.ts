@@ -15,6 +15,7 @@ interface PlanDataPoint {
   date: string;
   value: number;
   comparisonValue?: number;
+  comparisonDate?: string;
 }
 
 interface MetricData {
@@ -42,9 +43,9 @@ interface RecurringPlansResponse {
 }
 
 /**
- * Aggregate daily data to weekly on the frontend
+ * Aggregate daily data to weekly by summing values (for new/canceled plans)
  */
-function aggregateToWeekly(dailyData: PlanDataPoint[]): PlanDataPoint[] {
+function aggregateToWeeklySum(dailyData: PlanDataPoint[]): PlanDataPoint[] {
   if (dailyData.length === 0) return [];
 
   const weeklyMap = new Map<string, PlanDataPoint>();
@@ -61,7 +62,8 @@ function aggregateToWeekly(dailyData: PlanDataPoint[]): PlanDataPoint[] {
       weeklyMap.set(weekKey, {
         date: weekKey,
         value: 0,
-        comparisonValue: point.comparisonValue !== undefined ? 0 : undefined
+        comparisonValue: point.comparisonValue !== undefined ? 0 : undefined,
+        comparisonDate: point.comparisonDate
       });
     }
 
@@ -73,6 +75,46 @@ function aggregateToWeekly(dailyData: PlanDataPoint[]): PlanDataPoint[] {
   });
 
   return Array.from(weeklyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Aggregate daily data to weekly by taking last value (for active plans snapshots)
+ */
+function aggregateToWeeklyLast(dailyData: PlanDataPoint[]): PlanDataPoint[] {
+  if (dailyData.length === 0) return [];
+
+  const weeklyMap = new Map<string, { points: PlanDataPoint[] }>();
+
+  dailyData.forEach(point => {
+    const date = new Date(point.date);
+    // Get Monday of the week
+    const dayOfWeek = date.getDay();
+    const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const monday = new Date(date.setDate(diff));
+    const weekKey = format(monday, 'yyyy-MM-dd');
+
+    if (!weeklyMap.has(weekKey)) {
+      weeklyMap.set(weekKey, { points: [] });
+    }
+
+    weeklyMap.get(weekKey)!.points.push(point);
+  });
+
+  // Take the last point of each week
+  const result: PlanDataPoint[] = [];
+  weeklyMap.forEach((weekData, weekKey) => {
+    const lastPoint = weekData.points[weekData.points.length - 1];
+    if (lastPoint) {
+      result.push({
+        date: weekKey,
+        value: lastPoint.value,
+        comparisonValue: lastPoint.comparisonValue,
+        comparisonDate: lastPoint.comparisonDate
+      });
+    }
+  });
+
+  return result.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
@@ -97,14 +139,13 @@ async function fetchMetricData(
   const mainUrl = buildRecurringPlansUrl(metric, searchParams);
 
   // Fetch main period data
-  const mainResponse = await cachedFetch<RecurringPlansResponse>(mainUrl, {
-    ttl: 5 * 60 * 1000, // 5 minutes
-    staleWhileRevalidate: 10 * 60 * 1000
+  const mainResponse = await cachedFetch<RecurringPlansResponse>(mainUrl, undefined, {
+    ttl: 5 * 60 * 1000 // 5 minutes
   });
 
   const mainData: PlanDataPoint[] = mainResponse.data.trendData.map(point => ({
     date: point.date,
-    value: point.value
+    value: Number(point.value) || 0
   }));
 
   // Fetch comparison period data if requested
@@ -122,14 +163,13 @@ async function fetchMetricData(
     const compUrl = buildRecurringPlansUrl(metric, compSearchParams);
 
     try {
-      const compResponse = await cachedFetch<RecurringPlansResponse>(compUrl, {
-        ttl: 5 * 60 * 1000,
-        staleWhileRevalidate: 10 * 60 * 1000
+      const compResponse = await cachedFetch<RecurringPlansResponse>(compUrl, undefined, {
+        ttl: 5 * 60 * 1000
       });
 
       comparisonData = compResponse.data.trendData.map(point => ({
         date: point.date,
-        value: point.value
+        value: Number(point.value) || 0
       }));
     } catch (error) {
       logError(error, 'useRecurringPlansData.fetchComparison');
@@ -139,11 +179,16 @@ async function fetchMetricData(
   // Merge comparison data into main data
   const dailyData = mainData.map((point, index) => ({
     ...point,
-    comparisonValue: comparisonData[index]?.value
+    comparisonValue: comparisonData[index]?.value,
+    comparisonDate: comparisonData[index]?.date
   }));
 
-  // Generate weekly aggregation
-  const weeklyData = aggregateToWeekly(dailyData);
+  // Generate weekly aggregation based on metric type
+  // Active plans: use last value (it's a snapshot count)
+  // New/Canceled plans: sum values (they're event counts)
+  const weeklyData = metric === 'active-plans'
+    ? aggregateToWeeklyLast(dailyData)
+    : aggregateToWeeklySum(dailyData);
 
   return {
     daily: dailyData,

@@ -4,7 +4,7 @@ import React from 'react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
 interface SimpleLineChartProps {
-  data: Array<{ date: string; value: number }>;
+  data: Array<{ date: string; value: number; comparisonValue?: number; comparisonDate?: string }>;
   color?: string;
   height?: number;
   showAxes?: boolean;
@@ -16,6 +16,9 @@ export default function SimpleLineChart({
   height = 120,
   showAxes = false
 }: SimpleLineChartProps) {
+  // Check if comparison data exists
+  const hasComparison = data.some(point => point.comparisonValue !== undefined);
+
   // Custom tooltip component
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -28,7 +31,8 @@ export default function SimpleLineChart({
           if (isNaN(date.getTime())) {
             return dateStr;
           }
-          return date.toLocaleDateString(undefined, {
+          return date.toLocaleDateString('en-US', {
+            weekday: 'short',
             month: 'short',
             day: 'numeric',
             year: 'numeric'
@@ -38,14 +42,46 @@ export default function SimpleLineChart({
         }
       };
 
+      // Calculate percentage change if comparison exists
+      let percentageChange = null;
+      if (data.comparisonValue !== undefined && data.comparisonValue > 0) {
+        const change = ((data.value - data.comparisonValue) / data.comparisonValue) * 100;
+        percentageChange = change.toFixed(1);
+      }
+
       return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 min-w-[140px]">
-          <div className="text-xs text-gray-600 mb-1">
-            {formatDate(data.date)}
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[200px]">
+          {/* Current Period */}
+          <div className="mb-3">
+            <div className="text-xs text-gray-500 mb-1">Current Period</div>
+            <div className="text-xs text-gray-700 mb-1">{formatDate(data.date)}</div>
+            <div className="text-lg font-bold text-blue-600">{data.value.toLocaleString()}</div>
           </div>
-          <div className="text-lg font-bold text-gray-900">
-            {data.value}
-          </div>
+
+          {/* Comparison Period */}
+          {data.comparisonValue !== undefined && (
+            <>
+              <div className="border-t border-gray-200 pt-3">
+                <div className="text-xs text-gray-500 mb-1">Comparison Period</div>
+                <div className="text-xs text-gray-700 mb-1">
+                  {data.comparisonDate ? formatDate(data.comparisonDate) : formatDate(data.date)}
+                </div>
+                <div className="text-lg font-bold text-purple-600">{data.comparisonValue.toLocaleString()}</div>
+              </div>
+
+              {/* Change Percentage */}
+              {percentageChange !== null && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <div className="text-xs text-gray-500">Change:</div>
+                  <div className={`text-sm font-semibold ${
+                    parseFloat(percentageChange) >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {parseFloat(percentageChange) >= 0 ? '+' : ''}{percentageChange}%
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       );
     }
@@ -59,6 +95,10 @@ export default function SimpleLineChart({
           <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.3} />
             <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+          </linearGradient>
+          <linearGradient id={`gradient-comparison`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a855f7" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
           </linearGradient>
         </defs>
         {showAxes && (
@@ -85,6 +125,17 @@ export default function SimpleLineChart({
           content={<CustomTooltip />}
           cursor={{ stroke: color, strokeWidth: 1, strokeDasharray: '4 4' }}
         />
+        {hasComparison && (
+          <Area
+            type="monotone"
+            dataKey="comparisonValue"
+            stroke="#a855f7"
+            strokeWidth={2}
+            strokeDasharray="5 5"
+            fill={`url(#gradient-comparison)`}
+            dot={false}
+          />
+        )}
         <Area
           type="monotone"
           dataKey="value"
