@@ -25,6 +25,10 @@ interface FilterStore extends FilterState {
   hydrated: boolean;
   setHydrated: (hydrated: boolean) => void;
 
+  // Client selection
+  selectedClient: string;
+  setSelectedClient: (client: string) => void;
+
   // Comparison state (per-chart)
   comparisons: ComparisonMapping;
   setChartComparison: (chartId: string, comparison: ChartComparison) => void;
@@ -62,6 +66,7 @@ export const useFilterStore = create<FilterStore>()(
       isLoading: false,
       lastValidationError: null,
       hydrated: false,
+      selectedClient: 'mausa',
       comparisons: getDefaultComparisons(),
 
       // Date range actions
@@ -137,6 +142,11 @@ export const useFilterStore = create<FilterStore>()(
       // Hydration state
       setHydrated: (hydrated: boolean) => {
         set({ hydrated });
+      },
+
+      // Client selection
+      setSelectedClient: (client: string) => {
+        set({ selectedClient: client });
       },
 
       // Comparison state actions
@@ -225,6 +235,7 @@ export const useFilterStore = create<FilterStore>()(
         selectedAppeals: state.selectedAppeals,
         selectedFunds: state.selectedFunds,
         frequency: state.frequency,
+        selectedClient: state.selectedClient,
         comparisons: state.comparisons
       }),
       onRehydrateStorage: () => (state, error) => {

@@ -57,7 +57,22 @@ class APICache {
   private generateCacheKey(url: string, options?: RequestInit): string {
     const method = options?.method || 'GET';
     const body = options?.body ? JSON.stringify(options.body) : '';
-    return `${method}:${url}:${body}`;
+
+    // Include client ID in cache key to prevent cross-client cache pollution
+    let clientId = 'default';
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('insights-filter-store');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          clientId = parsed.state?.selectedClient || 'default';
+        }
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+
+    return `${clientId}:${method}:${url}:${body}`;
   }
 
   private isExpired(entry: CacheEntry<any>): boolean {
@@ -307,6 +322,38 @@ class APICache {
     };
   }
 
+  // Clear cache for a specific client
+  public invalidateClient(clientId: string): void {
+    // Clear matching entries from memory cache
+    for (const [key] of this.memoryCache.entries()) {
+      if (key.startsWith(`${clientId}:`)) {
+        this.memoryCache.delete(key);
+      }
+    }
+
+    // Clear matching entries from localStorage
+    if (typeof window !== 'undefined') {
+      const keys = Object.keys(localStorage);
+      keys
+        .filter(key => key.startsWith(this.storagePrefix))
+        .forEach(key => {
+          try {
+            const stored = localStorage.getItem(key);
+            if (stored) {
+              const cacheKey = JSON.parse(stored);
+              // Check if the cache key starts with client ID
+              if (key.includes(`${clientId}:`)) {
+                localStorage.removeItem(key);
+              }
+            }
+          } catch (error) {
+            // Remove corrupted entries
+            localStorage.removeItem(key);
+          }
+        });
+    }
+  }
+
   // Pre-populate cache with static data (useful for frequently accessed APIs)
   public preload<T>(url: string, data: T, ttl?: number): void {
     const cacheKey = this.generateCacheKey(url);
@@ -347,6 +394,10 @@ export const getCacheStats = () => {
 
 export const preloadCache = <T>(url: string, data: T, ttl?: number) => {
   apiCache.preload(url, data, ttl);
+};
+
+export const invalidateClientCache = (clientId: string) => {
+  apiCache.invalidateClient(clientId);
 };
 
 export default apiCache;

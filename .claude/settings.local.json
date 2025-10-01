@@ -7,7 +7,8 @@
       "Bash(tree:*)",
       "Bash(npx tsc:*)",
       "Bash(xargs rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

@@ -5,10 +5,50 @@ function normalizeBase(base?: string): string {
   return base.endsWith('/') ? base.slice(0, -1) : base;
 }
 
-export function getPhpApiBase(): string {
+/**
+ * Get API base URL for the selected client
+ * This function should be called from client components only
+ */
+export function getPhpApiBase(clientId?: string): string {
+  // If no client specified, try to get from store (client-side only)
+  let selectedClient = clientId;
+
+  if (!selectedClient && typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('insights-filter-store');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        selectedClient = parsed.state?.selectedClient || 'mausa';
+      }
+    } catch {
+      selectedClient = 'mausa';
+    }
+  }
+
+  // Map client IDs to their API URLs (must be explicit for Next.js env vars)
+  const clientUrls: Record<string, string | undefined> = {
+    'mausa': process.env.NEXT_PUBLIC_API_URL_MAUSA,
+    'amoud': process.env.NEXT_PUBLIC_API_URL_AMOUD,
+  };
+
+  const clientUrl = clientUrls[selectedClient || 'mausa'];
+
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    console.log('📡 getPhpApiBase:', {
+      selectedClient,
+      clientUrl,
+      allUrls: clientUrls,
+      fallback: process.env.NEXT_PUBLIC_PHP_API_BASE_URL
+    });
+  }
+
+  if (clientUrl) {
+    return normalizeBase(clientUrl);
+  }
+
+  // Fallback to default
   const fromEnv = normalizeBase(process.env.NEXT_PUBLIC_PHP_API_BASE_URL);
-  // Default to '/php-api' when no env is provided so local setups that
-  // serve PHP from this repo's php-api folder work out of the box.
   return fromEnv || '/php-api';
 }
 
