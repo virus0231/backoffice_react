@@ -79,3 +79,16 @@ export function buildAnalyticsUrl(kind: string, searchParams: URLSearchParams): 
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildRecurringPlansUrl(metric: string, searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    const sp = new URLSearchParams(searchParams);
+    sp.set('metric', metric);
+    return `/recurring-plans.php?${sp.toString()}`;
+  }
+  const url = new URL(`${base}/recurring-plans.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  url.searchParams.set('metric', metric);
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}

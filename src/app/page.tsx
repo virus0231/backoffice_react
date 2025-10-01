@@ -1,5 +1,6 @@
 import FilterBar from "@/components/filters/FilterBar";
 import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashboard";
+import RecurringPlansDashboard from "@/components/dashboard/RecurringPlansDashboard";
 import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
 import GenericBarChart from "@/components/charts/GenericBarChart";
 import DonutChart from "@/components/charts/DonutChart";
@@ -7,18 +8,6 @@ import HeatmapGrid from "@/components/charts/HeatmapGrid";
 
 export default function DashboardPage() {
   // Mock data (replace with API wiring later)
-  const performanceTrend = [
-    { date: "2025-01-01", current: 22000, comparison: 20000 },
-    { date: "2025-02-01", current: 26000, comparison: 21000 },
-    { date: "2025-03-01", current: 24000, comparison: 23000 },
-    { date: "2025-04-01", current: 30000, comparison: 24000 },
-    { date: "2025-05-01", current: 28000, comparison: 25000 },
-    { date: "2025-06-01", current: 32000, comparison: 26000 },
-    { date: "2025-07-01", current: 34000, comparison: 27000 },
-    { date: "2025-08-01", current: 36000, comparison: 28000 },
-    { date: "2025-09-01", current: 38000, comparison: 30000 },
-  ];
-
   const mrrTrend = [
     { date: "2025-04-01", current: 12000, comparison: 10000 },
     { date: "2025-05-01", current: 13000, comparison: 10500 },
@@ -26,13 +15,6 @@ export default function DashboardPage() {
     { date: "2025-07-01", current: 15500, comparison: 12000 },
     { date: "2025-08-01", current: 16500, comparison: 12500 },
     { date: "2025-09-01", current: 18000, comparison: 13000 },
-  ];
-
-  const recurringPlans = [
-    { plan: "Monthly", count: 640 },
-    { plan: "Quarterly", count: 120 },
-    { plan: "Annual", count: 85 },
-    { plan: "Weekly", count: 40 },
   ];
 
   const retentionCohort = [
@@ -131,76 +113,12 @@ export default function DashboardPage() {
           <PrimaryRevenueDashboard />
         </section>
 
-        {/* Performance Section */}
-        <section
-          id="performance"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Performance</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                All donations
-              </button>
-            </div>
-          </div>
-          {/* Metric tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">$38,000</div>
-              <div className="text-sm text-gray-600">Total raised</div>
-              <div className="text-xs text-green-600 mt-1">
-                +12% from previous period
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">1,245</div>
-              <div className="text-sm text-gray-600">Donations</div>
-              <div className="text-xs text-green-600 mt-1">
-                +5% from previous period
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">$31</div>
-              <div className="text-sm text-gray-600">Average</div>
-              <div className="text-xs text-green-600 mt-1">
-                +2% from previous period
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">3.2%</div>
-              <div className="text-sm text-gray-600">Conversion rate</div>
-              <div className="text-xs text-green-600 mt-1">
-                +0.3% from previous period
-              </div>
-            </div>
-          </div>
-          <AreaOverlayChart data={performanceTrend} granularity="weekly" />
-        </section>
-
         {/* Recurring Plans Section */}
         <section
           id="recurring-plans"
           className="bg-white rounded-lg border border-gray-200 p-6"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Recurring plans
-            </h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={recurringPlans}
-            xKey="plan"
-            ySeries={[{ key: "count", name: "Plans", color: "#2563eb" }]}
-          />
+          <RecurringPlansDashboard />
         </section>
 
         {/* Recurring Revenue Section */}

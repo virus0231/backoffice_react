@@ -228,17 +228,14 @@ export default function PrimaryRevenueDashboard() {
     <div className="space-y-6">
       {/* Chart Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Left side - Chart specific controls */}
+        {/* Left side - Range Status Indicator */}
         <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker
-            value={effectiveDateRange}
-            onChange={(range) => setLocalDateRange(range)}
-          />
-          <ComparisonDatePicker
-            value={comparisonRange}
-            onChange={setComparisonRange}
-            mainDateRange={effectiveDateRange}
-          />
+          {/* Range Status Indicator */}
+          {localDateRange ? (
+            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">Custom Range</span>
+          ) : (
+            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">Global Range</span>
+          )}
           {/* Reset to Global button */}
           {localDateRange && (
             <button
@@ -249,36 +246,41 @@ export default function PrimaryRevenueDashboard() {
               Reset
             </button>
           )}
-          {/* Range Status Indicator */}
-          {localDateRange ? (
-            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">Custom Range</span>
-          ) : (
-            <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full font-medium">Global Range</span>
-          )}
         </div>
 
-        {/* Right side - Granularity */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setGranularity('daily')}
-            className={`px-3 py-1.5 text-sm rounded-md font-medium transition-all ${
-              granularity === 'daily'
-                ? 'bg-white text-blue-700 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Daily
-          </button>
-          <button
-            onClick={() => setGranularity('weekly')}
-            className={`px-3 py-1.5 text-sm rounded-md font-medium transition-all ${
-              granularity === 'weekly'
-                ? 'bg-white text-blue-700 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Weekly
-          </button>
+        {/* Right side - Date pickers and Granularity */}
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker
+            value={effectiveDateRange}
+            onChange={(range) => setLocalDateRange(range)}
+          />
+          <ComparisonDatePicker
+            value={comparisonRange}
+            onChange={setComparisonRange}
+            mainDateRange={effectiveDateRange}
+          />
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setGranularity('daily')}
+              className={`px-3 py-1.5 text-sm rounded-md font-medium transition-all ${
+                granularity === 'daily'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Daily
+            </button>
+            <button
+              onClick={() => setGranularity('weekly')}
+              className={`px-3 py-1.5 text-sm rounded-md font-medium transition-all ${
+                granularity === 'weekly'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Weekly
+            </button>
+          </div>
         </div>
       </div>
 

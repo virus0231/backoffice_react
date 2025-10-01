@@ -14,7 +14,6 @@ const inter = Inter({
 
 const chartSections = [
   { id: "raised", label: "Raised", icon: "📊" },
-  { id: "performance", label: "Performance", icon: "📈" },
   { id: "recurring-plans", label: "Recurring plans", icon: "🔄" },
   { id: "recurring-revenue", label: "Recurring revenue", icon: "💰" },
   { id: "retention", label: "Retention", icon: "🎯" },
