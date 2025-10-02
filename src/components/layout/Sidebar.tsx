@@ -95,8 +95,15 @@ export default function Sidebar() {
         {/* Navigation */}
         <nav className='flex-1 px-4 py-4 space-y-1 overflow-y-auto'>
           {navigation.map((item) => {
-            const isActive = pathname === item.href ||
-                           (item.href !== '/' && pathname?.startsWith(item.href));
+            // More robust active state logic
+            let isActive = false;
+            if (pathname) {
+              if (item.href === '/') {
+                isActive = pathname === '/';
+              } else {
+                isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              }
+            }
 
             return (
               <Link
@@ -105,8 +112,8 @@ export default function Sidebar() {
                 className={clsx(
                   'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
                   isActive
-                    ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-500'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 )}
               >
                 <div
