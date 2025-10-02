@@ -37,15 +37,6 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
 
   const selectedClientData = CLIENTS.find(c => c.id === selectedClient) || CLIENTS[0]!;
 
-  // Debug: Log environment variables and selected client
-  useEffect(() => {
-    console.log('🔧 ClientSwitcher Debug:');
-    console.log('Selected Client:', selectedClient);
-    console.log('NEXT_PUBLIC_API_URL_MAUSA:', process.env.NEXT_PUBLIC_API_URL_MAUSA);
-    console.log('NEXT_PUBLIC_API_URL_AMOUD:', process.env.NEXT_PUBLIC_API_URL_AMOUD);
-    console.log('Selected Client Data:', selectedClientData);
-  }, [selectedClient, selectedClientData]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {

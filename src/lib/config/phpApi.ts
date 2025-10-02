@@ -33,16 +33,6 @@ export function getPhpApiBase(clientId?: string): string {
 
   const clientUrl = clientUrls[selectedClient || 'mausa'];
 
-  // Debug logging
-  if (typeof window !== 'undefined') {
-    console.log('📡 getPhpApiBase:', {
-      selectedClient,
-      clientUrl,
-      allUrls: clientUrls,
-      fallback: process.env.NEXT_PUBLIC_PHP_API_BASE_URL
-    });
-  }
-
   if (clientUrl) {
     return normalizeBase(clientUrl);
   }
