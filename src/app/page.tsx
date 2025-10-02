@@ -1,6 +1,7 @@
 import FilterBar from "@/components/filters/FilterBar";
 import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashboard";
 import RecurringPlansDashboard from "@/components/dashboard/RecurringPlansDashboard";
+import RecurringRevenueDashboard from "@/components/dashboard/RecurringRevenueDashboard";
 import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
 import GenericBarChart from "@/components/charts/GenericBarChart";
 import DonutChart from "@/components/charts/DonutChart";
@@ -126,62 +127,7 @@ export default function DashboardPage() {
           id="recurring-revenue"
           className="bg-white rounded-lg border border-gray-200 p-6"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Recurring revenue
-            </h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                All donations
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">
-                Monthly recurring revenue
-              </div>
-              <div className="text-3xl font-bold text-gray-900">$18,000</div>
-              <div className="text-sm text-gray-600 mt-1">
-                1,042 active recurring donations
-              </div>
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">
-                Net new MRR
-              </div>
-              <div className="text-3xl font-bold text-gray-900">$1,250</div>
-              <div className="text-sm text-gray-600 mt-1">
-                Monthly change in recurring revenue
-              </div>
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-gray-900 mb-2">
-                Retention rate
-              </div>
-              <div className="text-3xl font-bold text-gray-900">92%</div>
-              <div className="text-sm text-gray-600 mt-1">
-                Percentage of recurring donors retained
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AreaOverlayChart data={mrrTrend} granularity="weekly" />
-            <div className="chart-container p-3">
-              <div className="chart-header">
-                <h3 className="chart-title">Retention Cohorts</h3>
-              </div>
-              <HeatmapGrid
-                data={retentionCohort}
-                rowLabels={["Apr", "May", "Jun", "Jul", "Aug", "Sep"]}
-                colLabels={["M0", "M1", "M2", "M3", "M4", "M5"]}
-                height={260}
-              />
-            </div>
-          </div>
+          <RecurringRevenueDashboard />
         </section>
 
         {/* Retention Section */}

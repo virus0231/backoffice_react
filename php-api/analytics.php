@@ -130,10 +130,28 @@ try {
   error_log('[analytics] filters: appeals=' . (is_array($appealIds) ? count($appealIds) : 0) . ', funds=' . (is_array($fundIds) ? count($fundIds) : 0));
   error_log('[analytics] filterClause: ' . $filterClause);
 
-  $baseWhere = "WHERE t.status IN ('Completed','pending')\n                 AND t.date >= :start_dt\n                 AND t.date <= :end_dt_incl\n                 {$freqCondMain}\n                 AND EXISTS (\n                   SELECT 1\n                   FROM pw_transaction_details d\n                   JOIN pw_appeal a   ON a.id = d.appeal_id\n                   JOIN pw_fundlist f ON f.id = d.fundlist_id\n                   WHERE d.TID = t.id\n                     {$filterClause}\n                     {$freqCondSubquery}\n                 )";
+  $baseWhere = "WHERE t.status IN ('Completed','pending')
+    AND t.date >= :start_dt
+    AND t.date <= :end_dt_incl
+    {$freqCondMain}
+    AND EXISTS (
+      SELECT 1
+      FROM pw_transaction_details d
+      JOIN pw_appeal a ON a.id = d.appeal_id
+      JOIN pw_fundlist f ON f.id = d.fundlist_id
+      WHERE d.TID = t.id
+      {$filterClause}
+      {$freqCondSubquery}
+    )";
 
   // Aggregate query
-  $sqlAgg = "SELECT\n               COALESCE(SUM(t.totalamount), 0) AS totalAmount,\n               COUNT(DISTINCT t.id) AS donationCount,\n               COALESCE(AVG(t.totalamount), 0) AS averageDonation\n             FROM pw_transactions t\n             {$baseWhere}";
+  $sqlAgg = "
+    SELECT
+      SUM(t.totalamount) AS totalAmount,
+      COUNT(DISTINCT t.id) AS donationCount
+    FROM pw_transactions t
+    {$baseWhere}
+  ";
 
   // Log query for debugging
   error_log("SQL Aggregate: " . $sqlAgg);
@@ -147,11 +165,31 @@ try {
   error_log('[analytics] agg done');
   $agg = $stmtAgg->fetch() ?: ['totalAmount' => 0, 'donationCount' => 0, 'averageDonation' => 0];
 
-  // Trend query - use derived table to satisfy ONLY_FULL_GROUP_BY
+  // Trend query - simpler, cleaner approach
   if ($granularity === 'weekly') {
-    $sqlTrend = "SELECT\n                  DATE_FORMAT(MIN(day_date), '%Y-%u') AS period,\n                  MIN(day_date) AS day,\n                  SUM(amount) AS amount,\n                  SUM(cnt) AS count\n                FROM (\n                  SELECT\n                    YEARWEEK(t.date, 3) AS week_num,\n                    DATE(t.date) AS day_date,\n                    t.totalamount AS amount,\n                    1 AS cnt\n                  FROM pw_transactions t\n                  {$baseWhere}\n                ) AS daily_data\n                GROUP BY week_num\n                ORDER BY day ASC";
+    $sqlTrend = "
+      SELECT
+        YEARWEEK(t.date, 3) AS week_num,
+        DATE_FORMAT(MIN(t.date), '%Y-%u') AS period,
+        MIN(DATE(t.date)) AS day,
+        SUM(t.totalamount) AS amount,
+        COUNT(DISTINCT t.id) AS count
+      FROM pw_transactions t
+      {$baseWhere}
+      GROUP BY week_num
+      ORDER BY day ASC
+    ";
   } else {
-    $sqlTrend = "SELECT\n                  DATE_FORMAT(day_date, '%Y-%m-%d') AS period,\n                  day_date AS day,\n                  SUM(amount) AS amount,\n                  SUM(cnt) AS count\n                FROM (\n                  SELECT\n                    DATE(t.date) AS day_date,\n                    t.totalamount AS amount,\n                    1 AS cnt\n                  FROM pw_transactions t\n                  {$baseWhere}\n                ) AS daily_data\n                GROUP BY day_date\n                ORDER BY day ASC";
+    $sqlTrend = "
+      SELECT
+        DATE(t.date) AS day,
+        SUM(t.totalamount) AS amount,
+        COUNT(DISTINCT t.id) AS count
+      FROM pw_transactions t
+      {$baseWhere}
+      GROUP BY DATE(t.date)
+      ORDER BY day ASC
+    ";
   }
 
   error_log('[analytics] preparing trend');
@@ -162,52 +200,14 @@ try {
   error_log('[analytics] trend done');
   $trend = $stmtTrend->fetchAll();
 
-  // Convert to associative array keyed by period for easy lookup
-  $trendMap = [];
+  // Convert trend data to proper format
+  $trendData = [];
   foreach ($trend as $r) {
-    $trendMap[$r['period']] = [
-      'period' => $r['period'],
+    $trendData[] = [
+      'period' => $granularity === 'weekly' ? $r['period'] : $r['day'],
       'amount' => (float)($r['amount'] ?? 0),
       'count' => (int)($r['count'] ?? 0),
     ];
-  }
-
-  // Fill in missing dates with zero values
-  $trendData = [];
-  if ($granularity === 'weekly') {
-    // For weekly, iterate through weeks
-    $current = parse_date_ymd($startDate);
-    $end = parse_date_ymd($endDate);
-    while ($current <= $end) {
-      $weekNum = $current->format('Y-W');
-      if (!isset($trendMap[$weekNum])) {
-        $trendData[] = [
-          'period' => $weekNum,
-          'amount' => 0.0,
-          'count' => 0,
-        ];
-      } else {
-        $trendData[] = $trendMap[$weekNum];
-      }
-      $current->modify('+1 week');
-    }
-  } else {
-    // For daily, iterate through each day
-    $current = parse_date_ymd($startDate);
-    $end = parse_date_ymd($endDate);
-    while ($current <= $end) {
-      $dateStr = $current->format('Y-m-d');
-      if (!isset($trendMap[$dateStr])) {
-        $trendData[] = [
-          'period' => $dateStr,
-          'amount' => 0.0,
-          'count' => 0,
-        ];
-      } else {
-        $trendData[] = $trendMap[$dateStr];
-      }
-      $current->modify('+1 day');
-    }
   }
 
   error_log('[analytics] sending response');

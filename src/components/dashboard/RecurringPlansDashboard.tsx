@@ -46,10 +46,12 @@ export default function RecurringPlansDashboard() {
   const newPlansData = granularity === 'daily' ? plansData.newPlans.daily : plansData.newPlans.weekly;
   const canceledPlansData = granularity === 'daily' ? plansData.canceledPlans.daily : plansData.canceledPlans.weekly;
 
-  // Calculate totals for display
-  const activePlansTotal = activePlansData.length > 0 ? (activePlansData[activePlansData.length - 1]?.value ?? 0) : 0;
-  const newPlansTotal = newPlansData.reduce((sum, point) => sum + point.value, 0);
-  const canceledPlansTotal = canceledPlansData.reduce((sum, point) => sum + point.value, 0);
+  // Calculate totals for display - always use daily data for accurate totals
+  const activePlansTotal = plansData.activePlans.daily.length > 0
+    ? (plansData.activePlans.daily[plansData.activePlans.daily.length - 1]?.value ?? 0)
+    : 0;
+  const newPlansTotal = plansData.newPlans.daily.reduce((sum, point) => sum + point.value, 0);
+  const canceledPlansTotal = plansData.canceledPlans.daily.reduce((sum, point) => sum + point.value, 0);
 
   const isLoading = plansData.isLoading;
   const hasError = plansData.hasError;
@@ -138,7 +140,7 @@ export default function RecurringPlansDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-gray-700">Active plans</h3>
-                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="Total number of active recurring donation plans">
+                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="Active Plans: Total number of active recurring donation subscriptions at the end of the selected period. This represents all ongoing monthly, quarterly, or annual recurring donations that are currently active and processing payments.">
                     <span className="text-xs text-gray-600">?</span>
                   </div>
                 </div>
@@ -161,7 +163,7 @@ export default function RecurringPlansDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-gray-700">New plans</h3>
-                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="Number of new recurring donation plans created">
+                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="New Plans: Number of new recurring donation subscriptions created during the selected period. This tracks donors who signed up for monthly, quarterly, or annual recurring donations. Use this to measure subscription growth and acquisition success.">
                     <span className="text-xs text-gray-600">?</span>
                   </div>
                 </div>
@@ -184,7 +186,7 @@ export default function RecurringPlansDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-gray-700">Canceled plans</h3>
-                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="Number of recurring donation plans canceled">
+                  <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors" title="Canceled Plans: Number of recurring donation subscriptions that were canceled during the selected period. This includes both donor-initiated cancellations and payment failures. Monitor this metric to identify retention issues and trends. Note: Appeal and fund filters do not apply to this metric.">
                     <span className="text-xs text-gray-600">?</span>
                   </div>
                 </div>

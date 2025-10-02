@@ -463,9 +463,9 @@ export default function PrimaryRevenueDashboard() {
               <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors">
                 <span className="text-xs text-gray-600">?</span>
               </div>
-              <div className="absolute left-0 top-6 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-lg">
+              <div className="absolute left-0 top-6 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-lg">
                 <div className="font-medium mb-1">First Installments</div>
-                <p className="text-gray-300">The initial payment of recurring donations. This represents new recurring donors who have made their first contribution.</p>
+                <p className="text-gray-300">The initial payment from new recurring donation subscriptions. This tracks revenue from donors who just signed up for monthly, quarterly, or annual recurring giving and made their first payment during the selected period. This metric helps measure new recurring donor acquisition success and the immediate revenue impact of subscription campaigns.</p>
                 <div className="absolute -top-1 left-2 w-2 h-2 bg-gray-900 transform rotate-45"></div>
               </div>
             </div>
@@ -592,6 +592,16 @@ export default function PrimaryRevenueDashboard() {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium text-gray-900">One-time donations</h3>
+            <div className="relative group">
+              <div className="w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center cursor-help transition-colors">
+                <span className="text-xs text-gray-600">?</span>
+              </div>
+              <div className="absolute left-0 top-6 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-lg">
+                <div className="font-medium mb-1">One-time Donations</div>
+                <p className="text-gray-300">Revenue from single, non-recurring donations made during the selected period. This includes all one-time contributions that are not part of a recurring subscription or installment plan. One-time donations are often driven by campaigns, events, appeals, or spontaneous giving, and complement your recurring revenue stream.</p>
+                <div className="absolute -top-1 left-2 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+              </div>
+            </div>
             {comparisonRange && (
               <span className="text-xs text-gray-500 ml-auto">Comparable period</span>
             )}

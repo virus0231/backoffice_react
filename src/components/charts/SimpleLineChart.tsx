@@ -66,7 +66,7 @@ export default function SimpleLineChart({
                 <div className="text-xs text-gray-700 mb-1">
                   {data.comparisonDate ? formatDate(data.comparisonDate) : formatDate(data.date)}
                 </div>
-                <div className="text-lg font-bold text-purple-600">{data.comparisonValue.toLocaleString()}</div>
+                <div className="text-lg font-bold text-gray-500">{data.comparisonValue.toLocaleString()}</div>
               </div>
 
               {/* Change Percentage */}
@@ -97,8 +97,8 @@ export default function SimpleLineChart({
             <stop offset="100%" stopColor={color} stopOpacity={0.05} />
           </linearGradient>
           <linearGradient id={`gradient-comparison`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a855f7" stopOpacity={0.2} />
-            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#9ca3af" stopOpacity={0.15} />
+            <stop offset="100%" stopColor="#9ca3af" stopOpacity={0.02} />
           </linearGradient>
         </defs>
         {showAxes && (
@@ -129,9 +129,9 @@ export default function SimpleLineChart({
           <Area
             type="monotone"
             dataKey="comparisonValue"
-            stroke="#a855f7"
-            strokeWidth={2}
-            strokeDasharray="5 5"
+            stroke="#9ca3af"
+            strokeWidth={1.5}
+            strokeOpacity={0.5}
             fill={`url(#gradient-comparison)`}
             dot={false}
           />

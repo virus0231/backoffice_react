@@ -82,3 +82,16 @@ export function buildRecurringPlansUrl(metric: string, searchParams: URLSearchPa
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildRecurringRevenueUrl(metric: string, searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    const sp = new URLSearchParams(searchParams);
+    sp.set('metric', metric);
+    return `/recurring-revenue.php?${sp.toString()}`;
+  }
+  const url = new URL(`${base}/recurring-revenue.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  url.searchParams.set('metric', metric);
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}
