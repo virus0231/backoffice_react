@@ -2,6 +2,7 @@ import FilterBar from "@/components/filters/FilterBar";
 import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashboard";
 import RecurringPlansDashboard from "@/components/dashboard/RecurringPlansDashboard";
 import RecurringRevenueDashboard from "@/components/dashboard/RecurringRevenueDashboard";
+import FrequenciesDashboard from "@/components/dashboard/FrequenciesDashboard";
 import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
 import GenericBarChart from "@/components/charts/GenericBarChart";
 import DonutChart from "@/components/charts/DonutChart";
@@ -221,23 +222,8 @@ export default function DashboardPage() {
         </section>
 
         {/* Frequencies Section */}
-        <section
-          id="frequencies"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Frequencies</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={frequenciesData}
-            xKey="label"
-            ySeries={[{ key: "value", name: "Amount", color: "#2563eb" }]}
-          />
+        <section id="frequencies">
+          <FrequenciesDashboard />
         </section>
 
         {/* Payment Methods Section */}

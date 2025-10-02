@@ -250,10 +250,8 @@ export function useRecurringPlansData(
       isMounted = false;
     };
   }, [
-    dateRange.startDate,
-    dateRange.endDate,
-    comparisonRange?.startDate,
-    comparisonRange?.endDate,
+    dateRange,
+    comparisonRange,
     appealIds,
     fundIds
   ]);
