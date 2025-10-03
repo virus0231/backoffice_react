@@ -378,7 +378,7 @@ export default function PrimaryRevenueDashboard() {
             </div>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" key={`main-chart-${totalRaised.chartData.length}-${granularity}`}>
             <AreaChart
               data={totalRaised.chartData}
               margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
@@ -545,7 +545,7 @@ export default function PrimaryRevenueDashboard() {
                 <p className="text-xs text-gray-500">No data</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" key={`first-installments-${firstInstallments.chartData.length}-${granularity}`}>
                 <AreaChart data={firstInstallments.chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="firstInstallmentsGradient" x1="0" y1="0" x2="0" y2="1">
@@ -678,7 +678,7 @@ export default function PrimaryRevenueDashboard() {
                 <p className="text-xs text-gray-500">No data</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" key={`one-time-${oneTime.chartData.length}-${granularity}`}>
                 <AreaChart data={oneTime.chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="oneTimeGradient" x1="0" y1="0" x2="0" y2="1">

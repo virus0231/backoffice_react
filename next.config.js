@@ -1,10 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Production optimization for cPanel hosting
-  // output: 'standalone', // Standalone build for cPanel compatibility
-  output: 'export', // Static HTML export for shared hosting
-  basePath: '/insights', // Base path for the application
-  assetPrefix: '/insights/', // Asset prefix for static files
+  output: 'standalone', // Standalone build for cPanel compatibility
+  // output: 'export', // Static HTML export for shared hosting
+  // basePath: '/insights', // Base path for the application
+  // assetPrefix: '/insights/', // Asset prefix for static files
 
   // Image optimization settings for shared hosting
   images: {

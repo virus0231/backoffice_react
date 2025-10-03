@@ -3,6 +3,12 @@ import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashbo
 import RecurringPlansDashboard from "@/components/dashboard/RecurringPlansDashboard";
 import RecurringRevenueDashboard from "@/components/dashboard/RecurringRevenueDashboard";
 import FrequenciesDashboard from "@/components/dashboard/FrequenciesDashboard";
+import PaymentMethodsDashboard from "@/components/dashboard/PaymentMethodsDashboard";
+import RetentionDashboard from "@/components/dashboard/RetentionDashboard";
+import DayAndTimeDashboard from "@/components/dashboard/DayAndTimeDashboard";
+import FundsDashboard from "@/components/dashboard/FundsDashboard";
+import CountriesDashboard from "@/components/dashboard/CountriesDashboard";
+import TributesDashboard from "@/components/dashboard/TributesDashboard";
 import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
 import GenericBarChart from "@/components/charts/GenericBarChart";
 import DonutChart from "@/components/charts/DonutChart";
@@ -132,93 +138,13 @@ export default function DashboardPage() {
         </section>
 
         {/* Retention Section */}
-        <section
-          id="retention"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Retention</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                All time
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <div className="text-lg font-semibold text-gray-900 mb-4">
-                Audience breakdown
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">New recurring donors</span>
-                  <span className="font-medium">324</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">
-                    Returning recurring donors
-                  </span>
-                  <span className="font-medium">718</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Cancelled subscriptions</span>
-                  <span className="font-medium">57</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="text-lg font-semibold text-gray-900 mb-4">
-                Geographic distribution
-              </div>
-              <HeatmapGrid
-                data={Array.from({ length: 5 }, () =>
-                  Array.from({ length: 10 }, () =>
-                    Math.floor(Math.random() * 6)
-                  )
-                )}
-                rowLabels={["NA", "EU", "AS", "SA", "AF"]}
-                colLabels={["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]}
-                height={200}
-              />
-            </div>
-          </div>
+        <section id="retention">
+          <RetentionDashboard />
         </section>
 
         {/* Day and Time Section */}
-        <section
-          id="day-and-time"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Day and time
-            </h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 365 days
-              </button>
-            </div>
-          </div>
-          <HeatmapGrid
-            data={dayTimeGrid}
-            rowLabels={["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]}
-            colLabels={Array.from({ length: 24 }, (_, i) => `${i}:00`)}
-            height={240}
-          />
-          <div className="flex items-center gap-2 text-sm text-gray-600 mt-3">
-            <span>Less</span>
-            <div className="flex gap-1">
-              <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-100 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-300 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-700 rounded-sm"></div>
-            </div>
-            <span>More</span>
-          </div>
+        <section id="day-and-time">
+          <DayAndTimeDashboard />
         </section>
 
         {/* Frequencies Section */}
@@ -227,154 +153,23 @@ export default function DashboardPage() {
         </section>
 
         {/* Payment Methods Section */}
-        <section
-          id="payment-methods"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Payment methods
-            </h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <DonutChart data={paymentMethods} />
+        <section id="payment-methods">
+          <PaymentMethodsDashboard />
         </section>
 
-        {/* Designations Section */}
-        <section
-          id="designations"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Designations
-            </h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={designationsData}
-            xKey="designation"
-            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
-          />
+        {/* Funds Section */}
+        <section id="funds">
+          <FundsDashboard />
         </section>
 
         {/* Countries Section */}
-        <section
-          id="countries"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Countries</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={countriesData}
-            xKey="country"
-            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
-            horizontal
-          />
+        <section id="countries">
+          <CountriesDashboard />
         </section>
 
         {/* Tributes Section */}
-        <section
-          id="tributes"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Tributes</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={tributesData}
-            xKey="type"
-            ySeries={[{ key: "count", name: "Count", color: "#2563eb" }]}
-          />
-        </section>
-
-        {/* Fundraisers Section */}
-        <section
-          id="fundraisers"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Fundraisers</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={fundraisersData}
-            xKey="name"
-            ySeries={[{ key: "amount", name: "Raised", color: "#2563eb" }]}
-          />
-        </section>
-
-        {/* URL Section */}
-        <section
-          id="url"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">URL</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={urlData}
-            xKey="path"
-            ySeries={[{ key: "visits", name: "Visits", color: "#2563eb" }]}
-            horizontal
-          />
-        </section>
-
-        {/* UTM Section */}
-        <section
-          id="utm"
-          className="bg-white rounded-lg border border-gray-200 p-6"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">UTM</h2>
-            <div className="flex gap-2">
-              <button className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded">
-                Last 30 days
-              </button>
-            </div>
-          </div>
-          <GenericBarChart
-            data={utmData}
-            xKey="source"
-            ySeries={[
-              { key: "email", name: "Email", color: "#2563eb", stackId: "utm" },
-              {
-                key: "social",
-                name: "Social",
-                color: "#16a34a",
-                stackId: "utm",
-              },
-              { key: "paid", name: "Paid", color: "#f59e0b", stackId: "utm" },
-            ]}
-          />
+        <section id="tributes">
+          <TributesDashboard />
         </section>
       </div>
     </div>

@@ -108,3 +108,16 @@ export function buildFrequenciesUrl(metric: string, searchParams: URLSearchParam
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildPaymentMethodsUrl(metric: string, searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    const sp = new URLSearchParams(searchParams);
+    sp.set('metric', metric);
+    return `/payment-methods.php?${sp.toString()}`;
+  }
+  const url = new URL(`${base}/payment-methods.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  url.searchParams.set('metric', metric);
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}

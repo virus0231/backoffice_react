@@ -4,29 +4,30 @@ import { useState } from "react";
 import DateRangePicker from "@/components/filters/DateRangePicker";
 import { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
-import { useFrequenciesData } from "@/hooks/useFrequenciesData";
+import { usePaymentMethodsData } from "@/hooks/usePaymentMethodsData";
 import LoadingState from "@/components/common/LoadingState";
 import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Frequency types with their colors (matching database values)
-const FREQUENCIES = [
-  { key: 'monthly', label: 'Monthly', color: '#8b5cf6' },
-  { key: 'one_time', label: 'One-time', color: '#6366f1' },
-  { key: 'yearly', label: 'Yearly', color: '#ec4899' },
-  { key: 'weekly', label: 'Weekly', color: '#14b8a6' },
-  { key: 'daily', label: 'Daily', color: '#06b6d4' },
-];
+// Payment methods with their colors - mapped to database values
+const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string }> = {
+  'cc': { label: 'Credit Card', color: '#3b82f6' },
+  'applepay': { label: 'Apple Pay', color: '#8b5cf6' },
+  'gpay': { label: 'Google Pay', color: '#06b6d4' },
+  'PAYPAL': { label: 'PayPal', color: '#ec4899' },
+  'Stripe': { label: 'Stripe', color: '#10b981' },
+  'paypal_ipn': { label: 'PayPal IPN', color: '#f59e0b' },
+};
 
-interface FrequencyData {
-  frequency: string;
-  donations: number;
-  averageAmount: number;
-  medianAmount: number;
-  totalRaised: number;
-}
+const PAYMENT_METHODS = Object.entries(PAYMENT_METHOD_CONFIG).map(([key, cfg]) => ({
+  key,
+  label: cfg.label,
+  color: cfg.color,
+}));
 
-export default function FrequenciesDashboard() {
+// No mock data; using real API data via hook
+
+export default function PaymentMethodsDashboard() {
   // Get global filter context
   const {
     dateRange: globalDateRange,
@@ -46,22 +47,17 @@ export default function FrequenciesDashboard() {
   const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
   const fundIds = selectedFunds.length > 0 ? selectedFunds.map(f => f.id).join(',') : null;
 
-  const {
-    chartData,
-    tableData,
-    isLoading,
-    hasError,
-    error
-  } = useFrequenciesData(
+  const { chartData, tableData, isLoading, hasError, error } = usePaymentMethodsData(
     effectiveDateRange,
+    granularity,
     appealIds,
     fundIds
   );
 
-  // Calculate legend totals
-  const legendTotals = FREQUENCIES.map(freq => {
-    const total = tableData.find(d => d.frequency.toLowerCase() === freq.label.toLowerCase())?.totalRaised || 0;
-    return { ...freq, total };
+  // Calculate legend totals from table data
+  const legendTotals = PAYMENT_METHODS.map((method) => {
+    const total = tableData.find(d => d.paymentMethod === method.key)?.totalRaised || 0;
+    return { ...method, total };
   });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -91,7 +87,7 @@ export default function FrequenciesDashboard() {
   if (!isHydrated || isLoading) {
     return (
       <div className="space-y-6">
-        <LoadingState size="lg" message="Loading frequencies data..." fullHeight />
+        <LoadingState size="lg" message="Loading payment methods data..." fullHeight />
       </div>
     );
   }
@@ -101,9 +97,9 @@ export default function FrequenciesDashboard() {
     return (
       <div className="space-y-6">
         <ChartErrorFallback
-          error={new Error(error || "Failed to load frequencies data")}
+          error={new Error(error || "Failed to load payment methods data")}
           resetError={() => window.location.reload()}
-          title="Failed to load frequencies data"
+          title="Failed to load payment methods data"
         />
       </div>
     );
@@ -111,45 +107,40 @@ export default function FrequenciesDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Frequencies</h2>
-          <p className="text-sm text-gray-600 mt-1">Donations shown by frequency.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <DateRangePicker
-            value={effectiveDateRange}
-            onChange={(range) => setLocalDateRange(range)}
-          />
-          <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
-            <button
-              onClick={() => setGranularity("daily")}
-              className={`px-3 py-1 text-xs rounded transition-all ${
-                granularity === "daily"
-                  ? "bg-white text-gray-900 shadow-sm font-medium"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Daily
-            </button>
-            <button
-              onClick={() => setGranularity("weekly")}
-              className={`px-3 py-1 text-xs rounded transition-all ${
-                granularity === "weekly"
-                  ? "bg-white text-gray-900 shadow-sm font-medium"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Weekly
-            </button>
+      {/* Chart Card */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Payment methods</h2>
+          <div className="flex items-center gap-2">
+            <DateRangePicker
+              value={effectiveDateRange}
+              onChange={(range) => setLocalDateRange(range)}
+            />
+            <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+              <button
+                onClick={() => setGranularity("daily")}
+                className={`px-3 py-1 text-xs rounded transition-all ${
+                  granularity === "daily"
+                    ? "bg-white text-gray-900 shadow-sm font-medium"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setGranularity("weekly")}
+                className={`px-3 py-1 text-xs rounded transition-all ${
+                  granularity === "weekly"
+                    ? "bg-white text-gray-900 shadow-sm font-medium"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Weekly
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -168,25 +159,25 @@ export default function FrequenciesDashboard() {
               <Legend
                 content={() => (
                   <div className="flex flex-wrap gap-x-4 gap-y-2 mt-6 px-4">
-                    {legendTotals.map((freq) => (
-                      <div key={freq.key} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: freq.color }}></div>
-                        <span className="text-xs text-gray-700">{freq.label}</span>
-                        <span className="text-xs font-medium text-gray-900">${freq.total.toFixed(2)}</span>
+                    {legendTotals.map((method) => (
+                      <div key={method.key} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: method.color }}></div>
+                        <span className="text-xs text-gray-700">{method.label}</span>
+                        <span className="text-xs font-medium text-gray-900">${method.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     ))}
                   </div>
                 )}
               />
-              {FREQUENCIES.map((freq) => (
+              {PAYMENT_METHODS.map((method) => (
                 <Line
-                  key={freq.key}
+                  key={method.key}
                   type="monotone"
-                  dataKey={freq.key}
-                  stroke={freq.color}
+                  dataKey={method.key}
+                  stroke={method.color}
                   strokeWidth={2}
                   dot={false}
-                  name={freq.label}
+                  name={method.label}
                 />
               ))}
             </LineChart>
@@ -200,16 +191,16 @@ export default function FrequenciesDashboard() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Donation frequency
+                Payment method
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Donations
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Average amount
+                One-time median
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Median amount
+                Recurring median
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Total raised
@@ -218,23 +209,23 @@ export default function FrequenciesDashboard() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {tableData.map((row, index) => {
-              const freq = FREQUENCIES.find(f => f.label.toLowerCase() === row.frequency.toLowerCase());
+              const cfg = PAYMENT_METHOD_CONFIG[row.paymentMethod];
               return (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: freq?.color || '#gray' }}></div>
-                      <span className="text-sm text-gray-900">{row.frequency}</span>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg?.color || '#9ca3af' }}></div>
+                      <span className="text-sm text-gray-900">{cfg?.label || row.paymentMethod}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                     {row.donations}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${row.averageAmount.toFixed(2)}
+                    ${row.oneTimeMedian.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${row.medianAmount.toFixed(2)}
+                    ${row.recurringMedian.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                     ${row.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

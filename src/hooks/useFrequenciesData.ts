@@ -100,30 +100,40 @@ export function useFrequenciesData(
         if (isMounted) {
           // Normalize potential string numbers coming from the API
           const toNum = (v: unknown, fallback = 0): number => {
+            // Handle null/undefined
+            if (v === null || v === undefined) return fallback;
+
+            // Handle numbers
             if (typeof v === 'number') return Number.isFinite(v) ? v : fallback;
+
+            // Handle strings
             if (typeof v === 'string') {
-              const n = Number(v);
+              // Handle empty strings
+              if (v.trim() === '') return fallback;
+              const n = parseFloat(v);
               return Number.isFinite(n) ? n : fallback;
             }
-            const n = Number((v as any));
+
+            // Try to convert anything else
+            const n = Number(v);
             return Number.isFinite(n) ? n : fallback;
           };
 
           const normalizedChart = (chartResponse.data.chartData || []).map((d: any) => ({
-            date: d.date,
-            monthly: toNum(d.monthly),
-            one_time: toNum(d.one_time),
-            yearly: toNum(d.yearly),
-            weekly: toNum(d.weekly),
-            daily: toNum(d.daily),
+            date: String(d.date || ''),
+            monthly: toNum(d.monthly, 0),
+            one_time: toNum(d.one_time, 0),
+            yearly: toNum(d.yearly, 0),
+            weekly: toNum(d.weekly, 0),
+            daily: toNum(d.daily, 0),
           }));
 
           const normalizedTable = (tableResponse.data.tableData || []).map((r: any) => ({
-            frequency: r.frequency,
-            donations: Math.round(toNum(r.donations)),
-            averageAmount: toNum(r.averageAmount),
-            medianAmount: toNum(r.medianAmount),
-            totalRaised: toNum(r.totalRaised),
+            frequency: String(r.frequency || ''),
+            donations: Math.round(toNum(r.donations, 0)),
+            averageAmount: toNum(r.averageAmount, 0),
+            medianAmount: toNum(r.medianAmount, 0),
+            totalRaised: toNum(r.totalRaised, 0),
           }));
 
           setChartData(normalizedChart);
