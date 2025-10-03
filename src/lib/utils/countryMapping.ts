@@ -157,7 +157,7 @@ const COLORS = [
   '#3b82f6', '#10b981', '#ef4444', '#ec4899', '#f97316',
   '#eab308', '#06b6d4', '#8b5cf6', '#14b8a6', '#f59e0b',
   '#a855f7', '#6366f1', '#22c55e', '#84cc16', '#f43f5e',
-];
+] as const;
 
 export function getCountryColor(countryCode: string): string {
   // Simple hash function for consistent colors
@@ -165,5 +165,6 @@ export function getCountryColor(countryCode: string): string {
   for (let i = 0; i < countryCode.length; i++) {
     hash = countryCode.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return COLORS[Math.abs(hash) % COLORS.length];
+  const index = Math.abs(hash) % COLORS.length;
+  return COLORS[index]!;
 }

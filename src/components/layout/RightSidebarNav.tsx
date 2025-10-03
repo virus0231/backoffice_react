@@ -24,29 +24,29 @@ export default function RightSidebarNav() {
 
     // If near bottom of page, activate last section
     if (window.scrollY + windowHeight >= documentHeight - 100) {
-      setActiveSection(chartSections[chartSections.length - 1].id);
+      const last = chartSections.at(-1);
+      if (last) setActiveSection(last.id);
       return;
     }
 
     // Find the section currently in view
-    for (let i = chartSections.length - 1; i >= 0; i--) {
-      const section = chartSections[i];
+    for (const section of [...chartSections].reverse()) {
       const element = document.getElementById(section.id);
+      if (!element) continue;
 
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        const elementTop = window.scrollY + rect.top;
+      const rect = element.getBoundingClientRect();
+      const elementTop = window.scrollY + rect.top;
 
-        // Check if we've scrolled past this section's top
-        if (scrollPosition >= elementTop) {
-          setActiveSection(section.id);
-          return;
-        }
+      // Check if we've scrolled past this section's top
+      if (scrollPosition >= elementTop) {
+        setActiveSection(section.id);
+        return;
       }
     }
 
     // Default to first section if nothing matches
-    setActiveSection(chartSections[0].id);
+    const first = chartSections.at(0);
+    if (first) setActiveSection(first.id);
   }, []);
 
   useEffect(() => {

@@ -44,8 +44,8 @@ const formatHour = (hour: number): string => {
 
 // Get day name
 const getDayName = (dayIndex: number): string => {
-  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  return dayNames[dayIndex];
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+  return dayNames[dayIndex] ?? '';
 };
 
 export default function DayAndTimeDashboard() {
