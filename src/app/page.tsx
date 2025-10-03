@@ -8,7 +8,6 @@ import RetentionDashboard from "@/components/dashboard/RetentionDashboard";
 import DayAndTimeDashboard from "@/components/dashboard/DayAndTimeDashboard";
 import FundsDashboard from "@/components/dashboard/FundsDashboard";
 import CountriesDashboard from "@/components/dashboard/CountriesDashboard";
-import TributesDashboard from "@/components/dashboard/TributesDashboard";
 import AreaOverlayChart from "@/components/charts/AreaOverlayChart";
 import GenericBarChart from "@/components/charts/GenericBarChart";
 import DonutChart from "@/components/charts/DonutChart";
@@ -65,12 +64,6 @@ export default function DashboardPage() {
     { country: "Canada", amount: 9000 },
     { country: "Australia", amount: 7000 },
     { country: "Germany", amount: 6000 },
-  ];
-
-  const tributesData = [
-    { type: "In Honor", count: 120 },
-    { type: "In Memory", count: 85 },
-    { type: "Other", count: 20 },
   ];
 
   const fundraisersData = [
@@ -137,15 +130,15 @@ export default function DashboardPage() {
           <RecurringRevenueDashboard />
         </section>
 
-        {/* Retention Section */}
-        <section id="retention">
+        {/* Retention Section - Hidden for now */}
+        {/* <section id="retention">
           <RetentionDashboard />
-        </section>
+        </section> */}
 
-        {/* Day and Time Section */}
-        <section id="day-and-time">
+        {/* Day and Time Section - Hidden for now */}
+        {/* <section id="day-and-time">
           <DayAndTimeDashboard />
-        </section>
+        </section> */}
 
         {/* Frequencies Section */}
         <section id="frequencies">
@@ -165,11 +158,6 @@ export default function DashboardPage() {
         {/* Countries Section */}
         <section id="countries">
           <CountriesDashboard />
-        </section>
-
-        {/* Tributes Section */}
-        <section id="tributes">
-          <TributesDashboard />
         </section>
       </div>
     </div>

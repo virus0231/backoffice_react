@@ -42,7 +42,50 @@ try {
         }
 
         if ($granularity === 'daily') {
-            // Daily chart data query - counts each transaction only once
+            // Build active countries CTE with optional filters
+            $activeCountriesSql = "
+            active_countries AS (
+              SELECT DISTINCT
+                d.country AS country_code
+              FROM pw_transactions t
+              JOIN pw_donors d ON d.id = t.DID
+              WHERE t.status IN ('Completed', 'pending')
+                AND t.date >= {$startDateLiteral}
+                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND d.country IS NOT NULL
+                AND d.country != ''
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details td
+                  WHERE td.TID = t.id
+                  {$filterClause}
+                )
+            )";
+
+            // Build daily aggregation with optional filters - counts each transaction only once
+            $dailyAggSql = "
+            daily_agg AS (
+              SELECT
+                DATE(t.date) AS d,
+                d.country AS country_code,
+                SUM(t.totalamount) AS amount
+              FROM pw_transactions t
+              JOIN pw_donors d ON d.id = t.DID
+              WHERE t.status IN ('Completed', 'pending')
+                AND t.date >= {$startDateLiteral}
+                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND d.country IS NOT NULL
+                AND d.country != ''
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details td
+                  WHERE td.TID = t.id
+                  {$filterClause}
+                )
+              GROUP BY DATE(t.date), d.country
+            )";
+
+            // Daily chart data query
             $sql = "
             WITH RECURSIVE dates AS (
               SELECT DATE({$startDateLiteral}) AS d
@@ -51,38 +94,63 @@ try {
               FROM dates
               WHERE d + INTERVAL 1 DAY <= DATE({$endDateLiteral})
             ),
-            payment_types AS (
-              SELECT DISTINCT paymenttype FROM pw_transactions
-            ),
-            daily_agg AS (
-              SELECT
-                DATE(t.date) AS d,
-                t.paymenttype,
-                SUM(t.totalamount) AS amount
+            {$activeCountriesSql},
+            {$dailyAggSql}
+            SELECT
+              dt.d AS `date`,
+              ac.country_code,
+              COALESCE(da.amount, 0) AS amount
+            FROM dates dt
+            CROSS JOIN active_countries ac
+            LEFT JOIN daily_agg da ON da.d = dt.d AND da.country_code = ac.country_code
+            ORDER BY dt.d, ac.country_code
+            ";
+
+        } else {
+            // Build active countries CTE with optional filters
+            $activeCountriesSql = "
+            active_countries AS (
+              SELECT DISTINCT
+                d.country AS country_code
               FROM pw_transactions t
+              JOIN pw_donors d ON d.id = t.DID
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND d.country IS NOT NULL
+                AND d.country != ''
                 AND EXISTS (
                   SELECT 1
                   FROM pw_transaction_details td
                   WHERE td.TID = t.id
                   {$filterClause}
                 )
-              GROUP BY DATE(t.date), t.paymenttype
-            )
-            SELECT
-              d.d AS `date`,
-              pt.paymenttype,
-              COALESCE(a.amount, 0) AS amount
-            FROM dates d
-            CROSS JOIN payment_types pt
-            LEFT JOIN daily_agg a ON a.d = d.d AND a.paymenttype = pt.paymenttype
-            ORDER BY d.d, pt.paymenttype
-            ";
+            )";
 
-        } else {
-            // Weekly chart data query - counts each transaction only once
+            // Build weekly aggregation with optional filters - counts each transaction only once
+            $weeklyAggSql = "
+            weekly_agg AS (
+              SELECT
+                YEARWEEK(t.date, 1) AS week_number,
+                d.country AS country_code,
+                SUM(t.totalamount) AS amount
+              FROM pw_transactions t
+              JOIN pw_donors d ON d.id = t.DID
+              WHERE t.status IN ('Completed', 'pending')
+                AND t.date >= {$startDateLiteral}
+                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND d.country IS NOT NULL
+                AND d.country != ''
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details td
+                  WHERE td.TID = t.id
+                  {$filterClause}
+                )
+              GROUP BY YEARWEEK(t.date, 1), d.country
+            )";
+
+            // Weekly chart data query
             $sql = "
             WITH weeks AS (
               SELECT DISTINCT
@@ -92,35 +160,17 @@ try {
               WHERE date >= {$startDateLiteral}
                 AND date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
             ),
-            payment_types AS (
-              SELECT DISTINCT paymenttype FROM pw_transactions
-            ),
-            weekly_agg AS (
-              SELECT
-                YEARWEEK(t.date, 1) AS week_number,
-                t.paymenttype,
-                SUM(t.totalamount) AS amount
-              FROM pw_transactions t
-              WHERE t.status IN ('Completed', 'pending')
-                AND t.date >= {$startDateLiteral}
-                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-                AND EXISTS (
-                  SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
-                  {$filterClause}
-                )
-              GROUP BY YEARWEEK(t.date, 1), t.paymenttype
-            )
+            {$activeCountriesSql},
+            {$weeklyAggSql}
             SELECT
               w.week_number,
               w.week_start AS `date`,
-              pt.paymenttype,
-              COALESCE(a.amount, 0) AS amount
+              ac.country_code,
+              COALESCE(wa.amount, 0) AS amount
             FROM weeks w
-            CROSS JOIN payment_types pt
-            LEFT JOIN weekly_agg a ON a.week_number = w.week_number AND a.paymenttype = pt.paymenttype
-            ORDER BY w.week_number, pt.paymenttype
+            CROSS JOIN active_countries ac
+            LEFT JOIN weekly_agg wa ON wa.week_number = w.week_number AND wa.country_code = ac.country_code
+            ORDER BY w.week_number, ac.country_code
             ";
         }
 
@@ -157,24 +207,27 @@ try {
         // Table data query - raw transaction data for median calculation
         $sql = "
         SELECT
-            t.paymenttype AS payment_method,
-            (SELECT MAX(td.freq)
-             FROM pw_transaction_details td
-             WHERE td.TID = t.id
-             {$filterClause}
-            ) AS freq,
-            t.totalamount
+          d.country AS country_code,
+          (SELECT MAX(td.freq)
+           FROM pw_transaction_details td
+           WHERE td.TID = t.id
+           {$filterClause}
+          ) AS freq,
+          t.totalamount
         FROM pw_transactions t
+        JOIN pw_donors d ON d.id = t.DID
         WHERE t.status IN ('Completed', 'pending')
           AND t.date >= {$startDateLiteral}
           AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+          AND d.country IS NOT NULL
+          AND d.country != ''
           AND EXISTS (
             SELECT 1
             FROM pw_transaction_details td
             WHERE td.TID = t.id
             {$filterClause}
           )
-        ORDER BY t.paymenttype, t.totalamount";
+        ORDER BY d.country, t.totalamount";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
@@ -195,14 +248,14 @@ try {
 
 } catch (PDOException $e) {
     http_response_code(500);
-    error_log("Payment Methods API PDO Error: " . $e->getMessage());
+    error_log("Countries API PDO Error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
         'error' => 'Database error: ' . $e->getMessage()
     ]);
 } catch (Exception $e) {
     http_response_code(500);
-    error_log("Payment Methods API Error: " . $e->getMessage());
+    error_log("Countries API Error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()

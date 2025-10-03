@@ -29,7 +29,18 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Chart data query
+        // Build filter clause for EXISTS subquery
+        $filterClause = '';
+        if (!empty($appealIdsArray)) {
+            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+        }
+        if (!empty($fundIdsArray)) {
+            $sanitizedFundIds = array_map('intval', $fundIdsArray);
+            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
+        }
+
+        // Chart data query - counts each transaction only once with optimized single join
         $sql = "
         WITH RECURSIVE dates AS (
           SELECT DATE({$startDateLiteral}) AS d
@@ -41,31 +52,24 @@ try {
         daily_agg AS (
           SELECT
             DATE(t.date) AS d,
-            SUM(CASE WHEN td.freq = 1 THEN td.amount * td.quantity ELSE 0 END) AS monthly,
-            SUM(CASE WHEN td.freq = 0 THEN td.amount * td.quantity ELSE 0 END) AS one_time,
-            SUM(CASE WHEN td.freq = 2 THEN td.amount * td.quantity ELSE 0 END) AS yearly,
-            SUM(CASE WHEN td.freq = 4 THEN td.amount * td.quantity ELSE 0 END) AS weekly,
-            SUM(CASE WHEN td.freq = 3 THEN td.amount * td.quantity ELSE 0 END) AS daily
+            SUM(CASE WHEN freq_val = 1 THEN t.totalamount ELSE 0 END) AS monthly,
+            SUM(CASE WHEN freq_val = 0 THEN t.totalamount ELSE 0 END) AS one_time,
+            SUM(CASE WHEN freq_val = 2 THEN t.totalamount ELSE 0 END) AS yearly,
+            SUM(CASE WHEN freq_val = 4 THEN t.totalamount ELSE 0 END) AS weekly,
+            SUM(CASE WHEN freq_val = 3 THEN t.totalamount ELSE 0 END) AS daily
           FROM pw_transactions t
-          JOIN pw_transaction_details td ON td.TID = t.id
+          JOIN (
+            SELECT
+              TID,
+              MAX(freq) as freq_val
+            FROM pw_transaction_details
+            WHERE 1=1
+            {$filterClause}
+            GROUP BY TID
+          ) td ON td.TID = t.id
           WHERE t.status IN ('Completed', 'pending')
             AND t.date >= {$startDateLiteral}
             AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-        ";
-
-        // Add appeal filter if provided
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $sql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-
-        // Add fund filter if provided
-        if (!empty($fundIdsArray)) {
-            $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $sql .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
-        }
-
-        $sql .= "
           GROUP BY DATE(t.date)
         )
         SELECT
@@ -94,14 +98,22 @@ try {
         ]);
 
     } elseif ($metric === 'table') {
-        // Use literal values for dates to avoid parameter issues
+        // Use literal values for dates
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Table data query
-        $appealsJson = !empty($appealIdsArray) ? json_encode(array_map('intval', $appealIdsArray)) : '[]';
-        $fundsJson = !empty($fundIdsArray) ? json_encode(array_map('intval', $fundIdsArray)) : '[]';
+        // Build filter clause for EXISTS subquery
+        $filterClause = '';
+        if (!empty($appealIdsArray)) {
+            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+        }
+        if (!empty($fundIdsArray)) {
+            $sanitizedFundIds = array_map('intval', $fundIdsArray);
+            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
+        }
 
+        // Table data query - raw transaction data for median calculation
         $sql = "
         WITH
         freq_map AS (
@@ -111,26 +123,24 @@ try {
           UNION ALL SELECT 3, 'Daily'
           UNION ALL SELECT 4, 'Weekly'
         ),
-        params AS (
-          SELECT CAST(:appeals_json AS JSON) AS appeals,
-                 CAST(:funds_json AS JSON) AS funds
-        ),
         base AS (
           SELECT
-            td.freq,
-            (td.amount * td.quantity) AS donation_amount
+            (SELECT MAX(td.freq)
+             FROM pw_transaction_details td
+             WHERE td.TID = t.id
+             {$filterClause}
+            ) AS freq,
+            t.totalamount AS donation_amount
           FROM pw_transactions t
-          JOIN pw_transaction_details td ON td.TID = t.id
-          CROSS JOIN params p
-          LEFT JOIN JSON_TABLE(p.appeals, '\$[*]' COLUMNS(val INT PATH '\$')) a
-                 ON a.val = td.appeal_id
-          LEFT JOIN JSON_TABLE(p.funds, '\$[*]' COLUMNS(val INT PATH '\$')) f
-                 ON f.val = td.fundlist_id
           WHERE t.status IN ('Completed', 'pending')
             AND t.date >= {$startDateLiteral}
             AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-            AND (JSON_LENGTH(p.appeals) = 0 OR a.val IS NOT NULL)
-            AND (JSON_LENGTH(p.funds) = 0 OR f.val IS NOT NULL)
+            AND EXISTS (
+              SELECT 1
+              FROM pw_transaction_details td
+              WHERE td.TID = t.id
+              {$filterClause}
+            )
         ),
         stats AS (
           SELECT
@@ -139,6 +149,7 @@ try {
             ROUND(AVG(b.donation_amount), 2) AS averageAmount,
             ROUND(SUM(b.donation_amount), 2) AS totalRaised
           FROM base b
+          WHERE b.freq IS NOT NULL
           GROUP BY b.freq
         ),
         ranked AS (
@@ -148,6 +159,7 @@ try {
             ROW_NUMBER() OVER (PARTITION BY b.freq ORDER BY b.donation_amount) AS rn,
             COUNT(*) OVER (PARTITION BY b.freq) AS cnt
           FROM base b
+          WHERE b.freq IS NOT NULL
         ),
         med AS (
           SELECT
@@ -170,10 +182,7 @@ try {
         ";
 
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            'appeals_json' => $appealsJson,
-            'funds_json' => $fundsJson
-        ]);
+        $stmt->execute();
 
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

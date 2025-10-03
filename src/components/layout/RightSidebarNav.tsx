@@ -6,13 +6,12 @@ const chartSections = [
   { id: "raised", label: "Raised", icon: "📊" },
   { id: "recurring-plans", label: "Recurring plans", icon: "🔄" },
   { id: "recurring-revenue", label: "Recurring revenue", icon: "💰" },
-  { id: "retention", label: "Retention", icon: "🎯" },
-  { id: "day-and-time", label: "Day and time", icon: "📅" },
+  // { id: "retention", label: "Retention", icon: "🎯" }, // Hidden for now
+  // { id: "day-and-time", label: "Day and time", icon: "📅" }, // Hidden for now
   { id: "frequencies", label: "Frequencies", icon: "📊" },
   { id: "payment-methods", label: "Payment methods", icon: "💳" },
   { id: "funds", label: "Funds", icon: "🎯" },
   { id: "countries", label: "Countries", icon: "🌍" },
-  { id: "tributes", label: "Tributes", icon: "❤️" },
 ];
 
 export default function RightSidebarNav() {

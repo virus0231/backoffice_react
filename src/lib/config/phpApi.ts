@@ -121,3 +121,29 @@ export function buildPaymentMethodsUrl(metric: string, searchParams: URLSearchPa
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildFundsDataUrl(metric: string, searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    const sp = new URLSearchParams(searchParams);
+    sp.set('metric', metric);
+    return `/funds.php?${sp.toString()}`;
+  }
+  const url = new URL(`${base}/funds.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  url.searchParams.set('metric', metric);
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}
+
+export function buildCountriesDataUrl(metric: string, searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    const sp = new URLSearchParams(searchParams);
+    sp.set('metric', metric);
+    return `/countries.php?${sp.toString()}`;
+  }
+  const url = new URL(`${base}/countries.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  url.searchParams.set('metric', metric);
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}

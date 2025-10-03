@@ -1,74 +1,55 @@
 'use client';
 
 import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import DateRangePicker from "@/components/filters/DateRangePicker";
+import { DateRange } from "@/types/filters";
+import { useFilterContext } from "@/providers/FilterProvider";
+import { useFundsData } from "@/hooks/useFundsData";
+import LoadingState from "@/components/common/LoadingState";
+import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 
-interface FundData {
-  date: string;
-  amount: number;
-  fundName: string;
-}
-
-interface FundStats {
-  name: string;
-  donations: number;
-  oneTimeMedian: number;
-  recurringMedian: number;
-  totalRaised: number;
-}
-
-// Mock data for the chart
-const generateMockData = (): FundData[] => {
-  const data: FundData[] = [];
-  const startDate = new Date('2024-09-03');
-  const endDate = new Date('2024-10-03');
-
-  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split('T')[0];
-
-    if (d >= new Date('2024-09-24')) {
-      const amount = Math.random() * 800 + 200;
-      data.push({
-        date: dateStr,
-        amount: amount,
-        fundName: 'General fund'
-      });
-    } else {
-      data.push({
-        date: dateStr,
-        amount: 0,
-        fundName: 'General fund'
-      });
-    }
-  }
-
-  return data;
-};
-
-// Mock stats data
-const mockStats: FundStats[] = [
-  {
-    name: 'General fund',
-    donations: 47,
-    oneTimeMedian: 18.26,
-    recurringMedian: 52.60,
-    totalRaised: 2984.23
-  }
+// Color palette for funds
+const FUND_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#8b5cf6', // purple
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#ef4444', // red
+  '#14b8a6', // teal
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    const date = new Date(data.date);
+    const date = new Date(label);
     const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
+    // Sort by value descending and take top entries with non-zero values
+    const sortedPayload = [...payload]
+      .filter((entry: any) => entry.value > 0)
+      .sort((a: any, b: any) => b.value - a.value)
+      .slice(0, 10);
+
     return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-w-xs">
         <p className="text-sm font-medium text-gray-900 mb-2">{formattedDate}</p>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span className="text-sm text-gray-600">{data.fundName}</span>
-          <span className="text-sm font-semibold ml-auto">${data.amount.toFixed(2)}</span>
+        <div className="space-y-1.5">
+          {sortedPayload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: entry.color }}
+                ></div>
+                <span className="text-sm text-gray-600 truncate">{entry.name}</span>
+              </div>
+              <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                ${entry.value.toFixed(2)}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -77,12 +58,78 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function FundsDashboard() {
+  // Get global filter context
+  const {
+    dateRange: globalDateRange,
+    isHydrated,
+    selectedAppeals
+  } = useFilterContext();
+
+  // Local state for date range override
+  const [localDateRange, setLocalDateRange] = useState<DateRange | null>(null);
   const [granularity, setGranularity] = useState<'daily' | 'weekly'>('daily');
-  const chartData = generateMockData();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Use local date range if set, otherwise use global
+  const effectiveDateRange = localDateRange || globalDateRange;
+
+  // Fetch real data from API
+  const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
+
+  const { chartData, tableData, isLoading, hasError, error } = useFundsData(
+    effectiveDateRange,
+    granularity,
+    appealIds
+  );
+
+  // Create fund configuration from all table data for chart
+  const fundConfig = tableData.map((fund, index) => ({
+    fundId: fund.fundId,
+    fundName: fund.fundName,
+    appealName: fund.appealName,
+    color: FUND_COLORS[index % FUND_COLORS.length],
+    total: fund.totalRaised
+  }));
+
+  // Pagination
+  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = tableData.slice(startIndex, endIndex);
+
+  // Show loading state
+  if (!isHydrated || isLoading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <LoadingState size="lg" message="Loading funds data..." fullHeight />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <ChartErrorFallback
+          error={new Error(error || "Failed to load funds data")}
+          resetError={() => window.location.reload()}
+          title="Failed to load funds data"
+        />
+      </div>
+    );
+  }
 
   // Calculate max value for Y-axis
-  const maxValue = Math.max(...chartData.map(d => d.amount));
-  const yAxisMax = Math.ceil(maxValue / 500) * 500;
+  const maxValue = Math.max(
+    ...chartData.flatMap(d =>
+      Object.keys(d)
+        .filter(k => k.startsWith('fund_'))
+        .map(k => d[k])
+    ),
+    0
+  );
+  const yAxisMax = Math.ceil(maxValue / 500) * 500 || 1000;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -97,6 +144,10 @@ export default function FundsDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <DateRangePicker
+            value={effectiveDateRange}
+            onChange={(range) => setLocalDateRange(range)}
+          />
           {/* Daily/Weekly Toggle */}
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             <button
@@ -126,16 +177,10 @@ export default function FundsDashboard() {
       {/* Chart */}
       <div className="h-[300px] mb-6">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+          <LineChart
             data={chartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
-            <defs>
-              <linearGradient id="fundGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
             <XAxis
               dataKey="date"
@@ -154,14 +199,18 @@ export default function FundsDashboard() {
               tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey="amount"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              fill="url(#fundGradient)"
-            />
-          </AreaChart>
+            {fundConfig.map((fund) => (
+              <Line
+                key={fund.fundId}
+                type="monotone"
+                dataKey={`fund_${fund.fundId}`}
+                stroke={fund.color}
+                strokeWidth={2}
+                dot={false}
+                name={fund.fundName}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
       </div>
 
@@ -171,6 +220,7 @@ export default function FundsDashboard() {
           <thead>
             <tr className="text-left">
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Fund</th>
+              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Appeal</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Donations</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
                 One-time <span className="text-blue-600 underline decoration-dotted cursor-help">median</span>
@@ -182,22 +232,71 @@ export default function FundsDashboard() {
             </tr>
           </thead>
           <tbody>
-            {mockStats.map((stat) => (
-              <tr key={stat.name} className="border-t border-gray-100">
-                <td className="py-3 text-sm text-gray-900 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                  {stat.name}
-                </td>
-                <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
-                <td className="py-3 text-sm text-gray-900 text-right">${stat.oneTimeMedian.toFixed(2)}</td>
-                <td className="py-3 text-sm text-gray-900 text-right">${stat.recurringMedian.toFixed(2)}</td>
-                <td className="py-3 text-sm font-semibold text-gray-900 text-right">
-                  ${stat.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-              </tr>
-            ))}
+            {paginatedData.map((stat, index) => {
+              const globalIndex = startIndex + index;
+              const color = FUND_COLORS[globalIndex % FUND_COLORS.length];
+              return (
+                <tr key={stat.fundId} className="border-t border-gray-100">
+                  <td className="py-3 text-sm text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }}></div>
+                      {stat.fundName}
+                    </div>
+                  </td>
+                  <td className="py-3 text-sm text-gray-600">
+                    {stat.appealName || '-'}
+                  </td>
+                  <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
+                  <td className="py-3 text-sm text-gray-900 text-right">${stat.oneTimeMedian.toFixed(2)}</td>
+                  <td className="py-3 text-sm text-gray-900 text-right">${stat.recurringMedian.toFixed(2)}</td>
+                  <td className="py-3 text-sm font-semibold text-gray-900 text-right">
+                    ${stat.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} funds
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 text-sm rounded-md ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
