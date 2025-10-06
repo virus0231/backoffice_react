@@ -29,18 +29,7 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
-        $filterClause = '';
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-        if (!empty($fundIdsArray)) {
-            $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
-        }
-
-        // Chart data query - counts each transaction only once with optimized single join
+        // Chart data query (optimized: classify tx once, then aggregate)
         $sql = "
         WITH RECURSIVE dates AS (
           SELECT DATE({$startDateLiteral}) AS d
@@ -49,28 +38,54 @@ try {
           FROM dates
           WHERE d + INTERVAL 1 DAY <= DATE({$endDateLiteral})
         ),
-        daily_agg AS (
-          SELECT
-            DATE(t.date) AS d,
-            SUM(CASE WHEN freq_val = 1 THEN t.totalamount ELSE 0 END) AS monthly,
-            SUM(CASE WHEN freq_val = 0 THEN t.totalamount ELSE 0 END) AS one_time,
-            SUM(CASE WHEN freq_val = 2 THEN t.totalamount ELSE 0 END) AS yearly,
-            SUM(CASE WHEN freq_val = 4 THEN t.totalamount ELSE 0 END) AS weekly,
-            SUM(CASE WHEN freq_val = 3 THEN t.totalamount ELSE 0 END) AS daily
+        filtered_tx AS (
+          SELECT t.id, t.totalamount, DATE(t.date) AS d
           FROM pw_transactions t
-          JOIN (
-            SELECT
-              TID,
-              MAX(freq) as freq_val
-            FROM pw_transaction_details
-            WHERE 1=1
-            {$filterClause}
-            GROUP BY TID
-          ) td ON td.TID = t.id
           WHERE t.status IN ('Completed', 'pending')
             AND t.date >= {$startDateLiteral}
-            AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-          GROUP BY DATE(t.date)
+            AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)";
+
+        // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
+        $filterClause = '';
+        if (!empty($appealIdsArray)) {
+            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+            $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+        }
+        if (!empty($fundIdsArray)) {
+            $sanitizedFundIds = array_map('intval', $fundIdsArray);
+            $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
+        }
+
+        $sql .= "
+            AND EXISTS (
+              SELECT 1
+              FROM pw_transaction_details d
+              JOIN pw_appeal a ON a.id = d.appeal_id
+              JOIN pw_fundlist f ON f.id = d.fundlist_id
+              WHERE d.TID = t.id
+              {$filterClause}
+            )";
+
+        $sql .= "
+        ),
+        tx_freq AS (
+          SELECT ft.d,
+                 ft.totalamount,
+                 MAX(td.freq) AS max_freq
+          FROM filtered_tx ft
+          JOIN pw_transaction_details td ON td.TID = ft.id
+          GROUP BY ft.id, ft.d, ft.totalamount
+        ),
+        daily_agg AS (
+          SELECT
+            d,
+            SUM(CASE WHEN max_freq = 1 THEN totalamount ELSE 0 END) AS monthly,
+            SUM(CASE WHEN max_freq = 0 THEN totalamount ELSE 0 END) AS one_time,
+            SUM(CASE WHEN max_freq = 2 THEN totalamount ELSE 0 END) AS yearly,
+            SUM(CASE WHEN max_freq = 4 THEN totalamount ELSE 0 END) AS weekly,
+            SUM(CASE WHEN max_freq = 3 THEN totalamount ELSE 0 END) AS daily
+          FROM tx_freq
+          GROUP BY d
         )
         SELECT
           d.d AS `date`,
@@ -98,86 +113,72 @@ try {
         ]);
 
     } elseif ($metric === 'table') {
-        // Use literal values for dates
+        // Use literal values for dates to avoid parameter issues
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
+        // Aggregated table data by transaction-level frequency using DISTINCT transactions
+        // Build filter clause for EXISTS (matches analytics.php)
         $filterClause = '';
         if (!empty($appealIdsArray)) {
             $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
         }
         if (!empty($fundIdsArray)) {
             $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
+            $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
         }
 
-        // Table data query - raw transaction data for median calculation
         $sql = "
-        WITH
-        freq_map AS (
+        WITH freq_map AS (
           SELECT 0 AS freq, 'One-time' AS freq_name
           UNION ALL SELECT 1, 'Monthly'
           UNION ALL SELECT 2, 'Yearly'
           UNION ALL SELECT 3, 'Daily'
           UNION ALL SELECT 4, 'Weekly'
         ),
-        base AS (
-          SELECT
-            (SELECT MAX(td.freq)
-             FROM pw_transaction_details td
-             WHERE td.TID = t.id
-             {$filterClause}
-            ) AS freq,
-            t.totalamount AS donation_amount
+        filtered_tx AS (
+          SELECT t.id, t.totalamount
           FROM pw_transactions t
           WHERE t.status IN ('Completed', 'pending')
             AND t.date >= {$startDateLiteral}
             AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
             AND EXISTS (
               SELECT 1
-              FROM pw_transaction_details td
-              WHERE td.TID = t.id
+              FROM pw_transaction_details d
+              JOIN pw_appeal a ON a.id = d.appeal_id
+              JOIN pw_fundlist f ON f.id = d.fundlist_id
+              WHERE d.TID = t.id
               {$filterClause}
             )
         ),
-        stats AS (
+        tx_freq AS (
           SELECT
-            b.freq,
-            COUNT(*) AS donations,
-            ROUND(AVG(b.donation_amount), 2) AS averageAmount,
-            ROUND(SUM(b.donation_amount), 2) AS totalRaised
-          FROM base b
-          WHERE b.freq IS NOT NULL
-          GROUP BY b.freq
+            ft.id AS tid,
+            CASE MAX(td.freq)
+              WHEN 0 THEN 'One-time'
+              WHEN 1 THEN 'Monthly'
+              WHEN 2 THEN 'Yearly'
+              WHEN 3 THEN 'Daily'
+              WHEN 4 THEN 'Weekly'
+              ELSE 'One-time'
+            END AS frequency,
+            ft.totalamount AS totalamount
+          FROM filtered_tx ft
+          JOIN pw_transaction_details td ON td.TID = ft.id
+          GROUP BY ft.id
         ),
-        ranked AS (
-          SELECT
-            b.freq,
-            b.donation_amount,
-            ROW_NUMBER() OVER (PARTITION BY b.freq ORDER BY b.donation_amount) AS rn,
-            COUNT(*) OVER (PARTITION BY b.freq) AS cnt
-          FROM base b
-          WHERE b.freq IS NOT NULL
-        ),
-        med AS (
-          SELECT
-            r.freq,
-            ROUND(AVG(r.donation_amount), 2) AS medianAmount
-          FROM ranked r
-          WHERE r.rn IN (FLOOR((r.cnt + 1)/2), CEIL((r.cnt + 1)/2))
-          GROUP BY r.freq
+        agg AS (
+          SELECT frequency, COUNT(DISTINCT tid) AS donation_count, SUM(totalamount) AS total_raised
+          FROM tx_freq
+          GROUP BY frequency
         )
         SELECT
           fm.freq_name AS frequency,
-          COALESCE(s.donations, 0) AS donations,
-          COALESCE(s.averageAmount, 0.00) AS averageAmount,
-          COALESCE(m.medianAmount, 0.00) AS medianAmount,
-          COALESCE(s.totalRaised, 0.00) AS totalRaised
+          COALESCE(a.donation_count, 0) AS donations,
+          COALESCE(a.total_raised, 0.00) AS totalRaised
         FROM freq_map fm
-        LEFT JOIN stats s ON s.freq = fm.freq
-        LEFT JOIN med m ON m.freq = fm.freq
+        LEFT JOIN agg a ON a.frequency = fm.freq_name
         ORDER BY fm.freq
         ";
 

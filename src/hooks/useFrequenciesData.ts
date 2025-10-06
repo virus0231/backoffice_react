@@ -23,8 +23,6 @@ interface ChartDataPoint {
 interface TableDataRow {
   frequency: string;
   donations: number;
-  averageAmount: number;
-  medianAmount: number;
   totalRaised: number;
 }
 
@@ -131,8 +129,6 @@ export function useFrequenciesData(
           const normalizedTable = (tableResponse.data.tableData || []).map((r: any) => ({
             frequency: String(r.frequency || ''),
             donations: Math.round(toNum(r.donations, 0)),
-            averageAmount: toNum(r.averageAmount, 0),
-            medianAmount: toNum(r.medianAmount, 0),
             totalRaised: toNum(r.totalRaised, 0),
           }));
 

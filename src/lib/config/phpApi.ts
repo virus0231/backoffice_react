@@ -147,3 +147,13 @@ export function buildCountriesDataUrl(metric: string, searchParams: URLSearchPar
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildDayTimeUrl(searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    return `/day-time.php?${searchParams.toString()}`;
+  }
+  const url = new URL(`${base}/day-time.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}

@@ -1,37 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useFilterContext } from "@/providers/FilterProvider";
-
-// Mock heatmap data - 7 days x 24 hours
-const mockHeatmapData = [
-  // Monday
-  [0, 1, 0, 0, 1, 2, 3, 1, 2, 1, 2, 1, 0, 1, 2, 1, 3, 2, 1, 0, 0, 0, 0, 0],
-  // Tuesday
-  [1, 0, 1, 1, 0, 1, 2, 3, 4, 5, 4, 3, 2, 2, 3, 4, 5, 4, 5, 3, 2, 1, 0, 1],
-  // Wednesday
-  [0, 0, 0, 1, 1, 2, 3, 2, 3, 2, 3, 3, 3, 3, 2, 2, 1, 2, 4, 2, 1, 0, 0, 0],
-  // Thursday
-  [0, 0, 0, 0, 1, 2, 3, 2, 1, 2, 3, 2, 3, 4, 2, 1, 2, 3, 4, 2, 1, 0, 0, 0],
-  // Friday
-  [1, 0, 0, 0, 1, 2, 3, 4, 2, 1, 3, 2, 1, 2, 4, 5, 3, 2, 5, 3, 2, 1, 0, 0],
-  // Saturday
-  [0, 0, 0, 1, 1, 2, 1, 2, 3, 2, 3, 2, 3, 4, 2, 1, 0, 1, 2, 1, 4, 2, 1, 0],
-  // Sunday
-  [1, 0, 0, 0, 1, 1, 2, 1, 0, 0, 1, 3, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1, 0, 0],
-];
+import { useDayTimeData } from "@/hooks/useDayTimeData";
+import LoadingState from "@/components/common/LoadingState";
+import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 
 const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 const hours = ['12AM', '2AM', '4AM', '6AM', '8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM', '10PM'];
 
-// Get color based on intensity (0-5 scale)
-const getColorForIntensity = (value: number): string => {
+// Get color based on donation count with dynamic scaling
+const getColorForIntensity = (value: number, maxValue: number): string => {
   if (value === 0) return 'bg-gray-100';
-  if (value === 1) return 'bg-blue-200';
-  if (value === 2) return 'bg-blue-300';
-  if (value === 3) return 'bg-blue-400';
-  if (value === 4) return 'bg-blue-600';
-  return 'bg-blue-800'; // 5+
+
+  // Scale based on percentage of max
+  const percentage = maxValue > 0 ? (value / maxValue) * 100 : 0;
+
+  if (percentage <= 20) return 'bg-blue-200';
+  if (percentage <= 40) return 'bg-blue-300';
+  if (percentage <= 60) return 'bg-blue-400';
+  if (percentage <= 80) return 'bg-blue-600';
+  return 'bg-blue-800';
 };
 
 // Format hour for display
@@ -49,13 +38,47 @@ const getDayName = (dayIndex: number): string => {
 };
 
 export default function DayAndTimeDashboard() {
-  const { isHydrated } = useFilterContext();
-  const [hoveredCell, setHoveredCell] = useState<{ day: number; hour: number; value: number } | null>(null);
+  const {
+    isHydrated,
+    selectedAppeals,
+    selectedFunds
+  } = useFilterContext();
+
+  const [hoveredCell, setHoveredCell] = useState<{ day: number; hour: number; donationCount: number; totalRaised: number } | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const handleCellHover = (dayIndex: number, hourIndex: number, value: number, event: React.MouseEvent) => {
+  // Always use last 7 days - ignore global date filter
+  // Memoize to prevent infinite re-renders
+  const last7Days = useMemo(() => {
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6);
+
+    return {
+      startDate: sevenDaysAgo,
+      endDate: today
+    };
+  }, []); // Empty dependency array - only calculate once
+
+  // Fetch real data from API
+  const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
+  const fundIds = selectedFunds.length > 0 ? selectedFunds.map(f => f.id).join(',') : null;
+
+  const { heatmapData, isLoading, hasError, error } = useDayTimeData(
+    last7Days,
+    appealIds,
+    fundIds
+  );
+
+  // Calculate max value for color scaling
+  const maxDonationCount = Math.max(
+    ...heatmapData.flatMap(day => day.map(cell => cell.donationCount)),
+    1
+  );
+
+  const handleCellHover = (dayIndex: number, hourIndex: number, donationCount: number, totalRaised: number, event: React.MouseEvent) => {
     const rect = (event.target as HTMLElement).getBoundingClientRect();
-    setHoveredCell({ day: dayIndex, hour: hourIndex, value });
+    setHoveredCell({ day: dayIndex, hour: hourIndex, donationCount, totalRaised });
     setTooltipPosition({
       x: rect.left + rect.width / 2,
       y: rect.top - 10
@@ -66,10 +89,24 @@ export default function DayAndTimeDashboard() {
     setHoveredCell(null);
   };
 
-  if (!isHydrated) {
+  // Show loading state
+  if (!isHydrated || isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <LoadingState size="lg" message="Loading day and time data..." fullHeight />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <ChartErrorFallback
+          error={new Error(error || "Failed to load day and time data")}
+          resetError={() => window.location.reload()}
+          title="Failed to load day and time data"
+        />
       </div>
     );
   }
@@ -109,13 +146,13 @@ export default function DayAndTimeDashboard() {
 
             {/* Grid */}
             <div className="space-y-1.5">
-              {mockHeatmapData.map((dayData, dayIndex) => (
+              {heatmapData.map((dayData, dayIndex) => (
                 <div key={dayIndex} className="flex gap-1.5">
-                  {dayData.map((value, hourIndex) => (
+                  {dayData.map((cell, hourIndex) => (
                     <div
                       key={hourIndex}
-                      className={`flex-1 h-7 rounded cursor-pointer transition-all ${getColorForIntensity(value)} hover:ring-2 hover:ring-blue-500 hover:ring-offset-1`}
-                      onMouseEnter={(e) => handleCellHover(dayIndex, hourIndex, value, e)}
+                      className={`flex-1 h-7 rounded cursor-pointer transition-all ${getColorForIntensity(cell.donationCount, maxDonationCount)} hover:ring-2 hover:ring-blue-500 hover:ring-offset-1`}
+                      onMouseEnter={(e) => handleCellHover(dayIndex, hourIndex, cell.donationCount, cell.totalRaised, e)}
                       onMouseLeave={handleCellLeave}
                     />
                   ))}
@@ -140,10 +177,10 @@ export default function DayAndTimeDashboard() {
               </div>
               <div className="text-xs text-gray-600 mb-1">Raised</div>
               <div className="text-sm font-medium text-gray-900 mb-1">
-                ${(hoveredCell.value * 10.52).toFixed(2)}
+                ${hoveredCell.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <div className="text-xs text-gray-600">Donations</div>
-              <div className="text-sm font-medium text-gray-900">{hoveredCell.value}</div>
+              <div className="text-sm font-medium text-gray-900">{hoveredCell.donationCount}</div>
             </div>
           )}
         </div>

@@ -83,20 +83,30 @@ export default function FundsDashboard() {
     appealIds
   );
 
-  // Create fund configuration from all table data for chart
-  const fundConfig = tableData.map((fund, index) => ({
-    fundId: fund.fundId,
-    fundName: fund.fundName,
-    appealName: fund.appealName,
-    color: FUND_COLORS[index % FUND_COLORS.length],
-    total: fund.totalRaised
-  }));
-
   // Pagination
   const totalPages = Math.ceil(tableData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = tableData.slice(startIndex, endIndex);
+
+  // Create fund configuration from paginated data for chart
+  const fundConfig = paginatedData.map((fund, index) => ({
+    fundId: fund.fundId,
+    fundName: fund.fundName,
+    appealName: fund.appealName,
+    color: FUND_COLORS[(startIndex + index) % FUND_COLORS.length],
+    total: fund.totalRaised
+  }));
+
+  // Filter chart data to only include current page funds
+  const currentFundIds = paginatedData.map(f => `fund_${f.fundId}`);
+  const filteredChartData = chartData.map(dataPoint => {
+    const filtered: any = { date: dataPoint.date };
+    currentFundIds.forEach(fundKey => {
+      filtered[fundKey] = dataPoint[fundKey] || 0;
+    });
+    return filtered;
+  });
 
   // Show loading state
   if (!isHydrated || isLoading) {
@@ -120,16 +130,21 @@ export default function FundsDashboard() {
     );
   }
 
-  // Calculate max value for Y-axis
+  // Calculate max value for Y-axis from filtered data
   const maxValue = Math.max(
-    ...chartData.flatMap(d =>
+    ...filteredChartData.flatMap(d =>
       Object.keys(d)
         .filter(k => k.startsWith('fund_'))
         .map(k => d[k])
     ),
     0
   );
-  const yAxisMax = Math.ceil(maxValue / 500) * 500 || 1000;
+  // Use dynamic scaling based on actual data
+  const yAxisMax = maxValue <= 10 ? Math.ceil(maxValue) :
+                   maxValue <= 50 ? Math.ceil(maxValue / 10) * 10 :
+                   maxValue <= 100 ? Math.ceil(maxValue / 10) * 10 :
+                   maxValue <= 500 ? Math.ceil(maxValue / 50) * 50 :
+                   Math.ceil(maxValue / 100) * 100;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -178,7 +193,8 @@ export default function FundsDashboard() {
       <div className="h-[300px] mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={chartData}
+            key={`funds-chart-page-${currentPage}`}
+            data={filteredChartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -195,7 +211,7 @@ export default function FundsDashboard() {
             <YAxis
               stroke="#9ca3af"
               tick={{ fill: '#6b7280', fontSize: 12 }}
-              domain={[0, yAxisMax]}
+              domain={[0, 'auto']}
               tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -223,10 +239,7 @@ export default function FundsDashboard() {
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Appeal</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Donations</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
-                One-time <span className="text-blue-600 underline decoration-dotted cursor-help">median</span>
-              </th>
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
-                Recurring <span className="text-blue-600 underline decoration-dotted cursor-help">median</span>
+                Average donation
               </th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Total raised</th>
             </tr>
@@ -247,8 +260,7 @@ export default function FundsDashboard() {
                     {stat.appealName || '-'}
                   </td>
                   <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
-                  <td className="py-3 text-sm text-gray-900 text-right">${stat.oneTimeMedian.toFixed(2)}</td>
-                  <td className="py-3 text-sm text-gray-900 text-right">${stat.recurringMedian.toFixed(2)}</td>
+                  <td className="py-3 text-sm text-gray-900 text-right">${((stat.totalRaised || 0) / (stat.donations || 1)).toFixed(2)}</td>
                   <td className="py-3 text-sm font-semibold text-gray-900 text-right">
                     ${stat.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>

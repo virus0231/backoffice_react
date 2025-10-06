@@ -21,8 +21,6 @@ const FREQUENCIES = [
 interface FrequencyData {
   frequency: string;
   donations: number;
-  averageAmount: number;
-  medianAmount: number;
   totalRaised: number;
 }
 
@@ -38,6 +36,8 @@ export default function FrequenciesDashboard() {
   // Local state for date range override
   const [localDateRange, setLocalDateRange] = useState<DateRange | null>(null);
   const [granularity, setGranularity] = useState<"daily" | "weekly">("daily");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Use local date range if set, otherwise use global
   const effectiveDateRange = localDateRange || globalDateRange;
@@ -58,10 +58,31 @@ export default function FrequenciesDashboard() {
     fundIds
   );
 
-  // Calculate legend totals
-  const legendTotals = FREQUENCIES.map(freq => {
+  // Pagination
+  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = tableData.slice(startIndex, endIndex);
+
+  // Calculate legend totals from paginated data only
+  const paginatedFrequencies = paginatedData.map(d => d.frequency.toLowerCase());
+  const visibleFrequencies = FREQUENCIES.filter(freq =>
+    paginatedFrequencies.includes(freq.label.toLowerCase())
+  );
+
+  const legendTotals = visibleFrequencies.map(freq => {
     const total = tableData.find(d => d.frequency.toLowerCase() === freq.label.toLowerCase())?.totalRaised || 0;
     return { ...freq, total };
+  });
+
+  // Filter chart data to only include visible frequency keys
+  const visibleKeys = visibleFrequencies.map(f => f.key);
+  const filteredChartData = chartData.map(dataPoint => {
+    const filtered: any = { date: dataPoint.date };
+    visibleKeys.forEach(key => {
+      filtered[key] = dataPoint[key as keyof typeof dataPoint] || 0;
+    });
+    return filtered;
   });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -152,7 +173,7 @@ export default function FrequenciesDashboard() {
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart key={`frequencies-chart-page-${currentPage}`} data={filteredChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="date"
@@ -162,6 +183,7 @@ export default function FrequenciesDashboard() {
               <YAxis
                 tick={{ fill: '#6b7280', fontSize: 12 }}
                 tickLine={{ stroke: '#e5e7eb' }}
+                domain={[0, 'auto']}
                 tickFormatter={(value) => `$${value}`}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -178,7 +200,7 @@ export default function FrequenciesDashboard() {
                   </div>
                 )}
               />
-              {FREQUENCIES.map((freq) => (
+              {visibleFrequencies.map((freq) => (
                 <Line
                   key={freq.key}
                   type="monotone"
@@ -206,10 +228,7 @@ export default function FrequenciesDashboard() {
                 Donations
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Average amount
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Median amount
+                Average donation
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Total raised
@@ -217,7 +236,7 @@ export default function FrequenciesDashboard() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {tableData.map((row, index) => {
+            {paginatedData.map((row, index) => {
               const freq = FREQUENCIES.find(f => f.label.toLowerCase() === row.frequency.toLowerCase());
               return (
                 <tr key={index} className="hover:bg-gray-50">
@@ -231,10 +250,7 @@ export default function FrequenciesDashboard() {
                     {row.donations}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${row.averageAmount.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${row.medianAmount.toFixed(2)}
+                    ${((row.totalRaised || 0) / (row.donations || 1)).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                     ${row.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -244,6 +260,46 @@ export default function FrequenciesDashboard() {
             })}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+            <div className="text-sm text-gray-600">
+              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} frequencies
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 text-sm rounded-md ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

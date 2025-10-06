@@ -8,16 +8,13 @@ import { logError } from '@/lib/utils/errorHandling';
 
 interface CountryRawData {
   country_code: string;
-  amount: number | null;
-  freq: number | null;
-  totalamount: number | null;
+  donation_count: number | null;
+  total_raised: number | null;
 }
 
 interface CountryStats {
   countryCode: string;
   donations: number;
-  oneTimeMedian: number;
-  recurringMedian: number;
   totalRaised: number;
 }
 
@@ -59,40 +56,14 @@ function calculateMedian(values: number[]): number {
 
 // Process raw data to calculate stats
 function processTableData(rawData: CountryRawData[]): CountryStats[] {
-  // Group by country code
-  const grouped = rawData.reduce((acc, row) => {
-    const countryCode = row.country_code;
-    if (!acc[countryCode]) {
-      acc[countryCode] = {
-        oneTimeAmounts: [],
-        recurringAmounts: [],
-        totalRaised: 0,
-        donationCount: 0
-      };
-    }
-
-    // Only process if row has valid data
-    if (row.amount !== null && row.freq !== null && row.totalamount !== null) {
-      if (row.freq === 0) {
-        acc[countryCode].oneTimeAmounts.push(row.amount);
-      } else if (row.freq > 0) {
-        acc[countryCode].recurringAmounts.push(row.amount);
-      }
-      acc[countryCode].totalRaised += row.totalamount;
-      acc[countryCode].donationCount++;
-    }
-
-    return acc;
-  }, {} as Record<string, { oneTimeAmounts: number[], recurringAmounts: number[], totalRaised: number, donationCount: number }>);
-
-  // Calculate stats for each country
-  return Object.entries(grouped).map(([countryCode, data]) => ({
-    countryCode,
-    donations: data.donationCount,
-    oneTimeMedian: calculateMedian(data.oneTimeAmounts),
-    recurringMedian: calculateMedian(data.recurringAmounts),
-    totalRaised: data.totalRaised
-  })).sort((a, b) => b.totalRaised - a.totalRaised);
+  return rawData
+    .map((r) => ({
+      countryCode: String(r.country_code || ''),
+      donations: typeof r.donation_count === 'number' ? r.donation_count : 0,
+      totalRaised: typeof r.total_raised === 'number' ? r.total_raised : 0,
+    }))
+    .filter((r) => r.countryCode !== '')
+    .sort((a, b) => b.totalRaised - a.totalRaised);
 }
 
 // Transform chart data to group by date
@@ -182,9 +153,8 @@ export function useCountriesData(
         const processedTableData = processTableData(
           (tableResponse.data.tableData || []).map((r: any) => ({
             country_code: String(r.country_code || ''),
-            amount: r.amount === null ? null : toNum(r.amount, 0),
-            freq: r.freq === null ? null : toNum(r.freq, 0),
-            totalamount: r.totalamount === null ? null : toNum(r.totalamount, 0)
+            donation_count: r.donation_count === null ? 0 : toNum(r.donation_count, 0),
+            total_raised: r.total_raised === null ? 0 : toNum(r.total_raised, 0),
           }))
         );
 

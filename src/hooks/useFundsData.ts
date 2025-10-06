@@ -11,9 +11,8 @@ interface FundRawData {
   fund_name: string;
   appeal_id: number | null;
   appeal_name: string | null;
-  amount: number | null;
-  freq: number | null;
-  totalamount: number | null;
+  donation_count: number | null;
+  total_raised: number | null;
 }
 
 interface FundStats {
@@ -22,8 +21,6 @@ interface FundStats {
   appealId: number | null;
   appealName: string | null;
   donations: number;
-  oneTimeMedian: number;
-  recurringMedian: number;
   totalRaised: number;
 }
 
@@ -68,47 +65,16 @@ function calculateMedian(values: number[]): number {
 
 // Process raw data to calculate stats
 function processTableData(rawData: FundRawData[]): FundStats[] {
-  // Group by fund
-  const grouped = rawData.reduce((acc, row) => {
-    const fundKey = `${row.fund_id}`;
-    if (!acc[fundKey]) {
-      acc[fundKey] = {
-        fundId: row.fund_id,
-        fundName: row.fund_name,
-        appealId: row.appeal_id,
-        appealName: row.appeal_name,
-        oneTimeAmounts: [],
-        recurringAmounts: [],
-        totalRaised: 0,
-        donationCount: 0
-      };
-    }
-
-    // Only process if row has valid data
-    if (row.amount !== null && row.freq !== null && row.totalamount !== null) {
-      if (row.freq === 0) {
-        acc[fundKey].oneTimeAmounts.push(row.amount);
-      } else if (row.freq > 0) {
-        acc[fundKey].recurringAmounts.push(row.amount);
-      }
-      acc[fundKey].totalRaised += row.totalamount;
-      acc[fundKey].donationCount++;
-    }
-
-    return acc;
-  }, {} as Record<string, { fundId: number, fundName: string, appealId: number | null, appealName: string | null, oneTimeAmounts: number[], recurringAmounts: number[], totalRaised: number, donationCount: number }>);
-
-  // Calculate stats for each fund
-  return Object.values(grouped).map(data => ({
-    fundId: data.fundId,
-    fundName: data.fundName,
-    appealId: data.appealId,
-    appealName: data.appealName,
-    donations: data.donationCount,
-    oneTimeMedian: calculateMedian(data.oneTimeAmounts),
-    recurringMedian: calculateMedian(data.recurringAmounts),
-    totalRaised: data.totalRaised
-  })).sort((a, b) => b.totalRaised - a.totalRaised);
+  return rawData
+    .map((r) => ({
+      fundId: r.fund_id,
+      fundName: r.fund_name,
+      appealId: r.appeal_id,
+      appealName: r.appeal_name,
+      donations: typeof r.donation_count === 'number' ? r.donation_count : 0,
+      totalRaised: typeof r.total_raised === 'number' ? r.total_raised : 0,
+    }))
+    .sort((a, b) => b.totalRaised - a.totalRaised);
 }
 
 // Transform chart data to group by date
@@ -201,9 +167,8 @@ export function useFundsData(
             fund_name: String(r.fund_name || ''),
             appeal_id: r.appeal_id === null ? null : toNum(r.appeal_id, 0),
             appeal_name: r.appeal_name === null ? null : String(r.appeal_name),
-            amount: r.amount === null ? null : toNum(r.amount, 0),
-            freq: r.freq === null ? null : toNum(r.freq, 0),
-            totalamount: r.totalamount === null ? null : toNum(r.totalamount, 0)
+            donation_count: r.donation_count === null ? 0 : toNum(r.donation_count, 0),
+            total_raised: r.total_raised === null ? 0 : toNum(r.total_raised, 0),
           }))
         );
 

@@ -129,15 +129,30 @@ export default function CountriesDashboard() {
   const endIndex = startIndex + itemsPerPage;
   const currentStats = tableData.slice(startIndex, endIndex);
 
-  // Calculate max value for Y-axis based on current page countries
+  // Filter chart data to only include current page countries
   const currentCountryCodes = currentStats.map(s => s.countryCode);
-  const allValues = chartData.flatMap(d =>
+
+  const filteredChartData = chartData.map(dataPoint => {
+    const filtered: any = { date: dataPoint.date };
+    currentCountryCodes.forEach(code => {
+      filtered[code] = dataPoint[code] || 0;
+    });
+    return filtered;
+  });
+
+  // Calculate max value for Y-axis based on filtered data
+  const allValues = filteredChartData.flatMap(d =>
     Object.entries(d)
-      .filter(([key]) => key !== 'date' && currentCountryCodes.includes(key))
+      .filter(([key]) => key !== 'date')
       .map(([, value]) => value as number)
   );
-  const maxValue = allValues.length > 0 ? Math.max(...allValues) : 1000;
-  const yAxisMax = Math.ceil(maxValue / 1000) * 1000 || 1000;
+  const maxValue = allValues.length > 0 ? Math.max(...allValues) : 100;
+  // Use dynamic scaling based on actual data
+  const yAxisMax = maxValue <= 10 ? Math.ceil(maxValue) :
+                   maxValue <= 50 ? Math.ceil(maxValue / 10) * 10 :
+                   maxValue <= 100 ? Math.ceil(maxValue / 10) * 10 :
+                   maxValue <= 500 ? Math.ceil(maxValue / 50) * 50 :
+                   Math.ceil(maxValue / 100) * 100;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -186,7 +201,8 @@ export default function CountriesDashboard() {
       <div className="h-[300px] mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={chartData}
+            key={`countries-chart-page-${currentPage}`}
+            data={filteredChartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
@@ -203,7 +219,7 @@ export default function CountriesDashboard() {
             <YAxis
               stroke="#9ca3af"
               tick={{ fill: '#6b7280', fontSize: 12 }}
-              domain={[0, yAxisMax]}
+              domain={[0, 'auto']}
               tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip content={<CustomTooltip />} />
@@ -229,12 +245,7 @@ export default function CountriesDashboard() {
             <tr className="text-left">
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Country</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Donations</th>
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
-                One-time <span className="text-blue-600 underline decoration-dotted cursor-help">median</span>
-              </th>
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
-                Recurring <span className="text-blue-600 underline decoration-dotted cursor-help">median</span>
-              </th>
+              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Average donation</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Total raised</th>
             </tr>
           </thead>
@@ -262,8 +273,7 @@ export default function CountriesDashboard() {
                     </div>
                   </td>
                   <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
-                  <td className="py-3 text-sm text-gray-900 text-right">${stat.oneTimeMedian.toFixed(2)}</td>
-                  <td className="py-3 text-sm text-gray-900 text-right">${stat.recurringMedian.toFixed(2)}</td>
+                  <td className="py-3 text-sm text-gray-900 text-right">${((stat.totalRaised || 0) / (stat.donations || 1)).toFixed(2)}</td>
                   <td className="py-3 text-sm font-semibold text-gray-900 text-right">
                     ${stat.totalRaised.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>

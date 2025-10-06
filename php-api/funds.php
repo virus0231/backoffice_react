@@ -29,7 +29,14 @@ try {
         $endDateLiteral = $pdo->quote($endDate);
 
         if ($granularity === 'daily') {
-            // Build active funds CTE with optional appeal filter
+            // Build appeal filter
+            $appealFilterActive = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $appealFilterActive = " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+
+            // Build active funds CTE with optional appeal filter - use EXISTS
             $activeFundsSql = "
             active_funds AS (
               SELECT DISTINCT
@@ -39,54 +46,46 @@ try {
                 ap.name AS appeal_name
               FROM pw_fundlist fl
               LEFT JOIN pw_appeal ap ON ap.id = fl.appeal_id
-              JOIN pw_transaction_details td ON td.fundlist_id = fl.id
-              JOIN pw_transactions t ON t.id = td.TID
               WHERE fl.disable = 0
-                AND t.status IN ('Completed', 'pending')
-                AND t.date >= {$startDateLiteral}
-                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-            ";
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details td
+                  JOIN pw_transactions t ON t.id = td.TID
+                  WHERE td.fundlist_id = fl.id
+                    AND t.status IN ('Completed', 'pending')
+                    AND t.date >= {$startDateLiteral}
+                    AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                    {$appealFilterActive}
+                )
+            )";
 
-            // Add appeal filter if provided
+            // Build appeal filter for EXISTS (MATCH analytics.php pattern)
+            $appealFilter = '';
             if (!empty($appealIdsArray)) {
                 $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $activeFundsSql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+                $appealFilter = " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
             }
 
-            $activeFundsSql .= ")";
-
-            // Build daily aggregation with optional appeal filter
-            // IMPORTANT: Use DISTINCT t.id and divide by count to avoid counting transactions multiple times
+            // Build daily aggregation - simplified without PARTITION BY (faster)
             $dailyAggSql = "
             daily_agg AS (
               SELECT
                 DATE(t.date) AS d,
                 td.fundlist_id,
-                SUM(t.totalamount / (
-                  SELECT COUNT(DISTINCT td2.fundlist_id)
-                  FROM pw_transaction_details td2
-                  WHERE td2.TID = t.id";
-
-            if (!empty($appealIdsArray)) {
-                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $dailyAggSql .= " AND td2.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-            }
-
-            $dailyAggSql .= "
-                )) AS amount
+                SUM(t.totalamount) AS amount
               FROM pw_transactions t
               JOIN pw_transaction_details td ON td.TID = t.id
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-            ";
-
-            if (!empty($appealIdsArray)) {
-                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $dailyAggSql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-            }
-
-            $dailyAggSql .= "
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
+                  {$appealFilter}
+                )
               GROUP BY DATE(t.date), td.fundlist_id
             )";
 
@@ -115,7 +114,14 @@ try {
             ";
 
         } else {
-            // Build active funds CTE with optional appeal filter
+            // Build appeal filter
+            $appealFilterActive = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $appealFilterActive = " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+
+            // Build active funds CTE with optional appeal filter - use EXISTS
             $activeFundsSql = "
             active_funds AS (
               SELECT DISTINCT
@@ -125,52 +131,46 @@ try {
                 ap.name AS appeal_name
               FROM pw_fundlist fl
               LEFT JOIN pw_appeal ap ON ap.id = fl.appeal_id
-              JOIN pw_transaction_details td ON td.fundlist_id = fl.id
-              JOIN pw_transactions t ON t.id = td.TID
               WHERE fl.disable = 0
-                AND t.status IN ('Completed', 'pending')
-                AND t.date >= {$startDateLiteral}
-                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-            ";
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details td
+                  JOIN pw_transactions t ON t.id = td.TID
+                  WHERE td.fundlist_id = fl.id
+                    AND t.status IN ('Completed', 'pending')
+                    AND t.date >= {$startDateLiteral}
+                    AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                    {$appealFilterActive}
+                )
+            )";
 
+            // Build appeal filter for EXISTS (MATCH analytics.php pattern)
+            $appealFilter = '';
             if (!empty($appealIdsArray)) {
                 $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $activeFundsSql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+                $appealFilter = " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
             }
 
-            $activeFundsSql .= ")";
-
-            // Build weekly aggregation with optional appeal filter
+            // Build weekly aggregation - simplified without PARTITION BY (faster)
             $weeklyAggSql = "
             weekly_agg AS (
               SELECT
                 YEARWEEK(t.date, 1) AS week_number,
                 td.fundlist_id,
-                SUM(t.totalamount / (
-                  SELECT COUNT(DISTINCT td2.fundlist_id)
-                  FROM pw_transaction_details td2
-                  WHERE td2.TID = t.id";
-
-            if (!empty($appealIdsArray)) {
-                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $weeklyAggSql .= " AND td2.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-            }
-
-            $weeklyAggSql .= "
-                )) AS amount
+                SUM(t.totalamount) AS amount
               FROM pw_transactions t
               JOIN pw_transaction_details td ON td.TID = t.id
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-            ";
-
-            if (!empty($appealIdsArray)) {
-                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-                $weeklyAggSql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-            }
-
-            $weeklyAggSql .= "
+                AND EXISTS (
+                  SELECT 1
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
+                  {$appealFilter}
+                )
               GROUP BY YEARWEEK(t.date, 1), td.fundlist_id
             )";
 
@@ -220,54 +220,39 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Table data query - divide transaction amount by number of funds to avoid over-counting
+        // Build appeal filter for EXISTS (MATCH analytics.php pattern)
+        $appealFilter = '';
+        if (!empty($appealIdsArray)) {
+            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+            $appealFilter = " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+        }
+
+        // Aggregated table data per fund - simplified for speed
         $sql = "
         SELECT
           fl.id AS fund_id,
           fl.name AS fund_name,
           fl.appeal_id,
           ap.name AS appeal_name,
-          (SELECT MAX(td.freq)
-           FROM pw_transaction_details td
-           WHERE td.TID = t.id";
-
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $sql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-
-        $sql .= "
-          ) AS freq,
-          (t.totalamount / (
-            SELECT COUNT(DISTINCT td2.fundlist_id)
-            FROM pw_transaction_details td2
-            WHERE td2.TID = t.id";
-
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $sql .= " AND td2.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-
-        $sql .= "
-          )) AS amount,
-          t.totalamount
-        FROM pw_fundlist fl
+          COUNT(DISTINCT t.id) AS donation_count,
+          SUM(t.totalamount) AS total_raised
+        FROM pw_transactions t
+        JOIN pw_transaction_details td ON td.TID = t.id
+        JOIN pw_fundlist fl ON fl.id = td.fundlist_id AND fl.disable = 0
         LEFT JOIN pw_appeal ap ON ap.id = fl.appeal_id
-        JOIN pw_transaction_details td ON td.fundlist_id = fl.id
-        JOIN pw_transactions t ON t.id = td.TID
-        WHERE fl.disable = 0
-          AND t.status IN ('Completed', 'pending')
+        WHERE t.status IN ('Completed', 'pending')
           AND t.date >= {$startDateLiteral}
           AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-        ";
-
-        // Add appeal filter if provided
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $sql .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-
-        $sql .= " ORDER BY ap.name, fl.name, amount";
+          AND EXISTS (
+            SELECT 1
+            FROM pw_transaction_details d
+            JOIN pw_appeal a ON a.id = d.appeal_id
+            JOIN pw_fundlist f ON f.id = d.fundlist_id
+            WHERE d.TID = t.id
+            {$appealFilter}
+          )
+        GROUP BY fl.id, fl.name, fl.appeal_id, ap.name
+        ORDER BY total_raised DESC, ap.name, fl.name";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();

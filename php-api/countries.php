@@ -30,59 +30,59 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
-        $filterClause = '';
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-        if (!empty($fundIdsArray)) {
-            $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
-        }
-
         if ($granularity === 'daily') {
-            // Build active countries CTE with optional filters
+            // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
+            $filterClause = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+            if (!empty($fundIdsArray)) {
+                $sanitizedFundIds = array_map('intval', $fundIdsArray);
+                $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
+            }
+
+            // Build active countries CTE with optional filters - MATCH analytics.php EXISTS pattern
             $activeCountriesSql = "
             active_countries AS (
               SELECT DISTINCT
-                d.country AS country_code
+                COALESCE(NULLIF(don.country, ''), 'Unknown') AS country_code
               FROM pw_transactions t
-              JOIN pw_donors d ON d.id = t.DID
+              JOIN pw_donors don ON don.id = t.DID
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-                AND d.country IS NOT NULL
-                AND d.country != ''
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
             )";
 
-            // Build daily aggregation with optional filters - counts each transaction only once
+            // Build daily aggregation with optional filters - MATCH analytics.php pattern
             $dailyAggSql = "
             daily_agg AS (
               SELECT
                 DATE(t.date) AS d,
-                d.country AS country_code,
+                COALESCE(NULLIF(don.country, ''), 'Unknown') AS country_code,
                 SUM(t.totalamount) AS amount
               FROM pw_transactions t
-              JOIN pw_donors d ON d.id = t.DID
+              JOIN pw_donors don ON don.id = t.DID
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-                AND d.country IS NOT NULL
-                AND d.country != ''
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
-              GROUP BY DATE(t.date), d.country
+              GROUP BY DATE(t.date), COALESCE(NULLIF(don.country, ''), 'Unknown')
             )";
 
             // Daily chart data query
@@ -107,47 +107,58 @@ try {
             ";
 
         } else {
-            // Build active countries CTE with optional filters
+            // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
+            $filterClause = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+            if (!empty($fundIdsArray)) {
+                $sanitizedFundIds = array_map('intval', $fundIdsArray);
+                $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
+            }
+
+            // Build active countries CTE with optional filters - MATCH analytics.php EXISTS pattern
             $activeCountriesSql = "
             active_countries AS (
               SELECT DISTINCT
-                d.country AS country_code
+                COALESCE(NULLIF(don.country, ''), 'Unknown') AS country_code
               FROM pw_transactions t
-              JOIN pw_donors d ON d.id = t.DID
+              JOIN pw_donors don ON don.id = t.DID
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-                AND d.country IS NOT NULL
-                AND d.country != ''
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
             )";
 
-            // Build weekly aggregation with optional filters - counts each transaction only once
+            // Build weekly aggregation with optional filters - MATCH analytics.php pattern
             $weeklyAggSql = "
             weekly_agg AS (
               SELECT
                 YEARWEEK(t.date, 1) AS week_number,
-                d.country AS country_code,
+                COALESCE(NULLIF(don.country, ''), 'Unknown') AS country_code,
                 SUM(t.totalamount) AS amount
               FROM pw_transactions t
-              JOIN pw_donors d ON d.id = t.DID
+              JOIN pw_donors don ON don.id = t.DID
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-                AND d.country IS NOT NULL
-                AND d.country != ''
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
-              GROUP BY YEARWEEK(t.date, 1), d.country
+              GROUP BY YEARWEEK(t.date, 1), COALESCE(NULLIF(don.country, ''), 'Unknown')
             )";
 
             // Weekly chart data query
@@ -193,41 +204,43 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
+        // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
         $filterClause = '';
         if (!empty($appealIdsArray)) {
             $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
         }
         if (!empty($fundIdsArray)) {
             $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
+            $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
         }
 
-        // Table data query - raw transaction data for median calculation
+        // Aggregated table data per country using DISTINCT transactions
         $sql = "
+        WITH filtered_tx AS (
+          SELECT t.id, t.DID, t.totalamount
+          FROM pw_transactions t
+          WHERE t.status IN ('Completed', 'pending')
+            AND t.date >= {$startDateLiteral}
+            AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+            AND EXISTS (
+              SELECT 1
+              FROM pw_transaction_details d
+              JOIN pw_appeal a ON a.id = d.appeal_id
+              JOIN pw_fundlist f ON f.id = d.fundlist_id
+              WHERE d.TID = t.id
+              {$filterClause}
+            )
+        )
         SELECT
-          d.country AS country_code,
-          (SELECT MAX(td.freq)
-           FROM pw_transaction_details td
-           WHERE td.TID = t.id
-           {$filterClause}
-          ) AS freq,
-          t.totalamount
-        FROM pw_transactions t
-        JOIN pw_donors d ON d.id = t.DID
-        WHERE t.status IN ('Completed', 'pending')
-          AND t.date >= {$startDateLiteral}
-          AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-          AND d.country IS NOT NULL
-          AND d.country != ''
-          AND EXISTS (
-            SELECT 1
-            FROM pw_transaction_details td
-            WHERE td.TID = t.id
-            {$filterClause}
-          )
-        ORDER BY d.country, t.totalamount";
+          COALESCE(NULLIF(d.country, ''), 'Unknown') AS country_code,
+          COUNT(DISTINCT tx.id) AS donation_count,
+          SUM(tx.totalamount) AS total_raised
+        FROM filtered_tx tx
+        JOIN pw_donors d ON d.id = tx.DID
+        WHERE d.country IS NOT NULL AND d.country != ''
+        GROUP BY COALESCE(NULLIF(d.country, ''), 'Unknown')
+        ORDER BY country_code";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();

@@ -30,19 +30,8 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
-        $filterClause = '';
-        if (!empty($appealIdsArray)) {
-            $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
-        }
-        if (!empty($fundIdsArray)) {
-            $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
-        }
-
         if ($granularity === 'daily') {
-            // Daily chart data query - counts each transaction only once
+            // Daily chart data query
             $sql = "
             WITH RECURSIVE dates AS (
               SELECT DATE({$startDateLiteral}) AS d
@@ -62,11 +51,26 @@ try {
               FROM pw_transactions t
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
-                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)";
+
+            // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
+            $filterClause = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+            if (!empty($fundIdsArray)) {
+                $sanitizedFundIds = array_map('intval', $fundIdsArray);
+                $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
+            }
+
+            $sql .= "
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
               GROUP BY DATE(t.date), t.paymenttype
@@ -82,7 +86,7 @@ try {
             ";
 
         } else {
-            // Weekly chart data query - counts each transaction only once
+            // Weekly chart data query
             $sql = "
             WITH weeks AS (
               SELECT DISTINCT
@@ -103,11 +107,26 @@ try {
               FROM pw_transactions t
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
-                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+                AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)";
+
+            // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
+            $filterClause = '';
+            if (!empty($appealIdsArray)) {
+                $sanitizedAppealIds = array_map('intval', $appealIdsArray);
+                $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            }
+            if (!empty($fundIdsArray)) {
+                $sanitizedFundIds = array_map('intval', $fundIdsArray);
+                $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
+            }
+
+            $sql .= "
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details td
-                  WHERE td.TID = t.id
+                  FROM pw_transaction_details d
+                  JOIN pw_appeal a ON a.id = d.appeal_id
+                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  WHERE d.TID = t.id
                   {$filterClause}
                 )
               GROUP BY YEARWEEK(t.date, 1), t.paymenttype
@@ -143,38 +162,49 @@ try {
         $startDateLiteral = $pdo->quote($startDate);
         $endDateLiteral = $pdo->quote($endDate);
 
-        // Build filter clause for EXISTS subquery
+        // Build filter clause for EXISTS subquery (MATCH analytics.php pattern)
         $filterClause = '';
         if (!empty($appealIdsArray)) {
             $sanitizedAppealIds = array_map('intval', $appealIdsArray);
-            $filterClause .= " AND td.appeal_id IN (" . implode(',', $sanitizedAppealIds) . ")";
+            $filterClause .= " AND a.id IN (" . implode(',', $sanitizedAppealIds) . ")";
         }
         if (!empty($fundIdsArray)) {
             $sanitizedFundIds = array_map('intval', $fundIdsArray);
-            $filterClause .= " AND td.fundlist_id IN (" . implode(',', $sanitizedFundIds) . ")";
+            $filterClause .= " AND f.id IN (" . implode(',', $sanitizedFundIds) . ")";
         }
 
-        // Table data query - raw transaction data for median calculation
+        // Aggregated table data per payment method using DISTINCT transactions
         $sql = "
+        WITH filtered_tx AS (
+          SELECT t.id, t.paymenttype, t.totalamount
+          FROM pw_transactions t
+          WHERE t.status IN ('Completed', 'pending')
+            AND t.date >= {$startDateLiteral}
+            AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
+            AND EXISTS (
+              SELECT 1
+              FROM pw_transaction_details d
+              JOIN pw_appeal a ON a.id = d.appeal_id
+              JOIN pw_fundlist f ON f.id = d.fundlist_id
+              WHERE d.TID = t.id
+              {$filterClause}
+            )
+        ),
+        payment_types AS (
+          SELECT DISTINCT paymenttype FROM pw_transactions
+        ),
+        agg AS (
+          SELECT paymenttype, COUNT(DISTINCT id) AS donation_count, SUM(totalamount) AS total_raised
+          FROM filtered_tx
+          GROUP BY paymenttype
+        )
         SELECT
-            t.paymenttype AS payment_method,
-            (SELECT MAX(td.freq)
-             FROM pw_transaction_details td
-             WHERE td.TID = t.id
-             {$filterClause}
-            ) AS freq,
-            t.totalamount
-        FROM pw_transactions t
-        WHERE t.status IN ('Completed', 'pending')
-          AND t.date >= {$startDateLiteral}
-          AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
-          AND EXISTS (
-            SELECT 1
-            FROM pw_transaction_details td
-            WHERE td.TID = t.id
-            {$filterClause}
-          )
-        ORDER BY t.paymenttype, t.totalamount";
+          pt.paymenttype AS payment_method,
+          COALESCE(a.donation_count, 0) AS donation_count,
+          COALESCE(a.total_raised, 0) AS total_raised
+        FROM payment_types pt
+        LEFT JOIN agg a ON a.paymenttype = pt.paymenttype
+        ORDER BY pt.paymenttype";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
