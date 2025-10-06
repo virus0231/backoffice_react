@@ -37,15 +37,16 @@ function transformToGrid(rawData: DayTimeRawData[]): DayTimeHeatmapCell[][] {
   // Create a 7x24 grid initialized with zeros
   const grid: DayTimeHeatmapCell[][] = [];
   for (let day = 0; day < 7; day++) {
-    grid[day] = [];
+    const dayRow: DayTimeHeatmapCell[] = [];
     for (let hour = 0; hour < 24; hour++) {
-      grid[day][hour] = {
+      dayRow[hour] = {
         dayOfWeek: day,
         hourOfDay: hour,
         donationCount: 0,
         totalRaised: 0
       };
     }
+    grid[day] = dayRow;
   }
 
   // Fill in actual data from API
@@ -53,12 +54,15 @@ function transformToGrid(rawData: DayTimeRawData[]): DayTimeHeatmapCell[][] {
     const day = item.day_of_week;
     const hour = item.hour_of_day;
     if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
-      grid[day][hour] = {
-        dayOfWeek: day,
-        hourOfDay: hour,
-        donationCount: item.donation_count,
-        totalRaised: item.total_raised
-      };
+      const dayRow = grid[day];
+      if (dayRow) {
+        dayRow[hour] = {
+          dayOfWeek: day,
+          hourOfDay: hour,
+          donationCount: item.donation_count,
+          totalRaised: item.total_raised
+        };
+      }
     }
   });
 
