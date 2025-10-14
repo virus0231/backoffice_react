@@ -157,3 +157,13 @@ export function buildDayTimeUrl(searchParams: URLSearchParams): string {
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+export function buildRetentionUrl(searchParams: URLSearchParams): string {
+  const base = getPhpApiBase();
+  if (!base) {
+    return `/retention.php?${searchParams.toString()}`;
+  }
+  const url = new URL(`${base}/retention.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
+  return url.toString();
+}

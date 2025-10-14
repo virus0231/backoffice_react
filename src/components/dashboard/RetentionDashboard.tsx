@@ -2,38 +2,55 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useFilterContext } from "@/providers/FilterProvider";
-
-// Mock retention data - replace with real API data later
-const mockRetentionData = [
-  { cohort: "Dec 2024", count: 7, retention: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100] },
-  { cohort: "Jan 2025", count: 33, retention: [100, 94, 94, 91, 91, 91, 88, 82, 79, 79] },
-  { cohort: "Feb 2025", count: 26, retention: [100, 100, 100, 100, 96, 92, 88, 88, 85] },
-  { cohort: "Mar 2025", count: 52, retention: [100, 96, 88, 96, 96, 94, 92, 92] },
-  { cohort: "Apr 2025", count: 20, retention: [95, 90, 90, 95, 90, 90, 90] },
-  { cohort: "May 2025", count: 44, retention: [98, 93, 89, 88, 89, 89] },
-  { cohort: "Jun 2025", count: 49, retention: [100, 98, 96, 98, 98] },
-  { cohort: "Jul 2025", count: 43, retention: [95, 95, 93, 93] },
-  { cohort: "Aug 2025", count: 27, retention: [96, 89, 85] },
-  { cohort: "Sep 2025", count: 34, retention: [100, 100] },
-  { cohort: "Oct 2025", count: 0, retention: [] },
-];
+import { useRetentionData } from "@/hooks/useRetentionData";
+import LoadingState from "@/components/common/LoadingState";
+import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 
 const getColorForPercentage = (percentage: number): string => {
-  if (percentage >= 95) return "bg-[#2563eb] text-white"; // Dark blue
-  if (percentage >= 90) return "bg-[#3b82f6] text-white"; // Medium blue
-  if (percentage >= 85) return "bg-[#60a5fa] text-white"; // Light blue
-  if (percentage >= 80) return "bg-[#93c5fd] text-gray-900"; // Lighter blue
-  return "bg-gray-100 text-gray-600"; // Very light gray
+  if (percentage >= 95) return "bg-[#1d4ed8] text-white";
+  if (percentage >= 90) return "bg-[#2563eb] text-white";
+  if (percentage >= 85) return "bg-[#3b82f6] text-white";
+  if (percentage >= 80) return "bg-[#60a5fa] text-gray-900";
+  if (percentage >= 70) return "bg-[#93c5fd] text-gray-900";
+  if (percentage > 0) return "bg-blue-50 text-blue-700";
+  return "bg-gray-50 text-gray-400";
 };
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function RetentionDashboard() {
-  const { isHydrated } = useFilterContext();
-  const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState("Oct");
+  const { isHydrated, selectedAppeals, selectedFunds } = useFilterContext();
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => months[now.getMonth()] ?? 'Jan');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<{ cohort: string; month: number; percentage: number; count: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [showNumbers, setShowNumbers] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch real data from API
+  const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
+  const fundIds = selectedFunds.length > 0 ? selectedFunds.map(f => f.id).join(',') : null;
+
+  // Build asOf parameter (YYYY-MM) from current selection
+  const monthIndex = Math.max(0, months.indexOf(selectedMonth));
+  const asOf = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}`;
+
+  const { retentionData, isLoading, hasError, error } = useRetentionData(appealIds, fundIds, asOf);
+
+  const handleCellHover = (cohort: string, month: number, percentage: number, count: number, event: React.MouseEvent) => {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    setHoveredCell({ cohort, month, percentage, count });
+    setTooltipPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10
+    });
+  };
+
+  const handleCellLeave = () => {
+    setHoveredCell(null);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -47,10 +64,24 @@ export default function RetentionDashboard() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!isHydrated) {
+  // Show loading state
+  if (!isHydrated || isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <LoadingState size="lg" message="Loading retention data..." fullHeight />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (hasError) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <ChartErrorFallback
+          error={new Error(error || "Failed to load retention data")}
+          resetError={() => window.location.reload()}
+          title="Failed to load retention data"
+        />
       </div>
     );
   }
@@ -69,8 +100,17 @@ export default function RetentionDashboard() {
           </p>
         </div>
 
-        {/* Month Selector */}
-        <div className="relative" ref={dropdownRef}>
+        {/* Controls */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowNumbers(v => !v)}
+            className={`px-3 py-1.5 text-xs rounded-lg border ${showNumbers ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            title={showNumbers ? 'Hide % labels' : 'Show % labels'}
+          >
+            {showNumbers ? 'Labels: On' : 'Labels: Off'}
+          </button>
+
+          <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -127,7 +167,24 @@ export default function RetentionDashboard() {
             </div>
           )}
         </div>
+        </div>
       </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-3 mb-4 text-xs text-gray-600">
+        <span>Legend:</span>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-[#1d4ed8]"></span><span>95%+</span></div>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-[#2563eb]"></span><span>90–94%</span></div>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-[#3b82f6]"></span><span>85–89%</span></div>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-[#60a5fa]"></span><span>80–84%</span></div>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-blue-50 border border-blue-100"></span><span>1–79%</span></div>
+        <div className="flex items-center gap-1"><span className="inline-block w-4 h-3 rounded bg-gray-50 border border-gray-200"></span><span>0%</span></div>
+      </div>
+
+      {/* Empty state */}
+      {retentionData.length === 0 && (
+        <div className="p-6 border border-dashed border-gray-300 rounded-lg text-sm text-gray-600 mb-4">No retention data for the selected filters.</div>
+      )}
 
       {/* Retention Table */}
       <div className="overflow-x-auto">
@@ -179,7 +236,7 @@ export default function RetentionDashboard() {
             </tr>
           </thead>
           <tbody>
-            {mockRetentionData.map((row, rowIndex) => (
+            {retentionData.map((row, rowIndex) => (
               <tr key={rowIndex} className="border-b border-gray-100">
                 <td className="px-3 py-2 text-sm text-gray-900 font-medium">
                   {row.cohort}
@@ -189,17 +246,21 @@ export default function RetentionDashboard() {
                 </td>
                 {Array.from({ length: 12 }).map((_, colIndex) => {
                   const percentage = row.retention[colIndex];
-                  const hasData = percentage !== undefined;
+                  const hasData = typeof percentage === 'number';
+                  const pct = hasData ? percentage : 0;
+                  const retainedCount = Math.round((pct / 100) * row.count);
 
                   return (
                     <td key={colIndex} className="px-1 py-1">
                       {hasData ? (
                         <div
-                          className={`px-2 py-1.5 text-xs font-medium text-center rounded ${getColorForPercentage(
-                            percentage
+                          className={`px-2 py-1.5 text-xs font-medium text-center rounded cursor-pointer transition-all hover:ring-2 hover:ring-blue-500 hover:ring-offset-1 ${getColorForPercentage(
+                            pct
                           )}`}
+                          onMouseEnter={(e) => handleCellHover(row.cohort, colIndex, pct, retainedCount, e)}
+                          onMouseLeave={handleCellLeave}
                         >
-                          {percentage}%
+                          {showNumbers ? `${pct}%` : ''}
                         </div>
                       ) : (
                         <div className="px-2 py-1.5 text-xs text-center">
@@ -214,6 +275,30 @@ export default function RetentionDashboard() {
           </tbody>
         </table>
       </div>
+
+      {/* Tooltip */}
+      {hoveredCell && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-3 pointer-events-none transition-all duration-150 ease-out"
+          style={{
+            left: `${tooltipPosition.x}px`,
+            top: `${tooltipPosition.y}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="text-sm font-semibold text-gray-900 mb-1">
+            {hoveredCell.cohort} - {hoveredCell.month === 0 ? 'Baseline (Month 0)' : `Month ${hoveredCell.month}`}
+          </div>
+          <div className="text-xs text-gray-600 mb-1">Retention Rate</div>
+          <div className="text-sm font-medium text-gray-900 mb-2">
+            {hoveredCell.percentage}%
+          </div>
+          <div className="text-xs text-gray-600 mb-1">Retained Schedules</div>
+          <div className="text-sm font-medium text-gray-900">
+            {hoveredCell.count} of {retentionData.find(r => r.cohort === hoveredCell.cohort)?.count ?? 0}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
