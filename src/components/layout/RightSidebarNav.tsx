@@ -10,7 +10,7 @@ const chartSections = [
   { id: "day-and-time", label: "Day and time", icon: "📅" },
   { id: "frequencies", label: "Frequencies", icon: "📊" },
   { id: "payment-methods", label: "Payment methods", icon: "💳" },
-  { id: "funds", label: "Funds", icon: "🎯" },
+  { id: "campaigns", label: "Campaigns", icon: "🎯" },
   { id: "countries", label: "Countries", icon: "🌍" },
 ];
 

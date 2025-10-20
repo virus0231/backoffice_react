@@ -6,30 +6,24 @@ import { buildFundsDataUrl } from '@/lib/config/phpApi';
 import { cachedFetch } from '@/lib/cache/apiCache';
 import { logError } from '@/lib/utils/errorHandling';
 
-interface FundRawData {
-  fund_id: number;
-  fund_name: string;
-  appeal_id: number | null;
-  appeal_name: string | null;
+interface CampaignRawData {
+  appeal_id: number;
+  appeal_name: string;
   donation_count: number | null;
   total_raised: number | null;
 }
 
-interface FundStats {
-  fundId: number;
-  fundName: string;
-  appealId: number | null;
-  appealName: string | null;
+interface CampaignStats {
+  appealId: number;
+  appealName: string;
   donations: number;
   totalRaised: number;
 }
 
-interface FundChartDataPoint {
+interface CampaignChartDataPoint {
   date: string;
-  fund_id: number;
-  fund_name: string;
-  appeal_id: number | null;
-  appeal_name: string | null;
+  appeal_id: number;
+  appeal_name: string;
   amount: number;
 }
 
@@ -38,37 +32,17 @@ interface DateRange {
   endDate: Date;
 }
 
-interface UseFundsDataResult {
+interface UseCampaignsDataResult {
   chartData: { [key: string]: any }[];
-  tableData: FundStats[];
+  tableData: CampaignStats[];
   isLoading: boolean;
   hasError: boolean;
   error: string | null;
 }
 
-// Calculate median from array of numbers
-function calculateMedian(values: number[]): number {
-  if (values.length === 0) return 0;
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-
-  if (sorted.length % 2 === 0) {
-    const val1 = sorted[mid - 1];
-    const val2 = sorted[mid];
-    return val1 !== undefined && val2 !== undefined ? (val1 + val2) / 2 : 0;
-  } else {
-    const val = sorted[mid];
-    return val !== undefined ? val : 0;
-  }
-}
-
-// Process raw data to calculate stats
-function processTableData(rawData: FundRawData[]): FundStats[] {
+function processTableData(rawData: CampaignRawData[]): CampaignStats[] {
   return rawData
     .map((r) => ({
-      fundId: r.fund_id,
-      fundName: r.fund_name,
       appealId: r.appeal_id,
       appealName: r.appeal_name,
       donations: typeof r.donation_count === 'number' ? r.donation_count : 0,
@@ -77,28 +51,26 @@ function processTableData(rawData: FundRawData[]): FundStats[] {
     .sort((a, b) => b.totalRaised - a.totalRaised);
 }
 
-// Transform chart data to group by date
-function transformChartData(rawChartData: FundChartDataPoint[]): { [key: string]: any }[] {
+function transformChartData(rawChartData: CampaignChartDataPoint[]): { [key: string]: any }[] {
   const grouped = rawChartData.reduce((acc, row) => {
     const date = row.date;
     if (!acc[date]) {
       acc[date] = { date };
     }
-    // Use fund_id as key for the amount
-    acc[date][`fund_${row.fund_id}`] = row.amount;
+    acc[date][`appeal_${row.appeal_id}`] = row.amount;
     return acc;
   }, {} as Record<string, any>);
 
   return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function useFundsData(
+export function useCampaignsData(
   dateRange: DateRange,
   granularity: 'daily' | 'weekly',
   appealIds: string | null
-): UseFundsDataResult {
+): UseCampaignsDataResult {
   const [chartData, setChartData] = useState<{ [key: string]: any }[]>([]);
-  const [tableData, setTableData] = useState<FundStats[]>([]);
+  const [tableData, setTableData] = useState<CampaignStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -132,8 +104,8 @@ export function useFundsData(
         const tableUrl = buildFundsDataUrl('table', tableParams);
 
         const [chartResponse, tableResponse] = await Promise.all([
-          cachedFetch<{ success: boolean; data: { chartData: FundChartDataPoint[] } }>(chartUrl, undefined, { ttl: 5 * 60 * 1000 }),
-          cachedFetch<{ success: boolean; data: { tableData: FundRawData[] } }>(tableUrl, undefined, { ttl: 5 * 60 * 1000 })
+          cachedFetch<{ success: boolean; data: { chartData: CampaignChartDataPoint[] } }>(chartUrl, undefined, { ttl: 5 * 60 * 1000 }),
+          cachedFetch<{ success: boolean; data: { tableData: CampaignRawData[] } }>(tableUrl, undefined, { ttl: 5 * 60 * 1000 })
         ]);
 
         if (!isMounted) return;
@@ -153,20 +125,16 @@ export function useFundsData(
         const transformedChartData = transformChartData(
           (chartResponse.data.chartData || []).map((d: any) => ({
             date: String(d.date || ''),
-            fund_id: toNum(d.fund_id, 0),
-            fund_name: String(d.fund_name || ''),
-            appeal_id: d.appeal_id === null ? null : toNum(d.appeal_id, 0),
-            appeal_name: d.appeal_name === null ? null : String(d.appeal_name),
+            appeal_id: toNum(d.appeal_id, 0),
+            appeal_name: String(d.appeal_name || ''),
             amount: toNum(d.amount, 0)
           }))
         );
 
         const processedTableData = processTableData(
           (tableResponse.data.tableData || []).map((r: any) => ({
-            fund_id: toNum(r.fund_id, 0),
-            fund_name: String(r.fund_name || ''),
-            appeal_id: r.appeal_id === null ? null : toNum(r.appeal_id, 0),
-            appeal_name: r.appeal_name === null ? null : String(r.appeal_name),
+            appeal_id: toNum(r.appeal_id, 0),
+            appeal_name: String(r.appeal_name || ''),
             donation_count: r.donation_count === null ? 0 : toNum(r.donation_count, 0),
             total_raised: r.total_raised === null ? 0 : toNum(r.total_raised, 0),
           }))
@@ -176,10 +144,10 @@ export function useFundsData(
         setTableData(processedTableData);
         setIsLoading(false);
       } catch (err) {
-        logError(err, 'useFundsData');
+        logError(err, 'useCampaignsData');
         if (isMounted) {
           setHasError(true);
-          setError(err instanceof Error ? err.message : 'Failed to fetch funds data');
+          setError(err instanceof Error ? err.message : 'Failed to fetch campaigns data');
           setIsLoading(false);
         }
       }

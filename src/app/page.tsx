@@ -6,7 +6,7 @@ import FrequenciesDashboard from "@/components/dashboard/FrequenciesDashboard";
 import PaymentMethodsDashboard from "@/components/dashboard/PaymentMethodsDashboard";
 import RetentionDashboard from "@/components/dashboard/RetentionDashboard";
 import DayAndTimeDashboard from "@/components/dashboard/DayAndTimeDashboard";
-import FundsDashboard from "@/components/dashboard/FundsDashboard";
+import CampaignsDashboard from "@/components/dashboard/CampaignsDashboard";
 import CountriesDashboard from "@/components/dashboard/CountriesDashboard";
 
 export default function DashboardPage() {
@@ -76,8 +76,8 @@ export default function DashboardPage() {
         </section>
 
         {/* Funds Section */}
-        <section id="funds">
-          <FundsDashboard />
+        <section id="campaigns">
+          <CampaignsDashboard />
         </section>
 
         {/* Countries Section */}

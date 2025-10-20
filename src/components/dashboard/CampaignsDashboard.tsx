@@ -5,12 +5,12 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import DateRangePicker from "@/components/filters/DateRangePicker";
 import { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
-import { useFundsData } from "@/hooks/useFundsData";
+import { useCampaignsData } from "@/hooks/useCampaignsData";
 import LoadingState from "@/components/common/LoadingState";
 import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 
-// Color palette for funds
-const FUND_COLORS = [
+// Color palette for campaigns
+const CAMPAIGN_COLORS = [
   '#3b82f6', // blue
   '#10b981', // green
   '#f59e0b', // amber
@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function FundsDashboard() {
+export default function CampaignsDashboard() {
   // Get global filter context
   const {
     dateRange: globalDateRange,
@@ -77,7 +77,7 @@ export default function FundsDashboard() {
   // Fetch real data from API
   const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
 
-  const { chartData, tableData, isLoading, hasError, error } = useFundsData(
+  const { chartData, tableData, isLoading, hasError, error } = useCampaignsData(
     effectiveDateRange,
     granularity,
     appealIds
@@ -89,21 +89,20 @@ export default function FundsDashboard() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedData = tableData.slice(startIndex, endIndex);
 
-  // Create fund configuration from paginated data for chart
-  const fundConfig = paginatedData.map((fund, index) => ({
-    fundId: fund.fundId,
-    fundName: fund.fundName,
-    appealName: fund.appealName,
-    color: FUND_COLORS[(startIndex + index) % FUND_COLORS.length],
-    total: fund.totalRaised
+  // Create campaign configuration from paginated data for chart
+  const campaignConfig = paginatedData.map((campaign, index) => ({
+    appealId: campaign.appealId,
+    appealName: campaign.appealName,
+    color: CAMPAIGN_COLORS[(startIndex + index) % CAMPAIGN_COLORS.length],
+    total: campaign.totalRaised
   }));
 
-  // Filter chart data to only include current page funds
-  const currentFundIds = paginatedData.map(f => `fund_${f.fundId}`);
+  // Filter chart data to only include current page campaigns
+  const currentCampaignIds = paginatedData.map(c => `appeal_${c.appealId}`);
   const filteredChartData = chartData.map(dataPoint => {
     const filtered: any = { date: dataPoint.date };
-    currentFundIds.forEach(fundKey => {
-      filtered[fundKey] = dataPoint[fundKey] || 0;
+    currentCampaignIds.forEach(campaignKey => {
+      filtered[campaignKey] = dataPoint[campaignKey] || 0;
     });
     return filtered;
   });
@@ -112,7 +111,7 @@ export default function FundsDashboard() {
   if (!isHydrated || isLoading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <LoadingState size="lg" message="Loading funds data..." fullHeight />
+        <LoadingState size="lg" message="Loading campaigns data..." fullHeight />
       </div>
     );
   }
@@ -122,9 +121,9 @@ export default function FundsDashboard() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <ChartErrorFallback
-          error={new Error(error || "Failed to load funds data")}
+          error={new Error(error || "Failed to load campaigns data")}
           resetError={() => window.location.reload()}
-          title="Failed to load funds data"
+          title="Failed to load campaigns data"
         />
       </div>
     );
@@ -134,7 +133,7 @@ export default function FundsDashboard() {
   const maxValue = Math.max(
     ...filteredChartData.flatMap(d =>
       Object.keys(d)
-        .filter(k => k.startsWith('fund_'))
+        .filter(k => k.startsWith('appeal_'))
         .map(k => d[k])
     ),
     0
@@ -153,9 +152,9 @@ export default function FundsDashboard() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
             <span className="text-gray-400">🎯</span>
-            Funds
+            Campaigns
           </h2>
-          <p className="text-sm text-gray-600">Donations shown by the supporter's chosen fund.</p>
+          <p className="text-sm text-gray-600">Donations shown by campaign.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -193,7 +192,7 @@ export default function FundsDashboard() {
       <div className="h-[300px] mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            key={`funds-chart-page-${currentPage}`}
+            key={`campaigns-chart-page-${currentPage}`}
             data={filteredChartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
@@ -215,15 +214,15 @@ export default function FundsDashboard() {
               tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip content={<CustomTooltip />} />
-            {fundConfig.map((fund) => (
+            {campaignConfig.map((campaign) => (
               <Line
-                key={fund.fundId}
+                key={campaign.appealId}
                 type="monotone"
-                dataKey={`fund_${fund.fundId}`}
-                stroke={fund.color}
+                dataKey={`appeal_${campaign.appealId}`}
+                stroke={campaign.color}
                 strokeWidth={2}
                 dot={false}
-                name={fund.fundName}
+                name={campaign.appealName}
               />
             ))}
           </LineChart>
@@ -235,8 +234,7 @@ export default function FundsDashboard() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Fund</th>
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Appeal</th>
+              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Campaign</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Donations</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
                 Average donation
@@ -247,17 +245,14 @@ export default function FundsDashboard() {
           <tbody>
             {paginatedData.map((stat, index) => {
               const globalIndex = startIndex + index;
-              const color = FUND_COLORS[globalIndex % FUND_COLORS.length];
+              const color = CAMPAIGN_COLORS[globalIndex % CAMPAIGN_COLORS.length];
               return (
-                <tr key={stat.fundId} className="border-t border-gray-100">
+                <tr key={stat.appealId} className="border-t border-gray-100">
                   <td className="py-3 text-sm text-gray-900">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }}></div>
-                      {stat.fundName}
+                      {stat.appealName}
                     </div>
-                  </td>
-                  <td className="py-3 text-sm text-gray-600">
-                    {stat.appealName || '-'}
                   </td>
                   <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
                   <td className="py-3 text-sm text-gray-900 text-right">${((stat.totalRaised || 0) / (stat.donations || 1)).toFixed(2)}</td>
@@ -274,7 +269,7 @@ export default function FundsDashboard() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} funds
+              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} campaigns
             </div>
             <div className="flex items-center gap-2">
               <button
