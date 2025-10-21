@@ -12,9 +12,11 @@ import { clearCache } from '@/lib/cache/apiCache';
 interface ClientSwitcherProps {
   disabled?: boolean;
   className?: string;
+  variant?: 'default' | 'panel';
+  showIcon?: boolean;
 }
 
-const CLIENTS = [
+export const CLIENTS = [
   {
     id: 'mausa',
     name: 'Mausa',
@@ -29,7 +31,7 @@ const CLIENTS = [
   },
 ];
 
-export default function ClientSwitcher({ disabled = false, className }: ClientSwitcherProps) {
+export default function ClientSwitcher({ disabled = false, className, variant = 'default', showIcon = true }: ClientSwitcherProps) {
   const { selectedClient, setSelectedClient } = useFilterStore();
   const [isOpen, setIsOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
@@ -79,6 +81,8 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
     }, 100);
   };
 
+  const isPanel = variant === 'panel';
+
   return (
     <div className={clsx('relative', className)} ref={dropdownRef}>
       {/* Trigger Button */}
@@ -87,11 +91,10 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
         onClick={() => !disabled && !isSwitching && setIsOpen(!isOpen)}
         disabled={disabled || isSwitching}
         className={clsx(
-          'w-full min-w-[160px] px-4 py-2.5 text-sm font-medium text-left',
-          'bg-white border border-gray-300 rounded-lg shadow-sm',
-          'hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
-          'transition-all duration-200',
-          'flex items-center justify-between gap-2',
+          'w-full min-w-[160px] text-left flex items-center justify-between gap-2 transition-all duration-200',
+          isPanel
+            ? 'px-3 py-2 text-xs bg-white border border-gray-200 rounded-md focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20'
+            : 'px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
           (disabled || isSwitching) && 'bg-gray-50 text-gray-500 cursor-not-allowed opacity-60',
           !disabled && !isSwitching && 'cursor-pointer'
         )}
@@ -103,16 +106,13 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
           ) : (
-            <span className="text-base">{selectedClientData.icon}</span>
+            showIcon ? <span className={clsx(isPanel ? 'text-sm' : 'text-base')}>{selectedClientData.icon}</span> : null
           )}
           <span className="text-gray-900">{isSwitching ? 'Switching...' : selectedClientData.name}</span>
         </div>
         {!isSwitching && (
           <svg
-            className={clsx(
-              'w-4 h-4 text-gray-500 transition-transform duration-200',
-              isOpen && 'transform rotate-180'
-            )}
+            className={clsx('w-4 h-4 transition-transform duration-200', isOpen && 'transform rotate-180', isPanel ? 'text-gray-400' : 'text-gray-500')}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -124,7 +124,7 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
 
       {/* Dropdown Menu */}
       {isOpen && !disabled && !isSwitching && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+        <div className={clsx('absolute z-50 w-full bg-white border border-gray-200', isPanel ? 'mt-1 rounded-md shadow-md' : 'mt-2 rounded-lg shadow-lg')}>
           <div className="py-1">
             {CLIENTS.map((client) => (
               <button
@@ -132,14 +132,12 @@ export default function ClientSwitcher({ disabled = false, className }: ClientSw
                 type="button"
                 onClick={() => handleChange(client.id)}
                 className={clsx(
-                  'w-full px-4 py-2.5 text-sm text-left flex items-center gap-2',
-                  'transition-colors duration-150',
-                  selectedClient === client.id
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
+                  'w-full text-left flex items-center gap-2 transition-colors duration-150',
+                  isPanel ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm',
+                  selectedClient === client.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700 hover:bg-gray-50'
                 )}
               >
-                <span className="text-base">{client.icon}</span>
+                {showIcon ? <span className={clsx(isPanel ? 'text-sm' : 'text-base')}>{client.icon}</span> : null}
                 <span>{client.name}</span>
                 {selectedClient === client.id && (
                   <svg className="w-4 h-4 ml-auto text-blue-600" fill="currentColor" viewBox="0 0 20 20">

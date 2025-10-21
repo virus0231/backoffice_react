@@ -167,3 +167,20 @@ export function buildRetentionUrl(searchParams: URLSearchParams): string {
   for (const [k, v] of searchParams.entries()) url.searchParams.set(k, v);
   return url.toString();
 }
+
+// Auth endpoints
+export function buildLoginUrl(): string {
+  // Always use 'mausa' client for login
+  const base = getPhpApiBase('mausa');
+  if (!base) return '/login.php';
+  const url = new URL(`${base}/login.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  return url.toString();
+}
+
+export function buildAddUserUrl(): string {
+  // Use 'mausa' client for user creation
+  const base = getPhpApiBase('mausa');
+  if (!base) return '/add_user.php';
+  const url = new URL(`${base}/add_user.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  return url.toString();
+}

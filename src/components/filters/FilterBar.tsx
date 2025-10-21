@@ -13,7 +13,6 @@ import DateRangePicker from './DateRangePicker';
 import AppealsFilter from './AppealsFilter';
 import FundsFilter from './FundsFilter';
 import FrequencyFilter from './FrequencyFilter';
-import ClientSwitcher from './ClientSwitcher';
 import { useFilterStore } from '@/stores/filterStore';
 import { formatDateRangeDisplay } from '@/lib/utils/dateHelpers';
 
@@ -135,13 +134,7 @@ export default function FilterBar({
 
             {/* Filters Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Client</label>
-                <ClientSwitcher
-                  disabled={disabled || isLoading}
-                  className="w-full"
-                />
-              </div>
+              {/* Client switcher moved to Profile Panel */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
@@ -208,10 +201,7 @@ export default function FilterBar({
 
       {/* Desktop: Horizontal Filters */}
       <div className="hidden lg:flex items-center gap-4">
-        {/* Client Switcher */}
-        <ClientSwitcher
-          disabled={disabled || isLoading}
-        />
+        {/* Client switcher moved to Profile Panel */}
 
         {/* Date Range Picker */}
         <DateRangePicker

@@ -1,0 +1,27 @@
+# Disable directory listings
+Options -Indexes
+
+# Example environment variables (fill these in via cPanel if supported)
+<IfModule mod_env.c>
+  # Admin key for add_user endpoint (REQUIRED)
+  SetEnv INSIGHTS_ADMIN_KEY "asdfghjkl;'"
+
+  # Token signing secret for login (RECOMMENDED)
+  SetEnv INSIGHTS_AUTH_SECRET "qwertyuiopasdfghjklzxcvbnm"
+  # Optional token TTL (seconds)
+  SetEnv INSIGHTS_TOKEN_TTL "86400"
+</IfModule>
+
+# Basic CORS headers (PHP also sets these; this is a convenience)
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Deny public access to the logs folder
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^logs/ - [F,L]
+</IfModule>
+
