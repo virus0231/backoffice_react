@@ -2,14 +2,13 @@
 
 import React from 'react';
 
-export function BrandLogo({ className = '', title = 'YOC', src = '/brand/Asset%201@4x.png' }: { className?: string; title?: string; src?: string }) {
+// export function BrandLogo({ className = '', title = 'YOC', src = '/insights/brand/Asset%201@4x.png' }: { className?: string; title?: string; src?: string }) {
+export function BrandLogo({ className = '', title = 'YOC', src = 'brand/Asset%201@4x.png' }: { className?: string; title?: string; src?: string }) {
   return (
     <img
       src={src}
       alt={title}
       className={className}
-      decoding="async"
-      loading="lazy"
     />
   );
 }
