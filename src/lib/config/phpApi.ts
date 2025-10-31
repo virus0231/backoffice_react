@@ -29,6 +29,8 @@ export function getPhpApiBase(clientId?: string): string {
   const clientUrls: Record<string, string | undefined> = {
     'mausa': process.env.NEXT_PUBLIC_API_URL_MAUSA,
     'amoud': process.env.NEXT_PUBLIC_API_URL_AMOUD,
+    'afghan': process.env.NEXT_PUBLIC_API_URL_AFGHAN,
+    'rusard': process.env.NEXT_PUBLIC_API_URL_RUSARD,
   };
 
   const clientUrl = clientUrls[selectedClient || 'mausa'];
