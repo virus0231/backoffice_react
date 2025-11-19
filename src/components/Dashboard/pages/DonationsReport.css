@@ -1,0 +1,210 @@
+.donations-report-page {
+  flex: 1;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* Header Section */
+.donations-report-header {
+  background-color: white;
+  padding: 24px 30px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.donations-report-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.donations-report-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.breadcrumb-separator {
+  color: #d1d5db;
+}
+
+.breadcrumb-current {
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Content Section */
+.donations-report-content {
+  padding: 30px;
+}
+
+/* Report Filter Section */
+.report-filter-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Filter Grid */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+  margin-bottom: 30px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-group.empty-space {
+  visibility: hidden;
+}
+
+.filter-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Input Styles */
+.date-input,
+.select-input,
+.text-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #4b5563;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.date-input:focus,
+.select-input:focus,
+.text-input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.text-input::placeholder {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.select-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Export Buttons Row */
+.export-buttons-row {
+  display: flex;
+  gap: 15px;
+  padding-top: 10px;
+}
+
+.export-detail-btn,
+.export-summary-btn {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.export-detail-btn:hover,
+.export-summary-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+
+.export-detail-btn:active,
+.export-summary-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .filter-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .donations-report-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .donations-report-content {
+    padding: 15px;
+  }
+
+  .report-filter-section {
+    padding: 20px;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .filter-group.empty-space {
+    display: none;
+  }
+
+  .export-buttons-row {
+    flex-direction: column;
+  }
+
+  .export-detail-btn,
+  .export-summary-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .donations-report-header {
+    padding: 20px;
+  }
+
+  .donations-report-title {
+    font-size: 20px;
+  }
+
+  .donations-report-content {
+    padding: 10px;
+  }
+
+  .report-filter-section {
+    padding: 15px;
+  }
+}

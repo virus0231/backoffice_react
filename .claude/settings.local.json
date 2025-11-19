@@ -1,14 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(md-tree:*)",
-      "Bash(npx tailwindcss init:*)",
-      "Read(//c/**)",
-      "Bash(tree:*)",
-      "Bash(npx tsc:*)",
-      "Bash(xargs rm:*)",
-      "Bash(grep:*)",
-      "Bash(test:*)"
+      "Read(//c/Users/YOC/Pictures/Screenshots/**)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
