@@ -1,16 +1,8 @@
 import { useAuth } from '../../context/AuthContext';
 import './Header.css';
 
-const Header = ({ dateRange, setDateRange, timeFilter, setTimeFilter }) => {
+const Header = () => {
   const { user } = useAuth();
-
-  const timeFilters = [
-    { id: 'daily', label: 'Daily' },
-    { id: 'weekly', label: 'Weekly' },
-    { id: 'monthly', label: 'Monthly' },
-    { id: 'yearly', label: 'Yearly' },
-    { id: 'all', label: 'All-time' }
-  ];
 
   return (
     <div className="dashboard-header">
@@ -34,42 +26,6 @@ const Header = ({ dateRange, setDateRange, timeFilter, setTimeFilter }) => {
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </div>
-        </div>
-      </div>
-
-      <div className="header-filters">
-        <div className="date-filters">
-          <div className="date-input-group">
-            <label>From Date</label>
-            <input
-              type="text"
-              value={dateRange.from}
-              onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
-              placeholder="mm/dd/yyyy"
-            />
-          </div>
-          <div className="date-input-group">
-            <label>To Date</label>
-            <input
-              type="text"
-              value={dateRange.to}
-              onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
-              placeholder="mm/dd/yyyy"
-            />
-          </div>
-          <button className="filter-button">Filter</button>
-        </div>
-
-        <div className="time-filter-buttons">
-          {timeFilters.map((filter) => (
-            <button
-              key={filter.id}
-              className={`time-filter-btn ${timeFilter === filter.id ? 'active' : ''}`}
-              onClick={() => setTimeFilter(filter.id)}
-            >
-              {filter.label}
-            </button>
-          ))}
         </div>
       </div>
     </div>

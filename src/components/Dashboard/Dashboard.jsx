@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import DashboardContent from './DashboardContent';
+import InsightsPage from './insights/InsightsPage';
 import Users from './pages/Users';
 import Permissions from './pages/Permissions';
 import Donors from './pages/Donors';
@@ -26,12 +26,6 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [dateRange, setDateRange] = useState({
-    from: '01/01/2021',
-    to: '11/21/2025'
-  });
-
-  const [timeFilter, setTimeFilter] = useState('yearly');
 
   const renderContent = () => {
     switch (currentPage) {
@@ -79,13 +73,8 @@ const Dashboard = () => {
       default:
         return (
           <>
-            <Header
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-              timeFilter={timeFilter}
-              setTimeFilter={setTimeFilter}
-            />
-            <DashboardContent timeFilter={timeFilter} />
+            <Header />
+            <InsightsPage />
           </>
         );
     }
