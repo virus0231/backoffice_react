@@ -1,84 +1,69 @@
 import FilterBar from './FilterBar';
 import PrimaryRevenueDashboard from './dashboards/PrimaryRevenueDashboard';
 import RecurringPlansDashboard from './dashboards/RecurringPlansDashboard';
+import RecurringRevenueDashboard from './dashboards/RecurringRevenueDashboard';
+import FrequenciesDashboard from './dashboards/FrequenciesDashboard';
+import PaymentMethodsDashboard from './dashboards/PaymentMethodsDashboard';
+import RetentionDashboard from './dashboards/RetentionDashboard';
+import DayAndTimeDashboard from './dashboards/DayAndTimeDashboard';
+import CampaignsDashboard from './dashboards/CampaignsDashboard';
+import CountriesDashboard from './dashboards/CountriesDashboard';
 import RightSidebarNav from './RightSidebarNav';
-import './InsightsPage.css';
 
 const InsightsPage = () => {
   return (
-    <div className="insights-page">
-      <div className="insights-layout">
-        <main className="insights-main">
-          <div className="insights-content">
+    <div className="bg-gray-50 min-h-screen p-6 lg:p-8">
+      <div className="flex gap-6 max-w-[1536px] mx-auto">
+        <main className="flex-1 max-w-[calc(100%-320px)]">
+          <div className="flex flex-col gap-8">
             {/* Global Filters Section */}
-            <div className="filter-section">
+            <div className="bg-white rounded-lg border border-gray-200">
               <FilterBar />
             </div>
 
             {/* Chart Sections */}
-            <div className="dashboards-container">
-              <div id="raised" className="dashboard-section">
+            <div className="flex flex-col gap-8">
+              <section id="raised" className="scroll-mt-8">
                 <PrimaryRevenueDashboard />
-              </div>
+              </section>
 
-              <div id="recurring-plans" className="dashboard-section">
+              <section id="recurring-plans" className="scroll-mt-8">
                 <RecurringPlansDashboard />
-              </div>
+              </section>
 
-              <div id="recurring-revenue" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Recurring Revenue Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="recurring-revenue" className="scroll-mt-8">
+                <RecurringRevenueDashboard />
+              </section>
 
-              <div id="retention" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Retention Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="retention" className="scroll-mt-8">
+                <RetentionDashboard />
+              </section>
 
-              <div id="day-and-time" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Day and Time Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="day-and-time" className="scroll-mt-8">
+                <DayAndTimeDashboard />
+              </section>
 
-              <div id="frequencies" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Frequencies Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="frequencies" className="scroll-mt-8">
+                <FrequenciesDashboard />
+              </section>
 
-              <div id="payment-methods" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Payment Methods Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="payment-methods" className="scroll-mt-8">
+                <PaymentMethodsDashboard />
+              </section>
 
-              <div id="campaigns" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Campaigns Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="campaigns" className="scroll-mt-8">
+                <CampaignsDashboard />
+              </section>
 
-              <div id="countries" className="dashboard-section">
-                <div className="dashboard-placeholder">
-                  <h2>Countries Dashboard</h2>
-                  <p>Coming soon...</p>
-                </div>
-              </div>
+              <section id="countries" className="scroll-mt-8">
+                <CountriesDashboard />
+              </section>
             </div>
           </div>
         </main>
 
         {/* Right Sidebar Navigation */}
-        <aside className="insights-sidebar">
+        <aside className="hidden lg:block w-80 flex-shrink-0 sticky top-6 self-start h-fit">
           <RightSidebarNav />
         </aside>
       </div>

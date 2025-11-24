@@ -67,6 +67,10 @@
 .insights-sidebar {
   width: 320px;
   flex-shrink: 0;
+  position: sticky;
+  top: 1.5rem;
+  align-self: flex-start;
+  height: fit-content;
 }
 
 /* Responsive */

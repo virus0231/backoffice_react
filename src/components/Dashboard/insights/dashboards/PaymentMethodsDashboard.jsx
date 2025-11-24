@@ -1,122 +1,115 @@
 import { useState } from 'react';
-import './PaymentMethodsDashboard.css';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const PaymentMethodsDashboard = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [granularity, setGranularity] = useState('daily');
 
-  // Sample data
+  // Sample payment methods data
   const paymentMethodsData = [
-    { date: '2024-01-01', cc: 2800, applepay: 800, gpay: 600, paypal: 1200, stripe: 900, paypalipn: 400 },
-    { date: '2024-01-02', cc: 3200, applepay: 950, gpay: 720, paypal: 1400, stripe: 1100, paypalipn: 500 },
-    { date: '2024-01-03', cc: 2400, applepay: 680, gpay: 540, paypal: 980, stripe: 750, paypalipn: 350 },
-    { date: '2024-01-04', cc: 3600, applepay: 1100, gpay: 850, paypal: 1600, stripe: 1250, paypalipn: 580 },
-    { date: '2024-01-05', cc: 4200, applepay: 1300, gpay: 980, paypal: 1850, stripe: 1450, paypalipn: 680 }
+    { name: 'Credit Card', value: 45, count: 1250, color: '#3b82f6' },
+    { name: 'PayPal', value: 28, count: 780, color: '#8b5cf6' },
+    { name: 'Bank Transfer', value: 15, count: 420, color: '#10b981' },
+    { name: 'Apple Pay', value: 8, count: 220, color: '#f59e0b' },
+    { name: 'Google Pay', value: 4, count: 110, color: '#ef4444' },
   ];
 
-  const paymentMethods = [
-    { label: 'Credit Card', color: '#3b82f6', key: 'cc', total: 16200 },
-    { label: 'Apple Pay', color: '#10b981', key: 'applepay', total: 4830 },
-    { label: 'Google Pay', color: '#f59e0b', key: 'gpay', total: 3690 },
-    { label: 'PayPal', color: '#8b5cf6', key: 'paypal', total: 7030 },
-    { label: 'Stripe', color: '#ec4899', key: 'stripe', total: 5450 },
-    { label: 'PayPal IPN', color: '#14b8a6', key: 'paypalipn', total: 2510 }
-  ];
+  const total = paymentMethodsData.reduce((sum, method) => sum + method.count, 0);
 
-  const maxValue = Math.max(...paymentMethodsData.flatMap(d => Object.values(d).filter(v => typeof v === 'number')));
-
-  const totalPages = Math.ceil(paymentMethods.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentMethods = paymentMethods.slice(startIndex, endIndex);
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <div className="text-sm font-medium text-gray-900">{payload[0].name}</div>
+          <div className="text-xs text-gray-600 mt-1">
+            {payload[0].payload.count} donations ({payload[0].value}%)
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="payment-methods-dashboard">
-      <div className="dashboard-header">
-        <h2 className="dashboard-title">Payment methods</h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold text-gray-900">Payment methods</h2>
+        <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+          <button
+            onClick={() => setGranularity('daily')}
+            className={`px-3 py-1 text-xs rounded transition-all ${
+              granularity === 'daily'
+                ? 'bg-white text-gray-900 shadow-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Daily
+          </button>
+          <button
+            onClick={() => setGranularity('weekly')}
+            className={`px-3 py-1 text-xs rounded transition-all ${
+              granularity === 'weekly'
+                ? 'bg-white text-gray-900 shadow-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Weekly
+          </button>
+        </div>
       </div>
 
-      <div className="payment-chart">
-        <svg viewBox="0 0 700 256" className="multi-line-chart">
-          {/* Grid lines */}
-          {[0, 1, 2, 3, 4].map(i => (
-            <line
-              key={i}
-              x1="0"
-              y1={i * 64}
-              x2="700"
-              y2={i * 64}
-              stroke="#e5e7eb"
-              strokeWidth="1"
-            />
-          ))}
-
-          {/* Line for each payment method */}
-          {paymentMethods.map((method, methodIndex) => (
-            <g key={methodIndex}>
-              <path
-                d={`
-                  M 0 ${256 - (paymentMethodsData[0][method.key] / maxValue) * 200}
-                  ${paymentMethodsData.map((d, i) => `L ${(i / (paymentMethodsData.length - 1)) * 700} ${256 - (d[method.key] / maxValue) * 200}`).join(' ')}
-                `}
-                fill="none"
-                stroke={method.color}
-                strokeWidth="2"
-              />
-              {paymentMethodsData.map((d, i) => (
-                <circle
-                  key={i}
-                  cx={(i / (paymentMethodsData.length - 1)) * 700}
-                  cy={256 - (d[method.key] / maxValue) * 200}
-                  r="3"
-                  fill={method.color}
-                />
-              ))}
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="payment-legend">
-        <div className="legend-grid">
-          {currentMethods.map((method, index) => (
-            <div key={index} className="legend-item">
-              <div className="legend-indicator" style={{ backgroundColor: method.color }} />
-              <div className="legend-content">
-                <div className="legend-label">{method.label}</div>
-                <div className="legend-value">${method.total.toLocaleString()}</div>
-              </div>
-            </div>
-          ))}
+      {/* Chart and List */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pie Chart */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-4">Distribution</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={paymentMethodsData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="value"
+                >
+                  {paymentMethodsData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="text-center mt-4">
+            <div className="text-2xl font-bold text-gray-900">{total}</div>
+            <div className="text-xs text-gray-600">Total donations</div>
+          </div>
         </div>
 
-        {totalPages > 1 && (
-          <div className="pagination">
-            <button
-              className="pagination-btn"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Previous
-            </button>
-            <span className="pagination-info">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              className="pagination-btn"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Next
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
+        {/* List */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-4">Breakdown</h3>
+          <div className="space-y-4">
+            {paymentMethodsData.map((method, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: method.color }}
+                  ></div>
+                  <span className="text-sm text-gray-900">{method.name}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">{method.count}</div>
+                  <div className="text-xs text-gray-600">{method.value}%</div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

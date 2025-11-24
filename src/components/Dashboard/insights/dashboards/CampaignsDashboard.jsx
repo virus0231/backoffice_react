@@ -1,126 +1,129 @@
 import { useState } from 'react';
-import './CampaignsDashboard.css';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts';
 
 const CampaignsDashboard = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [sortBy, setSortBy] = useState('revenue');
 
-  // Sample data
+  // Sample campaigns data
   const campaignsData = [
-    { date: '2024-01-01', campaign1: 1800, campaign2: 1400, campaign3: 1200, campaign4: 980, campaign5: 750 },
-    { date: '2024-01-02', campaign1: 2100, campaign2: 1650, campaign3: 1380, campaign4: 1150, campaign5: 880 },
-    { date: '2024-01-03', campaign1: 1600, campaign2: 1200, campaign3: 1050, campaign4: 820, campaign5: 630 },
-    { date: '2024-01-04', campaign1: 2400, campaign2: 1890, campaign3: 1580, campaign4: 1320, campaign5: 1020 },
-    { date: '2024-01-05', campaign1: 2800, campaign2: 2200, campaign3: 1850, campaign4: 1540, campaign5: 1180 }
+    { name: 'Holiday Campaign 2024', revenue: 45200, donations: 850, avgDonation: 53.18 },
+    { name: 'Summer Fundraiser', revenue: 38500, donations: 720, avgDonation: 53.47 },
+    { name: 'Back to School', revenue: 32100, donations: 610, avgDonation: 52.62 },
+    { name: 'Spring Drive', revenue: 28900, donations: 540, avgDonation: 53.52 },
+    { name: 'Winter Appeal', revenue: 24300, donations: 480, avgDonation: 50.63 },
+    { name: 'Fall Giving', revenue: 19800, donations: 390, avgDonation: 50.77 },
   ];
 
-  const campaigns = [
-    { name: 'Emergency Relief Fund', color: '#3b82f6', key: 'campaign1', total: 10700 },
-    { name: 'Education Support', color: '#10b981', key: 'campaign2', total: 8340 },
-    { name: 'Healthcare Initiative', color: '#f59e0b', key: 'campaign3', total: 7060 },
-    { name: 'Clean Water Project', color: '#8b5cf6', key: 'campaign4', total: 5810 },
-    { name: 'Community Development', color: '#ec4899', key: 'campaign5', total: 4460 },
-    { name: 'Women Empowerment', color: '#14b8a6', key: 'campaign6', total: 3850 },
-    { name: 'Child Nutrition', color: '#f97316', key: 'campaign7', total: 3200 },
-    { name: 'Elderly Care', color: '#6366f1', key: 'campaign8', total: 2750 },
-    { name: 'Disaster Relief', color: '#ef4444', key: 'campaign9', total: 2400 },
-    { name: 'Orphan Support', color: '#06b6d4', key: 'campaign10', total: 2100 }
-  ];
+  const sortedData = [...campaignsData].sort((a, b) =>
+    sortBy === 'revenue' ? b.revenue - a.revenue : b.donations - a.donations
+  );
 
-  const maxValue = Math.max(...campaignsData.flatMap(d => Object.values(d).filter(v => typeof v === 'number')));
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
-  const totalPages = Math.ceil(campaigns.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentCampaigns = campaigns.slice(startIndex, endIndex);
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <div className="text-sm font-medium text-gray-900 mb-2">{data.name}</div>
+          <div className="text-xs text-gray-600">Revenue: {formatCurrency(data.revenue)}</div>
+          <div className="text-xs text-gray-600">Donations: {data.donations}</div>
+          <div className="text-xs text-gray-600">Avg: {formatCurrency(data.avgDonation)}</div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="campaigns-dashboard">
-      <div className="dashboard-header">
-        <h2 className="dashboard-title">Campaigns</h2>
-      </div>
-
-      <div className="campaigns-chart">
-        <svg viewBox="0 0 700 256" className="multi-line-chart">
-          {/* Grid lines */}
-          {[0, 1, 2, 3, 4].map(i => (
-            <line
-              key={i}
-              x1="0"
-              y1={i * 64}
-              x2="700"
-              y2={i * 64}
-              stroke="#e5e7eb"
-              strokeWidth="1"
-            />
-          ))}
-
-          {/* Line for each campaign (only first 5 for simplicity) */}
-          {campaigns.slice(0, 5).map((campaign, campaignIndex) => (
-            <g key={campaignIndex}>
-              <path
-                d={`
-                  M 0 ${256 - (campaignsData[0][campaign.key] / maxValue) * 200}
-                  ${campaignsData.map((d, i) => `L ${(i / (campaignsData.length - 1)) * 700} ${256 - ((d[campaign.key] || 0) / maxValue) * 200}`).join(' ')}
-                `}
-                fill="none"
-                stroke={campaign.color}
-                strokeWidth="2"
-              />
-              {campaignsData.map((d, i) => (
-                <circle
-                  key={i}
-                  cx={(i / (campaignsData.length - 1)) * 700}
-                  cy={256 - ((d[campaign.key] || 0) / maxValue) * 200}
-                  r="3"
-                  fill={campaign.color}
-                />
-              ))}
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="campaigns-legend">
-        <div className="legend-grid">
-          {currentCampaigns.map((campaign, index) => (
-            <div key={index} className="legend-item">
-              <div className="legend-indicator" style={{ backgroundColor: campaign.color }} />
-              <div className="legend-content">
-                <div className="legend-label">{campaign.name}</div>
-                <div className="legend-value">${campaign.total.toLocaleString()}</div>
-              </div>
-            </div>
-          ))}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h2 className="text-xl font-semibold text-gray-900">Campaigns</h2>
+        <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+          <button
+            onClick={() => setSortBy('revenue')}
+            className={`px-3 py-1 text-xs rounded transition-all ${
+              sortBy === 'revenue'
+                ? 'bg-white text-gray-900 shadow-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            By Revenue
+          </button>
+          <button
+            onClick={() => setSortBy('donations')}
+            className={`px-3 py-1 text-xs rounded transition-all ${
+              sortBy === 'donations'
+                ? 'bg-white text-gray-900 shadow-sm font-medium'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            By Donations
+          </button>
         </div>
+      </div>
 
-        {totalPages > 1 && (
-          <div className="pagination">
-            <button
-              className="pagination-btn"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Previous
-            </button>
-            <span className="pagination-info">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              className="pagination-btn"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Next
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-          </div>
-        )}
+      {/* Chart */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-4">Campaign Performance</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={sortedData} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fill: '#6b7280' }}
+                angle={-15}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Campaign</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-600">Revenue</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-600">Donations</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-600">Avg Donation</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {sortedData.map((campaign, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="px-6 py-4 text-sm text-gray-900">{campaign.name}</td>
+                <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">
+                  {formatCurrency(campaign.revenue)}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900 text-right">
+                  {campaign.donations}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900 text-right">
+                  {formatCurrency(campaign.avgDonation)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
