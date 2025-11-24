@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import DateRangePicker from "@/components/filters/DateRangePicker";
-import { DateRange } from "@/types/filters";
+import type { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
 import { usePaymentMethodsData } from "@/hooks/usePaymentMethodsData";
 import LoadingState from "@/components/common/LoadingState";

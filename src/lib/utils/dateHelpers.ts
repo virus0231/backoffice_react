@@ -23,7 +23,7 @@ import {
   differenceInDays,
 } from "date-fns";
 
-import { DateRange, DatePreset, DatePresetOption } from "@/types/filters";
+import type { DateRange, DatePreset, DatePresetOption } from "@/types/filters";
 
 /**
  * Generate date range for specific presets

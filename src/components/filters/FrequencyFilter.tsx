@@ -8,7 +8,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 
-import { FrequencyType, FrequencyOption } from '@/types/filters';
+import type { FrequencyType, FrequencyOption } from '@/types/filters';
 
 interface FrequencyFilterProps {
   value: FrequencyType;

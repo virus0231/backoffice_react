@@ -9,7 +9,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { format } from 'date-fns';
 
-import { DateRange, DatePreset } from '@/types/filters';
+import type { DateRange, DatePreset } from '@/types/filters';
 import {
   datePresetOptions,
   getDateRangeForPreset,

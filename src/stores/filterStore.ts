@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import { FilterState, DateRange, Appeal, Fund, FrequencyType } from '@/types/filters';
+import type { FilterState, DateRange, Appeal, Fund, FrequencyType } from '@/types/filters';
 import { getDefaultDateRange, validateDateRange } from '@/lib/utils/dateHelpers';
 import type { ChartComparison, ComparisonMapping } from '@/types/charts';
 import { validateComparisonRange, coerceComparisonAwayFromMain } from '@/lib/validation/comparisonDates';

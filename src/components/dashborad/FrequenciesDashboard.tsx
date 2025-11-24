@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import DateRangePicker from "@/components/filters/DateRangePicker";
-import { DateRange } from "@/types/filters";
+import type { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
 import { useFrequenciesData } from "@/hooks/useFrequenciesData";
 import LoadingState from "@/components/common/LoadingState";

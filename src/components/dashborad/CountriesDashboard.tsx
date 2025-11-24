@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import * as flags from 'country-flag-icons/react/3x2';
 import DateRangePicker from "@/components/filters/DateRangePicker";
-import { DateRange } from "@/types/filters";
+import type { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import LoadingState from "@/components/common/LoadingState";

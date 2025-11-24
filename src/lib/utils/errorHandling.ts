@@ -1,6 +1,7 @@
 /**
  * Comprehensive error handling utilities
  */
+import { getMockApiResponse } from "../mock/staticApi";
 
 export interface AppError {
   message: string;
@@ -18,7 +19,7 @@ export class APIError extends Error implements AppError {
 
   constructor(message: string, status?: number, code?: string, details?: any) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
     this.status = status;
     this.code = code;
     this.details = details;
@@ -27,26 +28,26 @@ export class APIError extends Error implements AppError {
 }
 
 export class ValidationError extends Error implements AppError {
-  code: string = 'VALIDATION_ERROR';
+  code: string = "VALIDATION_ERROR";
   timestamp: Date;
   details?: any;
 
   constructor(message: string, details?: any) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
     this.details = details;
     this.timestamp = new Date();
   }
 }
 
 export class NetworkError extends Error implements AppError {
-  code: string = 'NETWORK_ERROR';
+  code: string = "NETWORK_ERROR";
   timestamp: Date;
   details?: any;
 
-  constructor(message: string = 'Network connection failed', details?: any) {
+  constructor(message: string = "Network connection failed", details?: any) {
     super(message);
-    this.name = 'NetworkError';
+    this.name = "NetworkError";
     this.details = details;
     this.timestamp = new Date();
   }
@@ -61,6 +62,14 @@ export async function safeFetch(
   retries: number = 3,
   timeout: number = 30000
 ): Promise<Response> {
+  const mock = getMockApiResponse(url);
+  if (mock !== null && mock !== undefined) {
+    return new Response(JSON.stringify(mock), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -87,16 +96,19 @@ export async function safeFetch(
       if (attemptNumber < retries) {
         // Exponential backoff: 1s, 2s, 4s
         const delay = Math.pow(2, attemptNumber) * 1000;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         return fetchWithRetry(attemptNumber + 1);
       }
 
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new NetworkError('Failed to connect to server', { url, originalError: error.message });
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        throw new NetworkError("Failed to connect to server", {
+          url,
+          originalError: error.message,
+        });
       }
 
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new NetworkError('Request timeout', { url, timeout });
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new NetworkError("Request timeout", { url, timeout });
       }
 
       throw error;
@@ -114,7 +126,7 @@ export async function parseAPIResponse<T>(response: Response): Promise<T> {
     const text = await response.text();
 
     if (!text) {
-      throw new APIError('Empty response from server', response.status);
+      throw new APIError("Empty response from server", response.status);
     }
 
     const data = JSON.parse(text);
@@ -122,7 +134,7 @@ export async function parseAPIResponse<T>(response: Response): Promise<T> {
     // Handle PHP API error structure
     if (data.success === false) {
       throw new APIError(
-        data.message || 'API request failed',
+        data.message || "API request failed",
         response.status,
         data.code,
         data.details
@@ -136,7 +148,11 @@ export async function parseAPIResponse<T>(response: Response): Promise<T> {
     }
 
     if (error instanceof SyntaxError) {
-      throw new APIError('Invalid JSON response from server', response.status, 'INVALID_JSON');
+      throw new APIError(
+        "Invalid JSON response from server",
+        response.status,
+        "INVALID_JSON"
+      );
     }
 
     throw error;
@@ -146,52 +162,56 @@ export async function parseAPIResponse<T>(response: Response): Promise<T> {
 /**
  * Handle and format errors for display
  */
-export function formatErrorForDisplay(error: unknown): { message: string; isRetriable: boolean } {
+export function formatErrorForDisplay(error: unknown): {
+  message: string;
+  isRetriable: boolean;
+} {
   if (error instanceof NetworkError) {
     return {
-      message: 'Connection problem. Please check your internet connection and try again.',
-      isRetriable: true
+      message:
+        "Connection problem. Please check your internet connection and try again.",
+      isRetriable: true,
     };
   }
 
   if (error instanceof APIError) {
     if (error.status && error.status >= 500) {
       return {
-        message: 'Server error. Please try again in a moment.',
-        isRetriable: true
+        message: "Server error. Please try again in a moment.",
+        isRetriable: true,
       };
     }
 
     if (error.status === 404) {
       return {
-        message: 'The requested data was not found.',
-        isRetriable: false
+        message: "The requested data was not found.",
+        isRetriable: false,
       };
     }
 
     if (error.status === 403) {
       return {
-        message: 'Access denied. Please check your permissions.',
-        isRetriable: false
+        message: "Access denied. Please check your permissions.",
+        isRetriable: false,
       };
     }
 
     return {
-      message: error.message || 'An error occurred while loading data.',
-      isRetriable: error.status ? error.status >= 500 : true
+      message: error.message || "An error occurred while loading data.",
+      isRetriable: error.status ? error.status >= 500 : true,
     };
   }
 
   if (error instanceof ValidationError) {
     return {
       message: error.message,
-      isRetriable: false
+      isRetriable: false,
     };
   }
 
   return {
-    message: 'An unexpected error occurred. Please try again.',
-    isRetriable: true
+    message: "An unexpected error occurred. Please try again.",
+    isRetriable: true,
   };
 }
 
@@ -200,24 +220,25 @@ export function formatErrorForDisplay(error: unknown): { message: string; isRetr
  */
 export function logError(error: unknown, context?: string) {
   const errorInfo = {
-    message: error instanceof Error ? error.message : 'Unknown error',
+    message: error instanceof Error ? error.message : "Unknown error",
     stack: error instanceof Error ? error.stack : undefined,
     context,
     timestamp: new Date().toISOString(),
-    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
-    url: typeof window !== 'undefined' ? window.location.href : undefined
+    userAgent:
+      typeof window !== "undefined" ? window.navigator.userAgent : undefined,
+    url: typeof window !== "undefined" ? window.location.href : undefined,
   };
 
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error logged:', errorInfo);
+  if (import.meta.env.NODE_ENV === "development") {
+    console.error("Error logged:", errorInfo);
   } else {
     // In production, send to analytics
-    if (typeof window !== 'undefined') {
-      import('../monitoring/analytics.js').then(({ trackError }) => {
-        trackError('application_error', errorInfo);
+    if (typeof window !== "undefined") {
+      import("../monitoring/analytics.js").then(({ trackError }) => {
+        trackError("application_error", errorInfo);
       });
     }
-    console.error('Production error:', errorInfo.message);
+    console.error("Production error:", errorInfo.message);
   }
 }
 
@@ -242,14 +263,19 @@ export async function retryOperation<T>(
       }
 
       // Don't retry validation errors or 4xx errors
-      if (error instanceof ValidationError ||
-          (error instanceof APIError && error.status && error.status < 500 && error.status !== 429)) {
+      if (
+        error instanceof ValidationError ||
+        (error instanceof APIError &&
+          error.status &&
+          error.status < 500 &&
+          error.status !== 429)
+      ) {
         throw error;
       }
 
       // Exponential backoff with jitter
       const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 

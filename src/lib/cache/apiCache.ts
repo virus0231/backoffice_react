@@ -2,6 +2,7 @@
  * API caching strategy optimized for cPanel hosting with static builds
  * Uses in-memory cache with configurable TTL and localStorage fallback
  */
+import { getMockApiResponse } from '../mock/staticApi';
 
 interface CacheEntry<T> {
   data: T;
@@ -377,6 +378,10 @@ export const cachedFetch = <T>(
   fetchOptions?: RequestInit,
   cacheOptions?: CacheOptions
 ): Promise<T> => {
+  const mock = getMockApiResponse(url);
+  if (mock !== null && mock !== undefined) {
+    return Promise.resolve(mock as T);
+  }
   return apiCache.get<T>(url, fetchOptions, cacheOptions);
 };
 

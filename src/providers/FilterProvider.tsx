@@ -8,7 +8,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { useFilterStore } from '@/stores/filterStore';
-import { FilterState } from '@/types/filters';
+import type { FilterState } from '@/types/filters';
 
 interface FilterContextValue extends FilterState {
   // Additional context-specific properties
