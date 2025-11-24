@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 
 const chartSections = [
-  { id: "raised", label: "Raised", icon: "R" },
-  { id: "recurring-plans", label: "Recurring plans", icon: "P" },
-  { id: "recurring-revenue", label: "Recurring revenue", icon: "RR" },
-  { id: "retention", label: "Retention", icon: "RE" },
-  { id: "day-and-time", label: "Day and time", icon: "DT" },
-  { id: "frequencies", label: "Frequencies", icon: "FQ" },
-  { id: "payment-methods", label: "Payment methods", icon: "PM" },
-  { id: "campaigns", label: "Campaigns", icon: "C" },
-  { id: "countries", label: "Countries", icon: "CN" },
+  { id: "raised", label: "Raised" },
+  { id: "recurring-plans", label: "Recurring plans" },
+  { id: "recurring-revenue", label: "Recurring revenue" },
+  { id: "retention", label: "Retention" },
+  { id: "day-and-time", label: "Day and time" },
+  { id: "frequencies", label: "Frequencies" },
+  { id: "payment-methods", label: "Payment methods" },
+  { id: "campaigns", label: "Campaigns" },
+  { id: "countries", label: "Countries" },
 ];
+
+const BarIcon = () => (
+  <svg className="w-4 h-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+    <rect x="2" y="10" width="3" height="6" rx="1" />
+    <rect x="7" y="6" width="3" height="10" rx="1" />
+    <rect x="12" y="3" width="3" height="13" rx="1" />
+  </svg>
+);
 
 const RightSidebarNav = () => {
   const [activeSection, setActiveSection] = useState("raised");
@@ -21,13 +29,12 @@ const RightSidebarNav = () => {
     const documentHeight = document.documentElement.scrollHeight;
 
     if (window.scrollY + windowHeight >= documentHeight - 100) {
-      const last = chartSections[chartSections.length - 1];
+      const last = chartSections.at(-1);
       if (last) setActiveSection(last.id);
       return;
     }
 
-    for (let i = chartSections.length - 1; i >= 0; i -= 1) {
-      const section = chartSections[i];
+    for (const section of [...chartSections].reverse()) {
       const element = document.getElementById(section.id);
       if (!element) continue;
 
@@ -40,7 +47,7 @@ const RightSidebarNav = () => {
       }
     }
 
-    const first = chartSections[0];
+    const first = chartSections.at(0);
     if (first) setActiveSection(first.id);
   }, []);
 
@@ -96,9 +103,7 @@ const RightSidebarNav = () => {
                   : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent pl-3"
               }`}
             >
-              <span className="text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-700">
-                {section.icon}
-              </span>
+              <BarIcon />
               <span>{section.label}</span>
               {activeSection === section.id && (
                 <div className="ml-auto w-1 h-6 bg-blue-600 rounded-full"></div>

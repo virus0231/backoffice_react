@@ -4,7 +4,7 @@ import AppealsFilter from './filters/AppealsFilter';
 import FundsFilter from './filters/FundsFilter';
 import FrequencyFilter from './filters/FrequencyFilter';
 
-const buildDefaultRange = () => ({
+const defaultRange = () => ({
   startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
   endDate: new Date(),
   preset: 'last30days',
@@ -12,12 +12,11 @@ const buildDefaultRange = () => ({
 
 const FilterBar = ({
   className = '',
-  layout = 'horizontal',
   showClearAll = true,
   disabled = false,
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [dateRange, setDateRange] = useState(buildDefaultRange);
+  const [dateRange, setDateRange] = useState(defaultRange);
   const [selectedAppeals, setSelectedAppeals] = useState([]);
   const [selectedFunds, setSelectedFunds] = useState([]);
   const [frequency, setFrequency] = useState('all');
@@ -32,23 +31,11 @@ const FilterBar = ({
   }, [dateRange.preset, frequency, selectedAppeals.length, selectedFunds.length]);
 
   const clearAllFilters = () => {
-    setDateRange(buildDefaultRange());
+    setDateRange(defaultRange());
     setSelectedAppeals([]);
     setSelectedFunds([]);
     setFrequency('all');
   };
-
-  const desktopLayoutClass =
-    layout === 'grid'
-      ? 'hidden lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:gap-4'
-      : layout === 'vertical'
-        ? 'hidden lg:flex lg:flex-col lg:gap-3'
-        : 'hidden lg:flex lg:flex-wrap lg:items-center lg:gap-4';
-
-  const buttonBase =
-    'flex items-center justify-between w-full px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-all duration-200';
-
-  const disabledClasses = disabled ? ' bg-gray-50 text-gray-500 cursor-not-allowed hover:border-gray-300' : '';
 
   return (
     <div className={className}>
@@ -57,7 +44,13 @@ const FilterBar = ({
         <button
           onClick={() => !disabled && setIsDrawerOpen(true)}
           disabled={disabled}
-          className={`${buttonBase}${disabledClasses}`}
+          className={[
+            'flex items-center justify-between w-full px-4 py-2.5 text-sm',
+            'bg-white border border-gray-300 rounded-lg shadow-sm',
+            'hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20',
+            'transition-all duration-200',
+            disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : '',
+          ].join(' ')}
         >
           <div className="flex items-center">
             <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,6 +102,7 @@ const FilterBar = ({
                   value={dateRange}
                   onChange={setDateRange}
                   disabled={disabled}
+                  className="w-full"
                 />
               </div>
 
@@ -118,6 +112,7 @@ const FilterBar = ({
                   value={selectedAppeals}
                   onChange={setSelectedAppeals}
                   disabled={disabled}
+                  className="w-full"
                 />
               </div>
 
@@ -128,6 +123,7 @@ const FilterBar = ({
                   onChange={setSelectedFunds}
                   selectedAppeals={selectedAppeals}
                   disabled={disabled}
+                  className="w-full"
                 />
               </div>
 
@@ -137,6 +133,7 @@ const FilterBar = ({
                   value={frequency}
                   onChange={setFrequency}
                   disabled={disabled}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -161,47 +158,36 @@ const FilterBar = ({
         </div>
       )}
 
-      {/* Desktop Filters */}
-      <div className={`${desktopLayoutClass}`}>
+      {/* Desktop: Horizontal Filters */}
+      <div className="hidden lg:flex items-center gap-4">
         <DateRangePicker
           value={dateRange}
           onChange={setDateRange}
           disabled={disabled}
-          className={layout === 'vertical' ? 'w-full' : ''}
         />
-
         <AppealsFilter
           value={selectedAppeals}
           onChange={setSelectedAppeals}
           disabled={disabled}
-          className={layout === 'vertical' ? 'w-full' : ''}
         />
-
         <FundsFilter
           value={selectedFunds}
           onChange={setSelectedFunds}
           selectedAppeals={selectedAppeals}
           disabled={disabled}
-          className={layout === 'vertical' ? 'w-full' : ''}
         />
-
-        <div className={layout === 'grid' ? 'col-span-2 lg:col-span-1' : ''}>
-          <FrequencyFilter
-            value={frequency}
-            onChange={setFrequency}
-            disabled={disabled}
-          />
-        </div>
-
+        <FrequencyFilter
+          value={frequency}
+          onChange={setFrequency}
+          disabled={disabled}
+        />
         {showClearAll && (
-          <div className="hidden lg:flex lg:items-center lg:ml-auto">
-            <button
-              onClick={clearAllFilters}
-              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-transparent"
-            >
-              Clear all
-            </button>
-          </div>
+          <button
+            onClick={clearAllFilters}
+            className="ml-auto px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-transparent"
+          >
+            Clear all
+          </button>
         )}
       </div>
     </div>
