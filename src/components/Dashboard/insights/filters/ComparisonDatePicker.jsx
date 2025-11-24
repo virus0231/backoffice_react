@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import './ComparisonDatePicker.css';
 
 const ComparisonDatePicker = ({ value, onChange, mainDateRange }) => {
   const [isOpen, setIsOpen] = useState(false);

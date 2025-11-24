@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import './DateRangePicker.css';
 
 const datePresets = [
   { value: 'today', label: 'Today' },
@@ -32,7 +31,7 @@ const isSameDay = (date1, date2) => {
          date1.getFullYear() === date2.getFullYear();
 };
 
-const DateRangePicker = ({ value, onChange }) => {
+const DateRangePicker = ({ value, onChange, className = '', disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectingDate, setSelectingDate] = useState(null);
@@ -72,16 +71,13 @@ const DateRangePicker = ({ value, onChange }) => {
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
 
-    // Get day of week (0 = Sunday, we want Monday = 0)
     let startDay = firstDay.getDay() - 1;
     if (startDay < 0) startDay = 6;
 
-    // Add empty cells for days before month starts
     for (let i = 0; i < startDay; i++) {
       days.push(null);
     }
 
-    // Add all days in month
     for (let day = 1; day <= lastDay.getDate(); day++) {
       days.push(new Date(year, month, day));
     }
@@ -208,21 +204,22 @@ const DateRangePicker = ({ value, onChange }) => {
   const displayText = `${formatDate(value.startDate)} - ${formatDate(value.endDate)}`;
 
   return (
-    <div className="date-range-picker">
+    <div className={`relative ${className}`}>
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="date-range-button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+          disabled ? 'cursor-not-allowed bg-gray-50 text-gray-500 hover:border-gray-300' : ''
+        }`}
       >
-        <div className="date-range-button-content">
-          <svg className="date-range-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="date-range-text">{displayText}</span>
-        </div>
+        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span className="text-gray-900">{displayText}</span>
         <svg
-          className={`date-range-chevron ${isOpen ? 'open' : ''}`}
+          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -231,45 +228,45 @@ const DateRangePicker = ({ value, onChange }) => {
         </svg>
       </button>
 
-      {isOpen && (
-        <div ref={dropdownRef} className="date-range-dropdown">
-          <div className="date-range-calendar-wrapper">
+      {isOpen && !disabled && (
+        <div ref={dropdownRef} className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-4">
+          <div className="flex gap-4">
             {/* Calendar Section */}
-            <div className="date-range-calendar">
-              <div className="calendar-header">
-                <button onClick={prevMonth} className="calendar-nav-btn">
-                  <svg className="calendar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={prevMonth} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <div className="calendar-months">
-                  <span className="calendar-month-title">{formatMonthYear(currentMonth)}</span>
-                  <span className="calendar-month-title">
+                <div className="flex gap-8">
+                  <span className="text-sm font-semibold text-gray-900">{formatMonthYear(currentMonth)}</span>
+                  <span className="text-sm font-semibold text-gray-900">
                     {formatMonthYear(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
                   </span>
                 </div>
-                <button onClick={nextMonth} className="calendar-nav-btn">
-                  <svg className="calendar-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onClick={nextMonth} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               </div>
 
               {selectingDate === 'end' && tempRange.start && (
-                <div className="calendar-selection-hint">Select end date</div>
+                <div className="text-xs text-blue-600 mb-2 text-center">Select end date</div>
               )}
 
-              <div className="calendar-months-grid">
+              <div className="flex gap-4">
                 {/* First Month */}
-                <div className="calendar-month">
-                  <div className="calendar-weekdays">
+                <div>
+                  <div className="grid grid-cols-7 gap-1 mb-2">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                      <div key={day} className="calendar-weekday">{day}</div>
+                      <div key={day} className="text-xs text-gray-600 text-center font-medium w-8">{day}</div>
                     ))}
                   </div>
-                  <div className="calendar-days">
+                  <div className="grid grid-cols-7 gap-1">
                     {getDaysInMonth(currentMonth).map((day, index) => {
-                      if (!day) return <div key={`empty-${index}`} className="calendar-day-empty" />;
+                      if (!day) return <div key={`empty-${index}`} className="w-8 h-8" />;
 
                       const isSelected = isStartDate(day) || isEndDate(day);
                       const isInRange = isDateInRange(day);
@@ -282,10 +279,20 @@ const DateRangePicker = ({ value, onChange }) => {
                           onClick={() => handleDateClick(day)}
                           onMouseEnter={() => selectingDate === 'end' && tempRange.start && setHoveredDate(day)}
                           onMouseLeave={() => setHoveredDate(null)}
-                          className={`calendar-day ${isSelected ? 'selected' : ''} ${isInRange || isInHoverRange ? 'in-range' : ''} ${isTodayDate && !isSelected ? 'today' : ''}`}
+                          className={`w-8 h-8 text-xs rounded transition-colors relative ${
+                            isSelected
+                              ? 'bg-blue-600 text-white font-semibold'
+                              : isInRange || isInHoverRange
+                              ? 'bg-blue-100 text-blue-900'
+                              : isTodayDate
+                              ? 'bg-gray-100 text-gray-900 font-semibold'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
                         >
                           {day.getDate()}
-                          {isTodayDate && !isSelected && <div className="today-dot" />}
+                          {isTodayDate && !isSelected && (
+                            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
+                          )}
                         </button>
                       );
                     })}
@@ -293,15 +300,15 @@ const DateRangePicker = ({ value, onChange }) => {
                 </div>
 
                 {/* Second Month */}
-                <div className="calendar-month">
-                  <div className="calendar-weekdays">
+                <div>
+                  <div className="grid grid-cols-7 gap-1 mb-2">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                      <div key={day} className="calendar-weekday">{day}</div>
+                      <div key={day} className="text-xs text-gray-600 text-center font-medium w-8">{day}</div>
                     ))}
                   </div>
-                  <div className="calendar-days">
+                  <div className="grid grid-cols-7 gap-1">
                     {getDaysInMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)).map((day, index) => {
-                      if (!day) return <div key={`empty-${index}`} className="calendar-day-empty" />;
+                      if (!day) return <div key={`empty-${index}`} className="w-8 h-8" />;
 
                       const isSelected = isStartDate(day) || isEndDate(day);
                       const isInRange = isDateInRange(day);
@@ -314,10 +321,20 @@ const DateRangePicker = ({ value, onChange }) => {
                           onClick={() => handleDateClick(day)}
                           onMouseEnter={() => selectingDate === 'end' && tempRange.start && setHoveredDate(day)}
                           onMouseLeave={() => setHoveredDate(null)}
-                          className={`calendar-day ${isSelected ? 'selected' : ''} ${isInRange || isInHoverRange ? 'in-range' : ''} ${isTodayDate && !isSelected ? 'today' : ''}`}
+                          className={`w-8 h-8 text-xs rounded transition-colors relative ${
+                            isSelected
+                              ? 'bg-blue-600 text-white font-semibold'
+                              : isInRange || isInHoverRange
+                              ? 'bg-blue-100 text-blue-900'
+                              : isTodayDate
+                              ? 'bg-gray-100 text-gray-900 font-semibold'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
                         >
                           {day.getDate()}
-                          {isTodayDate && !isSelected && <div className="today-dot" />}
+                          {isTodayDate && !isSelected && (
+                            <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
+                          )}
                         </button>
                       );
                     })}
@@ -327,16 +344,22 @@ const DateRangePicker = ({ value, onChange }) => {
             </div>
 
             {/* Presets Sidebar */}
-            <div className="date-range-presets">
-              {datePresets.map(preset => (
-                <button
-                  key={preset.value}
-                  onClick={() => handlePresetSelect(preset.value)}
-                  className={`preset-button ${value.preset === preset.value ? 'active' : ''}`}
-                >
-                  {preset.label}
-                </button>
-              ))}
+            <div className="w-40 border-l border-gray-200 pl-4">
+              <div className="space-y-1">
+                {datePresets.map(preset => (
+                  <button
+                    key={preset.value}
+                    onClick={() => handlePresetSelect(preset.value)}
+                    className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${
+                      value.preset === preset.value
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

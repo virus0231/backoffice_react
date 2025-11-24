@@ -1,61 +1,76 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import DateRangePicker from './filters/DateRangePicker';
 import AppealsFilter from './filters/AppealsFilter';
 import FundsFilter from './filters/FundsFilter';
 import FrequencyFilter from './filters/FrequencyFilter';
-import './FilterBar.css';
 
-const FilterBar = () => {
+const buildDefaultRange = () => ({
+  startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
+  endDate: new Date(),
+  preset: 'last30days',
+});
+
+const FilterBar = ({
+  className = '',
+  layout = 'horizontal',
+  showClearAll = true,
+  disabled = false,
+}) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
-    endDate: new Date(),
-    preset: 'last30days'
-  });
+  const [dateRange, setDateRange] = useState(buildDefaultRange);
   const [selectedAppeals, setSelectedAppeals] = useState([]);
   const [selectedFunds, setSelectedFunds] = useState([]);
   const [frequency, setFrequency] = useState('all');
 
-  const getActiveFilterCount = () => {
+  const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (dateRange.preset && dateRange.preset !== 'last30days') count++;
-    if (selectedAppeals.length > 0) count++;
-    if (selectedFunds.length > 0) count++;
-    if (frequency !== 'all') count++;
+    if (dateRange.preset && dateRange.preset !== 'last30days') count += 1;
+    if (selectedAppeals.length > 0) count += 1;
+    if (selectedFunds.length > 0) count += 1;
+    if (frequency !== 'all') count += 1;
     return count;
-  };
+  }, [dateRange.preset, frequency, selectedAppeals.length, selectedFunds.length]);
 
   const clearAllFilters = () => {
-    setDateRange({
-      startDate: new Date(new Date().setDate(new Date().getDate() - 30)),
-      endDate: new Date(),
-      preset: 'last30days'
-    });
+    setDateRange(buildDefaultRange());
     setSelectedAppeals([]);
     setSelectedFunds([]);
     setFrequency('all');
   };
 
+  const desktopLayoutClass =
+    layout === 'grid'
+      ? 'hidden lg:grid lg:grid-cols-2 xl:grid-cols-4 lg:gap-4'
+      : layout === 'vertical'
+        ? 'hidden lg:flex lg:flex-col lg:gap-3'
+        : 'hidden lg:flex lg:flex-wrap lg:items-center lg:gap-4';
+
+  const buttonBase =
+    'flex items-center justify-between w-full px-4 py-2.5 text-sm bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 transition-all duration-200';
+
+  const disabledClasses = disabled ? ' bg-gray-50 text-gray-500 cursor-not-allowed hover:border-gray-300' : '';
+
   return (
-    <>
+    <div className={className}>
       {/* Mobile: Toggle Button */}
-      <div className="filter-bar-mobile">
+      <div className="lg:hidden">
         <button
-          onClick={() => setIsDrawerOpen(true)}
-          className="filter-toggle-btn"
+          onClick={() => !disabled && setIsDrawerOpen(true)}
+          disabled={disabled}
+          className={`${buttonBase}${disabledClasses}`}
         >
-          <div className="filter-toggle-content">
-            <svg className="filter-toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
-            <span className="filter-toggle-label">Filters</span>
-            {getActiveFilterCount() > 0 && (
-              <span className="filter-count-badge">
-                {getActiveFilterCount()}
+            <span className="font-medium text-gray-900">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                {activeFilterCount}
               </span>
             )}
           </div>
-          <svg className="filter-toggle-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -63,74 +78,81 @@ const FilterBar = () => {
 
       {/* Mobile: Drawer/Modal */}
       {isDrawerOpen && (
-        <div className="filter-drawer-overlay">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="filter-drawer-backdrop"
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
             onClick={() => setIsDrawerOpen(false)}
           />
-          <div className="filter-drawer-panel">
-            <div className="filter-drawer-header">
-              <div className="filter-drawer-title-wrapper">
-                <svg className="filter-drawer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+          <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white shadow-xl flex flex-col">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                <h2 className="filter-drawer-title">Filters</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
               </div>
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="filter-drawer-close"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <svg className="filter-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="filter-drawer-content">
-              <div className="filter-drawer-item">
-                <label className="filter-drawer-label">Date Range</label>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
                 <DateRangePicker
                   value={dateRange}
                   onChange={setDateRange}
+                  disabled={disabled}
                 />
               </div>
 
-              <div className="filter-drawer-item">
-                <label className="filter-drawer-label">Appeals</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Appeals</label>
                 <AppealsFilter
                   value={selectedAppeals}
                   onChange={setSelectedAppeals}
+                  disabled={disabled}
                 />
               </div>
 
-              <div className="filter-drawer-item">
-                <label className="filter-drawer-label">Funds</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Funds</label>
                 <FundsFilter
                   value={selectedFunds}
                   onChange={setSelectedFunds}
                   selectedAppeals={selectedAppeals}
+                  disabled={disabled}
                 />
               </div>
 
-              <div className="filter-drawer-item">
-                <label className="filter-drawer-label">Frequency</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
                 <FrequencyFilter
                   value={frequency}
                   onChange={setFrequency}
+                  disabled={disabled}
                 />
               </div>
             </div>
 
-            <div className="filter-drawer-footer">
-              <button
-                onClick={clearAllFilters}
-                className="filter-drawer-clear-btn"
-              >
-                Clear All
-              </button>
+            <div className="border-t border-gray-200 p-4 flex gap-3">
+              {showClearAll && (
+                <button
+                  onClick={clearAllFilters}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Clear All
+                </button>
+              )}
               <button
                 onClick={() => setIsDrawerOpen(false)}
-                className="filter-drawer-apply-btn"
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Apply Filters
               </button>
@@ -139,30 +161,50 @@ const FilterBar = () => {
         </div>
       )}
 
-      {/* Desktop: Horizontal Filters */}
-      <div className="filter-bar-desktop">
+      {/* Desktop Filters */}
+      <div className={`${desktopLayoutClass}`}>
         <DateRangePicker
           value={dateRange}
           onChange={setDateRange}
+          disabled={disabled}
+          className={layout === 'vertical' ? 'w-full' : ''}
         />
 
         <AppealsFilter
           value={selectedAppeals}
           onChange={setSelectedAppeals}
+          disabled={disabled}
+          className={layout === 'vertical' ? 'w-full' : ''}
         />
 
         <FundsFilter
           value={selectedFunds}
           onChange={setSelectedFunds}
           selectedAppeals={selectedAppeals}
+          disabled={disabled}
+          className={layout === 'vertical' ? 'w-full' : ''}
         />
 
-        <FrequencyFilter
-          value={frequency}
-          onChange={setFrequency}
-        />
+        <div className={layout === 'grid' ? 'col-span-2 lg:col-span-1' : ''}>
+          <FrequencyFilter
+            value={frequency}
+            onChange={setFrequency}
+            disabled={disabled}
+          />
+        </div>
+
+        {showClearAll && (
+          <div className="hidden lg:flex lg:items-center lg:ml-auto">
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md border border-transparent"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 
