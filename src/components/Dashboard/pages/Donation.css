@@ -272,11 +272,137 @@
 }
 
 /* No Data State */
-.no-data {
+.no-data,
+.loading-data {
   text-align: center;
   padding: 60px 20px;
   color: #6b7280;
   font-size: 15px;
+}
+
+.loading-data {
+  font-weight: 600;
+  color: #10b981;
+}
+
+/* Data Counter */
+.data-counter {
+  margin-top: 15px;
+  padding: 10px 15px;
+  background-color: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #86efac;
+}
+
+.data-counter p {
+  margin: 0;
+  color: #065f46;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Loading Progress */
+.loading-progress {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: #eff6ff;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background-color: #dbeafe;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progress-text {
+  margin: 0;
+  color: #1e40af;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Button Disabled State */
+.report-btn:disabled,
+.export-btn:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.6;
+}
+
+.report-btn:disabled:hover,
+.export-btn:disabled:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  background-color: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pagination-btn {
+  padding: 8px 12px;
+  min-width: 40px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.pagination-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f9fafb;
 }
 
 /* Responsive Design */
@@ -327,6 +453,23 @@
 
   .donation-table {
     min-width: 800px;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+  }
+
+  .pagination-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .pagination-btn {
+    padding: 6px 10px;
+    min-width: 36px;
+    font-size: 13px;
   }
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import API from '../../../utils/api';
 import './Donation.css';
 
 const Donation = () => {
@@ -14,7 +15,12 @@ const Donation = () => {
   });
 
   const [donations, setDonations] = useState([]);
-  const [filteredDonations, setFilteredDonations] = useState([]);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [loadingDetailCSV, setLoadingDetailCSV] = useState(false);
+  const [loadingSummaryCSV, setLoadingSummaryCSV] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -23,27 +29,214 @@ const Donation = () => {
     }));
   };
 
-  const handleGetReport = () => {
-    console.log('Get Report with filters:', filters);
-    // Implement report generation logic
-    alert('Getting report with current filters...');
+  const handleGetReport = async () => {
+    setLoadingReport(true);
+    setDonations([]);
+    setTotalRecords(0);
+    setCurrentPage(1);
+
+    try {
+      const baseRequestData = {
+        startDate: filters.fromDate || '',
+        endDate: filters.toDate || '',
+        status: filters.paymentStatus || '0',
+        paymentType: filters.paymentType || '0',
+        frequency: filters.frequency || '',
+        txtsearch: filters.search || '',
+        orderid: filters.orderSearch || ''
+      };
+
+      // Step 1: Get total count first
+      const countResponse = await API.post('getReportData.php', {
+        GetReport: 'getReport',
+        ...baseRequestData
+      });
+
+      let totalCount = 0;
+      if (typeof countResponse === 'string') {
+        totalCount = parseInt(countResponse) || 0;
+      } else if (typeof countResponse === 'number') {
+        totalCount = countResponse;
+      }
+
+      if (totalCount === 0) {
+        alert('No data found. Try adjusting your filters.');
+        setLoadingReport(false);
+        return;
+      }
+
+      // Step 2: Load first chunk and show immediately
+      const chunkSize = 500;
+      const totalChunks = Math.ceil(totalCount / chunkSize);
+
+      // Load first chunk
+      const firstChunkResponse = await API.post('getReportData.php', {
+        GetReport: 'getReport',
+        loadData: '0',
+        chunkSize: chunkSize.toString(),
+        ...baseRequestData
+      });
+
+      let firstChunkData = [];
+      if (typeof firstChunkResponse === 'string') {
+        try {
+          firstChunkData = JSON.parse(firstChunkResponse);
+        } catch (e) {
+          console.error('JSON Parse Error:', e);
+          firstChunkData = [];
+        }
+      } else if (Array.isArray(firstChunkResponse)) {
+        firstChunkData = firstChunkResponse;
+      }
+
+      // Show first chunk immediately
+      setDonations(firstChunkData);
+      setTotalRecords(firstChunkData.length);
+      setLoadingReport(false); // Stop loading indicator
+
+      // Step 3: Load remaining chunks in background
+      if (totalChunks > 1) {
+        loadRemainingChunks(1, totalChunks, chunkSize, baseRequestData, firstChunkData);
+      }
+
+    } catch (error) {
+      console.error('Error fetching report:', error);
+      alert('Failed to fetch report data: ' + error.message);
+      setLoadingReport(false);
+    }
   };
 
-  const handleExportDetailCSV = () => {
-    console.log('Export Detail CSV with filters:', filters);
-    // Implement CSV export logic
-    alert('Exporting detailed CSV...');
+  const loadRemainingChunks = async (startChunk, totalChunks, chunkSize, baseRequestData, initialData) => {
+    let allData = [...initialData];
+
+    for (let chunk = startChunk; chunk < totalChunks; chunk++) {
+      try {
+        const offset = chunk * chunkSize;
+
+        const chunkResponse = await API.post('getReportData.php', {
+          GetReport: 'getReport',
+          loadData: offset.toString(),
+          chunkSize: chunkSize.toString(),
+          ...baseRequestData
+        });
+
+        let chunkData = [];
+        if (typeof chunkResponse === 'string') {
+          try {
+            chunkData = JSON.parse(chunkResponse);
+          } catch (e) {
+            console.error('JSON Parse Error:', e);
+            chunkData = [];
+          }
+        } else if (Array.isArray(chunkResponse)) {
+          chunkData = chunkResponse;
+        }
+
+        allData = [...allData, ...chunkData];
+
+        // Update table with new data in background
+        setDonations([...allData]);
+        setTotalRecords(allData.length);
+
+        // Break if we got less data than expected
+        if (chunkData.length < chunkSize) {
+          break;
+        }
+      } catch (error) {
+        console.error('Error loading chunk:', error);
+        break;
+      }
+    }
   };
 
-  const handleExportSummaryCSV = () => {
-    console.log('Export Summary CSV with filters:', filters);
-    // Implement CSV export logic
-    alert('Exporting summary CSV...');
+  const handleExportDetailCSV = async () => {
+    setLoadingDetailCSV(true);
+    try {
+      const blob = await API.post('export_optimized.php', {
+        btnexport: true,
+        startDate: filters.fromDate || '',
+        endDate: filters.toDate || '',
+        status: filters.paymentStatus || '0',
+        paymentType: filters.paymentType || '0',
+        frequency: filters.frequency || '',
+        txtsearch: filters.search || '',
+        orderid: filters.orderSearch || ''
+      }, { responseType: 'blob' });
+
+      if (blob.size === 0) {
+        alert('No data to export. Please adjust your filters.');
+        return;
+      }
+
+      const dateString = API.getDateString();
+      API.downloadFile(blob, `ForgottenWomen_DonationDetailReport_${dateString}.csv`);
+    } catch (error) {
+      console.error('Error exporting detail CSV:', error);
+      alert('Failed to export detail CSV: ' + error.message);
+    } finally {
+      setLoadingDetailCSV(false);
+    }
+  };
+
+  const handleExportSummaryCSV = async () => {
+    setLoadingSummaryCSV(true);
+    try {
+      const blob = await API.post('export_optimized.php', {
+        btnexport_summary: true,
+        startDate: filters.fromDate || '',
+        endDate: filters.toDate || '',
+        status: filters.paymentStatus || '0',
+        paymentType: filters.paymentType || '0',
+        frequency: filters.frequency || '',
+        txtsearch: filters.search || '',
+        orderid: filters.orderSearch || ''
+      }, { responseType: 'blob' });
+
+      if (blob.size === 0) {
+        alert('No data to export. Please adjust your filters.');
+        return;
+      }
+
+      const dateString = API.getDateString();
+      API.downloadFile(blob, `ForgottenWomen_DonationSummaryReport_${dateString}.csv`);
+    } catch (error) {
+      console.error('Error exporting summary CSV:', error);
+      alert('Failed to export summary CSV: ' + error.message);
+    } finally {
+      setLoadingSummaryCSV(false);
+    }
   };
 
   const handleAction = (donation) => {
     console.log('Action for donation:', donation);
-    alert(`Action for donation: ${donation.name}`);
+    // Implement view details modal or navigation
+  };
+
+  // Pagination helpers
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = donations.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(donations.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getPaginationRange = () => {
+    const range = [];
+    const showPages = 5; // Number of page buttons to show
+    let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let end = Math.min(totalPages, start + showPages - 1);
+
+    if (end - start < showPages - 1) {
+      start = Math.max(1, end - showPages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    return range;
   };
 
   return (
@@ -90,11 +283,11 @@ const Donation = () => {
                 value={filters.paymentStatus}
                 onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
               >
-                <option value="">Select</option>
-                <option value="completed">Completed</option>
-                <option value="pending">Pending</option>
-                <option value="failed">Failed</option>
-                <option value="refunded">Refunded</option>
+                <option value="0">All</option>
+                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+                <option value="Failed">Failed</option>
+                <option value="Refunded">Refunded</option>
               </select>
             </div>
 
@@ -131,11 +324,11 @@ const Donation = () => {
                 value={filters.frequency}
                 onChange={(e) => handleFilterChange('frequency', e.target.value)}
               >
-                <option value="">Select</option>
-                <option value="one-time">One-Time</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="yearly">Yearly</option>
+                <option value="">All</option>
+                <option value="0">One-Time</option>
+                <option value="1">Monthly</option>
+                <option value="2">Quarterly</option>
+                <option value="3">Yearly</option>
               </select>
             </div>
 
@@ -170,16 +363,33 @@ const Donation = () => {
           </div>
 
           <div className="action-buttons-row">
-            <button className="report-btn" onClick={handleGetReport}>
-              Get Report
+            <button
+              className="report-btn"
+              onClick={handleGetReport}
+              disabled={loadingReport}
+            >
+              {loadingReport ? 'Loading...' : 'Get Report'}
             </button>
-            <button className="export-btn" onClick={handleExportDetailCSV}>
-              Export Detail CSV
+            <button
+              className="export-btn"
+              onClick={handleExportDetailCSV}
+              disabled={loadingDetailCSV}
+            >
+              {loadingDetailCSV ? 'Exporting...' : 'Export Detail CSV'}
             </button>
-            <button className="export-btn" onClick={handleExportSummaryCSV}>
-              Export Summary CSV
+            <button
+              className="export-btn"
+              onClick={handleExportSummaryCSV}
+              disabled={loadingSummaryCSV}
+            >
+              {loadingSummaryCSV ? 'Exporting...' : 'Export Summary CSV'}
             </button>
           </div>
+          {totalRecords > 0 && (
+            <div className="data-counter">
+              <p>Filtered Value: {totalRecords}</p>
+            </div>
+          )}
         </div>
 
         <div className="donation-table-container">
@@ -196,17 +406,23 @@ const Donation = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredDonations.length > 0 ? (
-                filteredDonations.map((donation, index) => (
-                  <tr key={donation.id}>
-                    <td>{index + 1}</td>
-                    <td className="donation-date">{donation.date}</td>
-                    <td className="donation-name">{donation.name}</td>
-                    <td className="donation-email">{donation.email}</td>
-                    <td className="donation-amount">${donation.amount}</td>
+              {loadingReport ? (
+                <tr>
+                  <td colSpan="7" className="loading-data">
+                    Loading data...
+                  </td>
+                </tr>
+              ) : donations.length > 0 ? (
+                currentItems.map((donation, index) => (
+                  <tr key={index}>
+                    <td>{indexOfFirstItem + index + 1}</td>
+                    <td className="donation-date">{donation.date || 'N/A'}</td>
+                    <td className="donation-name">{`${donation.firstname || ''} ${donation.lastname || ''}`.trim() || 'N/A'}</td>
+                    <td className="donation-email">{donation.email || 'N/A'}</td>
+                    <td className="donation-amount">£{donation.charge_amount || donation.totalamount || '0.00'}</td>
                     <td>
-                      <span className={`status-badge status-${donation.status.toLowerCase()}`}>
-                        {donation.status}
+                      <span className={`status-badge status-${(donation.status || 'pending').toLowerCase()}`}>
+                        {donation.status || 'Pending'}
                       </span>
                     </td>
                     <td>
@@ -222,12 +438,61 @@ const Donation = () => {
               ) : (
                 <tr>
                   <td colSpan="7" className="no-data">
-                    No donations found. Use filters to search for donations.
+                    No donations found. Use filters and click "Get Report" to search for donations.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
+          {donations.length > 0 && totalPages > 1 && (
+            <div className="pagination-container">
+              <div className="pagination-info">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, donations.length)} of {donations.length} records
+              </div>
+              <div className="pagination-controls">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                >
+                  First
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+
+                {getPaginationRange().map(pageNum => (
+                  <button
+                    key={pageNum}
+                    className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

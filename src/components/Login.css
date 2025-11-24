@@ -179,6 +179,20 @@
   stroke-width: 2.5;
 }
 
+.login-button:disabled {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.6;
+}
+
+.login-button:disabled:hover {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: none;
+  transform: none;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .login-card {

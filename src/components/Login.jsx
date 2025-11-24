@@ -1,36 +1,61 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
+import API from '../utils/api';
 import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    // Simple authentication check
-    if (username === 'admin' && password === 'admin') {
-      login(username);
-      setModalConfig({
-        title: 'Success!',
-        message: 'Login successful! Redirecting to dashboard...',
-        type: 'success'
-      });
-      setModalOpen(true);
-    } else {
-      setError('Invalid username or password');
+    try {
+      // Send login request to backend
+      const response = await API.post('auth.php', {
+        action: 'Login',
+        username_val: username,
+        password_val: password
+      }, { responseType: 'text' });
+
+      if (response.includes('id and password matched')) {
+        // Login successful
+        login(username);
+        setModalConfig({
+          title: 'Success!',
+          message: 'Login successful! Redirecting to dashboard...',
+          type: 'success'
+        });
+        setModalOpen(true);
+      } else {
+        // Login failed
+        setError('Invalid username or password');
+        setModalConfig({
+          title: 'Error!',
+          message: 'Invalid username or password. Please try again.',
+          type: 'error'
+        });
+        setModalOpen(true);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred. Please try again.');
       setModalConfig({
         title: 'Error!',
-        message: 'Invalid username or password. Please try again.',
+        message: 'An error occurred during login. Please check your credentials and try again.',
         type: 'error'
       });
       setModalOpen(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,11 +126,13 @@ const Login = () => {
               <a href="#forgot">Forgot password?</a>
             </div>
 
-            <button type="submit" className="login-button">
-              Log in
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
+            <button type="submit" className="login-button" disabled={loading}>
+              {loading ? 'Logging in...' : 'Log in'}
+              {!loading && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              )}
             </button>
           </form>
         </div>
