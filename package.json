@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tailwindcss/vite": "^4.1.17",
     "country-flag-icons": "^1.6.4",
     "date-fns": "^4.1.0",
     "react": "^19.2.0",

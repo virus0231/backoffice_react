@@ -8,7 +8,6 @@ import RetentionDashboard from "@/components/dashborad/RetentionDashboard";
 import DayAndTimeDashboard from "@/components/dashborad/DayAndTimeDashboard";
 import CampaignsDashboard from "@/components/dashborad/CampaignsDashboard";
 import CountriesDashboard from "@/components/dashborad/CountriesDashboard";
-// import "@/insights.css";
 
 export default function DashboardPage() {
   return (
