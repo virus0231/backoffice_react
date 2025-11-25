@@ -63,10 +63,11 @@ const Permissions = () => {
 
       if (response?.success) {
         const rolePermissions = response.permissions || [];
+        const allPermissions = getAllPermissions();
         const updatedPermissions = {};
 
         // Set all permissions based on what the role has
-        getAllPermissions().forEach(perm => {
+        allPermissions.forEach(perm => {
           updatedPermissions[perm.id] = rolePermissions.includes(perm.id);
         });
 

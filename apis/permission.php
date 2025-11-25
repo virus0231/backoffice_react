@@ -50,9 +50,8 @@ if(isset($_POST['action'])){
             $roleId = $_POST['role_id'];
 
             $rolePermTable = find_first_existing_table($conn, ['pw_role_permissions', 'wp_yoc_role_permissions']);
-            $permTable = find_first_existing_table($conn, ['pw_permissions', 'wp_yoc_permissions']);
 
-            if (!$rolePermTable || !$permTable) {
+            if (!$rolePermTable) {
                 echo json_encode([
                     'success' => true,
                     'permissions' => []
@@ -60,17 +59,19 @@ if(isset($_POST['action'])){
                 exit();
             }
 
-            $sql = "SELECT pp.id
-                    FROM `$rolePermTable` rp
-                    INNER JOIN `$permTable` pp ON rp.permission_id = pp.id
-                    WHERE rp.role_id = :role_id";
+            // Simply get permission_id directly from role_permissions table
+            // No need to join with pw_permissions since all permissions are defined in frontend routes.js
+            $sql = "SELECT permission_id
+                    FROM `$rolePermTable`
+                    WHERE role_id = :role_id";
+
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(':role_id', $roleId, PDO::PARAM_INT);
             $stmt->execute();
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $permissions = array_map(function($row) {
-                return intval($row['id']);
+                return intval($row['permission_id']);
             }, $rows);
 
             echo json_encode([
