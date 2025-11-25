@@ -245,14 +245,35 @@ export const useFilterStore = create<FilterStore>()(
         }
 
         if (state) {
-          // Validate rehydrated date range
+          const clearPersisted = () => {
+            try { localStorage.removeItem('insights-filter-store'); } catch {}
+          };
+
+          // Normalize and validate rehydrated date range
           if (state.dateRange) {
+            try {
+              state.dateRange = {
+                startDate: new Date((state.dateRange as any).startDate),
+                endDate: new Date((state.dateRange as any).endDate),
+                preset: (state.dateRange as any).preset || 'last30days',
+              };
+            } catch {
+              state.dateRange = getDefaultDateRange();
+            }
             const validation = validateDateRange(state.dateRange);
             if (!validation.isValid) {
               console.warn('Invalid persisted date range, resetting to default');
               state.dateRange = getDefaultDateRange();
+              clearPersisted();
             }
+          } else {
+            state.dateRange = getDefaultDateRange();
           }
+
+          state.selectedAppeals = state.selectedAppeals || [];
+          state.selectedFunds = state.selectedFunds || [];
+          state.frequency = state.frequency || 'all';
+          state.selectedClient = state.selectedClient || 'mausa';
 
           // Sanitize comparison ranges
           if ((state as any).comparisons) {
