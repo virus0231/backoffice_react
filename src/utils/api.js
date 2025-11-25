@@ -1,12 +1,12 @@
-// API Utility for making POST/GET requests to PHP backend
+// API Utility for making POST/GET requests to PHP backoffice
 // In development, use the proxy. In production, use the full URL.
 const BASE_URL = import.meta.env.DEV
-  ? '/backend/yoc'  // Development: Use proxy
-  : 'https://forgottenwomen.youronlineconversation.com/backend/yoc'; // Production: Full URL
+  ? '/backoffice/yoc'  // Development: Use proxy
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc'; // Production: Full URL
 
 class API {
   /**
-   * Make a POST request to the backend
+   * Make a POST request to the backoffice
    * @param {string} endpoint - The PHP file name (e.g., 'getReportData.php')
    * @param {Object} data - Form data to send
    * @param {Object} options - Additional options (responseType, etc.)

@@ -7,13 +7,13 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/backend': {
-        target: 'https://forgottenwomen.youronlineconversation.com',
+      "/backoffice": {
+        target: "https://forgottenwomen.youronlineconversation.com",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path
-      }
-    }
+        rewrite: (path) => path,
+      },
+    },
   },
   resolve: {
     alias: {
