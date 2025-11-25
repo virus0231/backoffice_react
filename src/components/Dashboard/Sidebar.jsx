@@ -46,7 +46,7 @@ const menuItems = [
   },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isMobileMenuOpen, onClose }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const location = useLocation();
@@ -57,11 +57,19 @@ const Sidebar = () => {
       setOpenSubmenu(openSubmenu === item.id ? null : item.id);
     } else if (item.path) {
       navigate(item.path);
+      // Close mobile menu when navigating
+      if (onClose) {
+        onClose();
+      }
     }
   };
 
   const handleSubmenuClick = (subitem) => {
     navigate(subitem.path);
+    // Close mobile menu when navigating
+    if (onClose) {
+      onClose();
+    }
   };
 
   const getIcon = (iconName) => {
@@ -85,7 +93,7 @@ const Sidebar = () => {
   };
 
   return (
-    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+    <div className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <div className="logo-icon-container">
@@ -126,6 +134,7 @@ const Sidebar = () => {
               <div
                 className={`nav-item ${openSubmenu === item.id || active ? 'active' : ''}`}
                 onClick={() => handleMenuClick(item)}
+                title={isCollapsed ? item.label : ''}
               >
                 <div className="nav-item-content">
                   <div className="nav-icon-wrapper">
@@ -179,6 +188,7 @@ const Sidebar = () => {
                         e.stopPropagation();
                         handleSubmenuClick(subitem);
                       }}
+                      title={subitem.label}
                     >
                       <span className="submenu-dot"></span>
                       <span className="submenu-label">{subitem.label}</span>

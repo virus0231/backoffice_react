@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
@@ -30,14 +31,26 @@ const titleMap = {
 const Dashboard = () => {
   const { pathname } = useLocation();
   const pageTitle = titleMap[pathname] || "Dashboard";
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleMenuToggle = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const handleCloseMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div className="dashboard-layout">
-      <Sidebar />
+      <Sidebar isMobileMenuOpen={isMobileMenuOpen} onClose={handleCloseMobileMenu} />
       <div className="dashboard-main">
-        <Header pageTitle={pageTitle} />
+        <Header pageTitle={pageTitle} onMenuClick={handleMenuToggle} />
         <Outlet />
       </div>
+      {isMobileMenuOpen && (
+        <div className="mobile-overlay" onClick={handleCloseMobileMenu}></div>
+      )}
     </div>
   );
 };

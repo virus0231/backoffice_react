@@ -2,9 +2,9 @@
   "permissions": {
     "allow": [
       "Read(//c/Users/YOC/Pictures/Screenshots/**)",
-      "Bash(npm run dev:*)",
       "Bash(npx tailwindcss:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

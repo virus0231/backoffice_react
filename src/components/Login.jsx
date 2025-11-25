@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 import './Login.css';
@@ -11,10 +12,18 @@ const Login = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
   const { login, error: authError, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (authError) setError(authError);
   }, [authError]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,12 +32,8 @@ const Login = () => {
 
     const ok = await login(username, password);
     if (ok) {
-      setModalConfig({
-        title: 'Success!',
-        message: 'Login successful! Redirecting to dashboard...',
-        type: 'success'
-      });
-      setModalOpen(true);
+      // Navigate immediately after successful login
+      navigate('/', { replace: true });
     } else {
       setModalConfig({
         title: 'Error!',
@@ -39,10 +44,6 @@ const Login = () => {
     }
     setLoading(false);
   };
-
-  if (isAuthenticated) {
-    return null;
-  }
 
   return (
     <div className="login-shell">
