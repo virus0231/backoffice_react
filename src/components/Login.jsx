@@ -45,30 +45,38 @@ const Login = () => {
   }
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <div className="login-logo">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
-                    fill="url(#login-gradient)" />
-              <defs>
-                <linearGradient id="login-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f472b6" />
-                  <stop offset="100%" stopColor="#ec4899" />
-                </linearGradient>
-              </defs>
-            </svg>
+    <div className="login-shell">
+      <div className="login-hero">
+        <div className="hero-sheen" />
+        <div className="hero-content">
+          <div className="hero-logo">
+            <span className="hero-mark">♥</span>
           </div>
-          <div className="login-title-group">
-            <h1 className="login-title">Forgotten Women</h1>
-            <p className="login-subtitle">Back Office Portal</p>
+          <div>
+            <p className="hero-kicker">Forgotten Women</p>
+            <h1 className="hero-title">Back Office Access</h1>
+            <p className="hero-subtitle">
+              Secure entry to your fundraising insights and operations dashboard.
+            </p>
           </div>
+        </div>
+      </div>
+
+      <div className="login-panel">
+        <div className="panel-header">
+          <div className="panel-brand">
+            <span className="brand-mark">FW</span>
+            <div>
+              <h2>Welcome back</h2>
+              <p>Sign in to continue</p>
+            </div>
+          </div>
+          <span className="panel-badge">Back Office</span>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+          <label className="form-group">
+            <span className="form-label">Username</span>
             <div className="input-wrapper">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -83,10 +91,10 @@ const Login = () => {
                 required
               />
             </div>
-          </div>
+          </label>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <label className="form-group">
+            <span className="form-label">Password</span>
             <div className="input-wrapper">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -101,21 +109,25 @@ const Login = () => {
                 required
               />
             </div>
-          </div>
+          </label>
 
           {error && <div className="error-message">{error}</div>}
+
+          <div className="panel-actions">
+            <label className="remember-me">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+            <a href="#" className="forgot-password">Forgot password?</a>
+          </div>
 
           <button className="login-button" type="submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="login-footer">
-          <div className="remember-me">
-            <input type="checkbox" id="remember" />
-            <label htmlFor="remember">Remember me</label>
-          </div>
-          <a href="#" className="forgot-password">Forgot password?</a>
+        <div className="panel-footer">
+          <span>Secure access • YOC</span>
         </div>
       </div>
 
