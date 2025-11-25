@@ -3,9 +3,6 @@ import API from '../../../utils/api';
 import { getAllPermissions, getGroupedPermissions } from '../../../config/routes';
 import './Permissions.css';
 
-// Get all available permissions dynamically from route configuration
-const AVAILABLE_PERMISSIONS = getAllPermissions();
-
 const Permissions = () => {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
@@ -18,7 +15,7 @@ const Permissions = () => {
   // Initialize permissions state
   useEffect(() => {
     const initialPermissions = {};
-    AVAILABLE_PERMISSIONS.forEach(perm => {
+    getAllPermissions().forEach(perm => {
       initialPermissions[perm.id] = false;
     });
     setPermissions(initialPermissions);
@@ -36,7 +33,7 @@ const Permissions = () => {
     } else {
       // Reset all to unchecked
       const resetPermissions = {};
-      AVAILABLE_PERMISSIONS.forEach(perm => {
+      getAllPermissions().forEach(perm => {
         resetPermissions[perm.id] = false;
       });
       setPermissions(resetPermissions);
@@ -69,7 +66,7 @@ const Permissions = () => {
         const updatedPermissions = {};
 
         // Set all permissions based on what the role has
-        AVAILABLE_PERMISSIONS.forEach(perm => {
+        getAllPermissions().forEach(perm => {
           updatedPermissions[perm.id] = rolePermissions.includes(perm.id);
         });
 
@@ -104,7 +101,7 @@ const Permissions = () => {
 
     try {
       // Convert permissions object to array of permission IDs
-      const selectedPermissions = AVAILABLE_PERMISSIONS
+      const selectedPermissions = getAllPermissions()
         .filter(perm => permissions[perm.id])
         .map(perm => perm.id);
 
