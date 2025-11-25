@@ -1,0 +1,318 @@
+[11-Nov-2025 12:35:57 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 12:36:01 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 12:36:18 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 13:01:28 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 13:02:18 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 13:02:22 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:9
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(9): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 9
+[11-Nov-2025 13:04:52 UTC] PHP Warning:  Undefined property: PDOStatement::$rowCount in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 11
+[11-Nov-2025 13:06:07 UTC] PHP Warning:  Undefined property: PDOStatement::$rowCount in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 11
+[11-Nov-2025 13:06:07 UTC] PHP Fatal error:  Uncaught TypeError: mysqli_query(): Argument #1 ($mysql) must be of type mysqli, PDO given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:37
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php(37): mysqli_query()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 37
+[11-Nov-2025 13:07:27 UTC] PHP Warning:  Undefined variable $pdo in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 8
+[11-Nov-2025 13:07:27 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 8
+[11-Nov-2025 13:08:18 UTC] PHP Warning:  Undefined variable $pdo in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 8
+[11-Nov-2025 13:08:18 UTC] PHP Fatal error:  Uncaught Error: Call to a member function query() on null in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 8
+[11-Nov-2025 13:10:59 UTC] PHP Parse error:  syntax error, unexpected token "/", expecting end of file in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 2
+[11-Nov-2025 13:11:03 UTC] PHP Parse error:  syntax error, unexpected token "/", expecting end of file in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 2
+[11-Nov-2025 13:11:04 UTC] PHP Parse error:  syntax error, unexpected token "/", expecting end of file in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/configuration.php on line 2
+[11-Nov-2025 13:16:40 UTC] PHP Warning:  Undefined property: PDOStatement::$num_rows in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php on line 72
+[12-Nov-2025 15:30:47 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:30:47 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:30:52 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:30:52 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:31:00 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:31:00 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:31:00 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[12-Nov-2025 15:31:00 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_name_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 81
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_amount_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 82
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_donation_type_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 83
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_sort_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 84
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_featured_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 85
+[17-Nov-2025 13:57:35 UTC] PHP Warning:  Undefined array key "amount_enable_1" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 86
+[17-Nov-2025 14:26:06 UTC] PHP Warning:  Undefined array key "new_appeal_id" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 95
+[17-Nov-2025 14:26:26 UTC] PHP Warning:  Undefined array key "new_appeal_id" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 95
+[20-Nov-2025 16:26:26 UTC] PHP Warning:  Undefined array key "fund_ids" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 184
+[20-Nov-2025 16:26:26 UTC] PHP Fatal error:  Uncaught TypeError: array_reverse(): Argument #1 ($array) must be of type array, null given in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php:185
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php(185): array_reverse()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/cause.php on line 185
+[22-Nov-2025 11:55:07 UTC] PHP Warning:  Undefined array key "qurbani_txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 11
+[22-Nov-2025 11:55:07 UTC] PHP Warning:  Undefined array key "qurbani_orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 12
+[22-Nov-2025 11:56:23 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42000] [1044] Access denied for user 'fwdb'@'localhost' to database 'mausa_yoc' in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/config.php:11
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/config.php(11): PDO->__construct()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php(3): include('/home/yocadmin/...')
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/config.php on line 11
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1465
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1466
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1468
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1469
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1470
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1471
+[22-Nov-2025 11:58:37 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1472
+[22-Nov-2025 11:58:37 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_transactions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1558
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php(1558): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1558
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1465
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1466
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1468
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1469
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1470
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1471
+[22-Nov-2025 12:00:06 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1472
+[22-Nov-2025 12:00:06 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_transactions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1558
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php(1558): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1558
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1600
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1601
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1603
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1604
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1605
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1606
+[22-Nov-2025 12:00:40 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1607
+[22-Nov-2025 12:00:40 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_donors' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1698
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php(1698): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1698
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1600
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1601
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1603
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1604
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1605
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1606
+[22-Nov-2025 12:01:14 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1607
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1600
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1601
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1603
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1604
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1605
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1606
+[22-Nov-2025 12:06:02 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1607
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1602
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1603
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1605
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1606
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1607
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1608
+[22-Nov-2025 12:10:16 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1609
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1467
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1468
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1470
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1471
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1472
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1473
+[22-Nov-2025 12:10:44 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1474
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1467
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1468
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1470
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1471
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1472
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1473
+[22-Nov-2025 12:11:13 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1474
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1467
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1468
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1470
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "paymentType" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1471
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "frequency" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1472
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1473
+[22-Nov-2025 12:11:18 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1474
+[22-Nov-2025 12:13:21 UTC] PHP Warning:  Undefined array key "status" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1791
+[22-Nov-2025 12:13:21 UTC] PHP Warning:  Undefined array key "search" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1792
+[22-Nov-2025 12:13:21 UTC] PHP Warning:  Undefined array key "donation" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1793
+[22-Nov-2025 12:13:21 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1794
+[22-Nov-2025 12:13:21 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1795
+[22-Nov-2025 12:15:14 UTC] PHP Warning:  Undefined array key "txtsearch" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 101
+[22-Nov-2025 12:15:14 UTC] PHP Warning:  Undefined array key "orderid" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 102
+[22-Nov-2025 12:17:52 UTC] PHP Warning:  Undefined array key "startDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 285
+[22-Nov-2025 12:17:52 UTC] PHP Warning:  Undefined array key "endDate" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 286
+[22-Nov-2025 12:17:52 UTC] PHP Warning:  Undefined array key "email" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 287
+[23-Nov-2025 19:47:45 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 19:47:46 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 19:47:58 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 19:47:58 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 19:48:13 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 20:00:07 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 20:03:59 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 20:04:19 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:41
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(41): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(12): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 41
+[23-Nov-2025 20:04:57 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[23-Nov-2025 20:04:57 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[23-Nov-2025 20:07:20 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[23-Nov-2025 20:07:20 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 15
+[23-Nov-2025 20:33:45 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1579
+[23-Nov-2025 20:33:45 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1579
+[23-Nov-2025 20:33:45 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1584) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1595
+[23-Nov-2025 20:33:45 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1584) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1596
+[23-Nov-2025 20:33:45 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1584) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1597
+[23-Nov-2025 20:33:45 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1584) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1598
+[23-Nov-2025 20:45:07 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:53
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(53): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(24): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 53
+[23-Nov-2025 20:45:12 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:53
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(53): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(24): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 53
+[23-Nov-2025 20:48:28 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:53
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(53): PDOStatement->execute()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(24): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 53
+[23-Nov-2025 20:49:02 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:49:02 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:49:22 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:49:22 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:54:14 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:54:14 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 20:55:06 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1583
+[23-Nov-2025 20:55:06 UTC] PHP Deprecated:  preg_replace(): Passing null to parameter #3 ($subject) of type array|string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1583
+[23-Nov-2025 20:55:06 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1588) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1599
+[23-Nov-2025 20:55:06 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1588) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1600
+[23-Nov-2025 20:55:06 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1588) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1601
+[23-Nov-2025 20:55:06 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php:1588) in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/getReportData.php on line 1602
+[23-Nov-2025 21:11:24 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 21:11:24 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 21:29:57 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 21:29:57 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 22:16:30 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[23-Nov-2025 22:16:30 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 09:37:53 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 09:37:53 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:20:07 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:20:07 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:20:31 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:20:31 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:23:23 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:23:23 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:26:24 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.wp_yoc_users' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php:103
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php(103): PDO->query()
+#1 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php(46): get_user_details()
+#2 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php on line 103
+[25-Nov-2025 12:27:57 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php on line 58
+[25-Nov-2025 12:27:57 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/user.php on line 58
+[25-Nov-2025 12:32:11 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:32:11 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:32:11 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.pw_role_permissions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:81
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(81): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 81
+[25-Nov-2025 12:32:44 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:32:44 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:32:44 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.pw_role_permissions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:81
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(81): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 81
+[25-Nov-2025 12:38:08 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.pw_role_permissions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:81
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(81): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 81
+[25-Nov-2025 12:38:14 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:38:14 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:38:14 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.pw_role_permissions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:81
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(81): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 81
+[25-Nov-2025 12:38:15 UTC] PHP Warning:  Undefined array key "password_val" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 23
+[25-Nov-2025 12:38:15 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:38:15 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #2 ($data) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:38:15 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 27
+[25-Nov-2025 12:38:15 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'mausa_yoc.pw_role_permissions' doesn't exist in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php:81
+Stack trace:
+#0 /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php(81): PDOStatement->execute()
+#1 {main}
+  thrown in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 81
+[25-Nov-2025 12:38:45 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 86
+[25-Nov-2025 12:38:45 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 86
+[25-Nov-2025 12:41:04 UTC] PHP Warning:  Undefined array key "company" in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 86
+[25-Nov-2025 12:41:04 UTC] PHP Deprecated:  hash_hmac(): Passing null to parameter #3 ($key) of type string is deprecated in /home/yocadmin/forgottenwomen.youronlineconversation.com/backend/yoc/auth.php on line 86
