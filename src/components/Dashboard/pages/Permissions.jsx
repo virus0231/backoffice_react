@@ -2,9 +2,23 @@ import { useEffect, useState } from 'react';
 import API from '../../../utils/api';
 import './Permissions.css';
 
+// Define all available permissions/modules
+const AVAILABLE_PERMISSIONS = [
+  { id: 1, name: 'Users', path: '/backend/pages/users/' },
+  { id: 2, name: 'Permissions', path: '/backend/pages/permission/' },
+  { id: 3, name: 'Causes', path: '/backend/pages/causes/' },
+  { id: 4, name: 'Donor', path: '/backend/pages/donor/' },
+  { id: 5, name: 'Donation', path: '/backend/pages/donation/' },
+  { id: 6, name: 'Schedules', path: '/backend/pages/schedules/' },
+  { id: 7, name: 'Configuration', path: '/backend/pages/dm/' },
+  { id: 8, name: 'Reports', path: '/backend/pages/report/' },
+  { id: 9, name: 'CRM', path: '/backend/pages/crm/' },
+  { id: 10, name: 'Seasons', path: '/backend/pages/seasons/' },
+  { id: 11, name: 'Manual Transaction', path: '/backend/pages/ManualTransaction/' },
+];
+
 const Permissions = () => {
   const [roles, setRoles] = useState([]);
-  const [modules, setModules] = useState([]);
   const [selectedRole, setSelectedRole] = useState('');
   const [permissions, setPermissions] = useState({});
   const [loading, setLoading] = useState(false);
@@ -12,10 +26,18 @@ const Permissions = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Fetch roles and modules on mount
+  // Initialize permissions state
+  useEffect(() => {
+    const initialPermissions = {};
+    AVAILABLE_PERMISSIONS.forEach(perm => {
+      initialPermissions[perm.id] = false;
+    });
+    setPermissions(initialPermissions);
+  }, []);
+
+  // Fetch roles on mount
   useEffect(() => {
     fetchRoles();
-    fetchModules();
   }, []);
 
   // Fetch permissions when role changes
@@ -23,7 +45,12 @@ const Permissions = () => {
     if (selectedRole) {
       fetchRolePermissions(selectedRole);
     } else {
-      setPermissions({});
+      // Reset all to unchecked
+      const resetPermissions = {};
+      AVAILABLE_PERMISSIONS.forEach(perm => {
+        resetPermissions[perm.id] = false;
+      });
+      setPermissions(resetPermissions);
     }
   }, [selectedRole]);
 
@@ -36,24 +63,6 @@ const Permissions = () => {
     } catch (err) {
       console.error('Error fetching roles:', err);
       setError('Failed to load roles');
-    }
-  };
-
-  const fetchModules = async () => {
-    try {
-      const response = await API.post('permission.php', { action: 'get-permissions' });
-      if (response?.success && response?.data) {
-        setModules(response.data);
-        // Initialize permissions state
-        const initialPermissions = {};
-        response.data.forEach(module => {
-          initialPermissions[module.id] = false;
-        });
-        setPermissions(initialPermissions);
-      }
-    } catch (err) {
-      console.error('Error fetching permissions:', err);
-      setError('Failed to load permission modules');
     }
   };
 
@@ -70,8 +79,9 @@ const Permissions = () => {
         const rolePermissions = response.permissions || [];
         const updatedPermissions = {};
 
-        modules.forEach(module => {
-          updatedPermissions[module.id] = rolePermissions.includes(module.id);
+        // Set all permissions based on what the role has
+        AVAILABLE_PERMISSIONS.forEach(perm => {
+          updatedPermissions[perm.id] = rolePermissions.includes(perm.id);
         });
 
         setPermissions(updatedPermissions);
@@ -105,9 +115,9 @@ const Permissions = () => {
 
     try {
       // Convert permissions object to array of permission IDs
-      const selectedPermissions = modules
-        .filter(module => permissions[module.id])
-        .map(module => module.id);
+      const selectedPermissions = AVAILABLE_PERMISSIONS
+        .filter(perm => permissions[perm.id])
+        .map(perm => perm.id);
 
       const response = await API.post('permission.php', {
         action: 'update-role-permissions',
@@ -171,15 +181,15 @@ const Permissions = () => {
           ) : selectedRole ? (
             <>
               <div className="permissions-list">
-                {modules.map((module) => (
-                  <label key={module.id} className="permission-item">
+                {AVAILABLE_PERMISSIONS.map((perm) => (
+                  <label key={perm.id} className="permission-item">
                     <input
                       type="checkbox"
-                      checked={!!permissions[module.id]}
-                      onChange={() => handlePermissionChange(module.id)}
+                      checked={!!permissions[perm.id]}
+                      onChange={() => handlePermissionChange(perm.id)}
                       disabled={saving}
                     />
-                    <span>{module.permission_name || module.name}</span>
+                    <span>{perm.name}</span>
                   </label>
                 ))}
               </div>

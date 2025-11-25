@@ -40,37 +40,8 @@ if(isset($_POST['action'])){
         exit();
     }
 
-    // Get all available permissions/modules
-    if($_POST['action'] == "get-permissions"){
-        header('Content-Type: application/json');
-        try {
-            $permTable = find_first_existing_table($conn, ['pw_permissions', 'wp_yoc_permissions']);
-            if (!$permTable) {
-                echo json_encode([
-                    'success' => false,
-                    'message' => 'Permissions table not found'
-                ]);
-                exit();
-            }
-
-            $sql = "SELECT * FROM `$permTable` ORDER BY id ASC";
-            $stmt = $conn->query($sql);
-            $permissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            echo json_encode([
-                'success' => true,
-                'data' => $permissions
-            ]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'message' => 'Unable to fetch permissions',
-                'error' => $e->getMessage()
-            ]);
-        }
-        exit();
-    }
+    // Note: All available permissions are defined in the frontend code
+    // The database only stores which permissions each role HAS (pw_role_permissions table)
 
     // Get permissions for a specific role
     if($_POST['action'] == "get-role-permissions"){
