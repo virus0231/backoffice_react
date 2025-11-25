@@ -1,48 +1,67 @@
 import { useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar = ({ activeMenu, onMenuChange }) => {
+const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', path: '/' },
+  { id: 'users', label: 'Users', icon: 'users', badge: '12', path: '/users' },
+  { id: 'permissions', label: 'Permissions', icon: 'shield', path: '/permissions' },
+  { id: 'donors', label: 'Donors', icon: 'heart', badge: '45', path: '/donors' },
+  { id: 'donation', label: 'Donation', icon: 'gift', badge: 'New', path: '/donation' },
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    icon: 'calendar',
+    hasSubmenu: true,
+    submenu: [{ id: 'schedule', label: 'Schedule', path: '/schedule' }],
+  },
+  { id: 'configuration', label: 'Configuration', icon: 'settings', path: '/configuration' },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: 'file-text',
+    hasSubmenu: true,
+    submenu: [
+      { id: 'donations-report', label: 'Donation Report', path: '/donations-report' },
+      { id: 'fund-report', label: 'Fund Report', path: '/fund-report' },
+      { id: 'campaign-report', label: 'Campaign Report', path: '/campaign-report' },
+      { id: 'monthly-report', label: 'Monthly Report', path: '/monthly-report' },
+      { id: 'donor-report', label: 'Donor Report', path: '/donor-report' },
+    ],
+  },
+  {
+    id: 'causes',
+    label: 'Causes',
+    icon: 'folder',
+    hasSubmenu: true,
+    submenu: [
+      { id: 'appeal', label: 'Appeal', path: '/appeal' },
+      { id: 'amount', label: 'Amount', path: '/amount' },
+      { id: 'fund-list', label: 'Fund List', path: '/fund-list' },
+      { id: 'featured-amount', label: 'Featured Amount', path: '/featured-amount' },
+      { id: 'fund-amount', label: 'Fund-Amount', path: '/fund-amount' },
+      { id: 'category', label: 'Category', path: '/category' },
+      { id: 'country', label: 'Country', path: '/country' },
+    ],
+  },
+];
+
+const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
-
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', badge: null },
-    { id: 'users', label: 'Users', icon: 'users', badge: '12' },
-    { id: 'permissions', label: 'Permissions', icon: 'shield', badge: null },
-    { id: 'donors', label: 'Donors', icon: 'heart', badge: '45' },
-    { id: 'donation', label: 'Donation', icon: 'gift', badge: 'New' },
-    { id: 'schedule', label: 'Schedule', icon: 'calendar', hasSubmenu: true, submenu: [
-      { id: 'schedule', label: 'Schedule' }
-    ]},
-    { id: 'configuration', label: 'Configuration', icon: 'settings', badge: null },
-    { id: 'reports', label: 'Reports', icon: 'file-text', hasSubmenu: true, submenu: [
-      { id: 'donations-report', label: 'Donation Report' },
-      { id: 'fund-report', label: 'Fund Report' },
-      { id: 'campaign-report', label: 'Campaign Report' },
-      { id: 'monthly-report', label: 'Monthly Report' },
-      { id: 'donor-report', label: 'Donor Report' }
-    ]},
-    { id: 'causes', label: 'Causes', icon: 'folder', hasSubmenu: true, submenu: [
-      { id: 'appeal', label: 'Appeal' },
-      { id: 'amount', label: 'Amount' },
-      { id: 'fund-list', label: 'Fund List' },
-      { id: 'featured-amount', label: 'Featured Amount' },
-      { id: 'fund-amount', label: 'Fund-Amount' },
-      { id: 'category', label: 'Category' },
-      { id: 'country', label: 'Country' }
-    ]}
-  ];
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const handleMenuClick = (item) => {
     if (item.hasSubmenu) {
       setOpenSubmenu(openSubmenu === item.id ? null : item.id);
-    } else {
-      onMenuChange(item.id);
+    } else if (item.path) {
+      navigate(item.path);
     }
   };
 
-  const handleSubmenuClick = (submenuId) => {
-    onMenuChange(submenuId);
+  const handleSubmenuClick = (subitem) => {
+    navigate(subitem.path);
   };
 
   const getIcon = (iconName) => {
@@ -58,6 +77,11 @@ const Sidebar = ({ activeMenu, onMenuChange }) => {
       folder: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></>,
     };
     return icons[iconName];
+  };
+
+  const isActivePath = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -95,74 +119,76 @@ const Sidebar = ({ activeMenu, onMenuChange }) => {
       <div className="sidebar-divider"></div>
 
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
-          <div key={item.id}>
-            <div
-              className={`nav-item ${openSubmenu === item.id || activeMenu === item.id ? 'active' : ''}`}
-              onClick={() => handleMenuClick(item)}
-            >
-              <div className="nav-item-content">
-                <div className="nav-icon-wrapper">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    {getIcon(item.icon)}
-                  </svg>
-                </div>
-                {!isCollapsed && (
-                  <>
-                    <span className="nav-label">{item.label}</span>
-                    {item.badge && (
-                      <span className={`nav-badge ${item.badge === 'New' ? 'badge-new' : ''}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                    {item.hasSubmenu && (
-                      <svg
-                        className={`submenu-icon ${openSubmenu === item.id ? 'open' : ''}`}
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                      >
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    )}
-                  </>
-                )}
-              </div>
-              {!item.hasSubmenu && activeMenu === item.id && <div className="active-indicator"></div>}
-            </div>
-
-            {/* Submenu Items */}
-            {item.hasSubmenu && openSubmenu === item.id && !isCollapsed && (
-              <div className="submenu">
-                {item.submenu.map((subitem) => (
-                  <div
-                    key={subitem.id}
-                    className={`submenu-item ${activeMenu === subitem.id ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSubmenuClick(subitem.id);
-                    }}
-                  >
-                    <span className="submenu-dot"></span>
-                    <span className="submenu-label">{subitem.label}</span>
+        {menuItems.map((item) => {
+          const active = isActivePath(item.path || '');
+          return (
+            <div key={item.id}>
+              <div
+                className={`nav-item ${openSubmenu === item.id || active ? 'active' : ''}`}
+                onClick={() => handleMenuClick(item)}
+              >
+                <div className="nav-item-content">
+                  <div className="nav-icon-wrapper">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {getIcon(item.icon)}
+                    </svg>
                   </div>
-                ))}
+                  {!isCollapsed && (
+                    <>
+                      <span className="nav-label">{item.label}</span>
+                      {item.badge && (
+                        <span className={`nav-badge ${item.badge === 'New' ? 'badge-new' : ''}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                      {item.hasSubmenu && (
+                        <svg
+                          className={`submenu-icon ${openSubmenu === item.id ? 'open' : ''}`}
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                        >
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                      )}
+                    </>
+                  )}
+                </div>
+                {!item.hasSubmenu && active && <div className="active-indicator"></div>}
               </div>
-            )}
-          </div>
-        ))}
+
+              {item.hasSubmenu && openSubmenu === item.id && !isCollapsed && (
+                <div className="submenu">
+                  {item.submenu.map((subitem) => (
+                    <div
+                      key={subitem.id}
+                      className={`submenu-item ${isActivePath(subitem.path) ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSubmenuClick(subitem);
+                      }}
+                    >
+                      <span className="submenu-dot"></span>
+                      <span className="submenu-label">{subitem.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </div>
   );

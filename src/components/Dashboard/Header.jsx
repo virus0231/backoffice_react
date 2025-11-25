@@ -16,6 +16,11 @@ const Header = ({ pageTitle = 'Dashboard' }) => {
             <span className="pill-text">Back Office</span>
           </div>
           <h1 className="dashboard-title">{pageTitle}</h1>
+          <div className="header-crumbs">
+            <span>Back Office</span>
+            <span className="crumb-sep">/</span>
+            <span className="crumb-current">{pageTitle}</span>
+          </div>
         </div>
         <div className="user-profile">
           <div className="user-avatar">

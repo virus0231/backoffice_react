@@ -5,36 +5,18 @@
 }
 
 .users-header {
-  background-color: white;
-  padding: 24px 30px;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: transparent;
+  padding: 12px 0 8px 0;
+  border: none;
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
 .users-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
-}
-
-.users-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.breadcrumb-separator {
-  color: #d1d5db;
-}
-
-.breadcrumb-current {
-  color: #3b82f6;
-  font-weight: 500;
 }
 
 .users-content {

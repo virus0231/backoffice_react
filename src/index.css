@@ -91,3 +91,27 @@ body {
   width: 100%;
   min-height: 100vh;
 }
+
+/* Hide legacy per-page breadcrumbs to avoid duplicate nav bars */
+.add-appeal-breadcrumb,
+.add-category-breadcrumb,
+.add-user-breadcrumb,
+.amount-breadcrumb,
+.appeal-breadcrumb,
+.campaign-report-breadcrumb,
+.category-breadcrumb,
+.causes-breadcrumb,
+.causes-report-breadcrumb,
+.configuration-breadcrumb,
+.country-breadcrumb,
+.donation-breadcrumb,
+.donations-report-breadcrumb,
+.donors-breadcrumb,
+.featured-amount-breadcrumb,
+.fund-amount-breadcrumb,
+.fundlist-breadcrumb,
+.fund-report-breadcrumb,
+.permissions-breadcrumb,
+.schedule-breadcrumb {
+  display: none !important;
+}

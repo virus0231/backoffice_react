@@ -16,7 +16,6 @@ const Users = () => {
     password: '',
     roleId: '2', // default to admin
   });
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
@@ -214,13 +213,6 @@ const Users = () => {
     <div className="users-page">
       <div className="users-header">
         <h1 className="users-title">Users List</h1>
-        <div className="users-breadcrumb">
-          <span>Back Office</span>
-          <span className="breadcrumb-separator">/</span>
-          <span>Users</span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Users List</span>
-        </div>
       </div>
 
       <div className="users-content">
