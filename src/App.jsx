@@ -3,7 +3,11 @@ import Login from './components/Login'
 import Dashboard from './components/Dashboard/Dashboard'
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+  }
 
   return isAuthenticated ? <Dashboard /> : <Login />;
 }

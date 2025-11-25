@@ -208,13 +208,36 @@ function fetch_crm_only_amount_data($conn, $appeal_id) {
 }
 
 
+// Utility: find the first existing table from a list of candidates
+function find_first_existing_table($conn, $candidates) {
+    foreach ($candidates as $table) {
+        $stmt = $conn->prepare("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = :table LIMIT 1");
+        $stmt->bindParam(':table', $table, PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->fetchColumn()) {
+            return $table;
+        }
+    }
+    return null;
+}
+
 //users
 function get_all_users($conn) {
-    $sql = "SELECT `wp_yoc_users`.*, `wp_yoc_user_role`.`user_role` 
-            FROM `wp_yoc_users` 
-            INNER JOIN `wp_yoc_user_role` ON `wp_yoc_user_role`.`id` = `wp_yoc_users`.`user_role` 
-            WHERE `wp_yoc_users`.`user_role` != 1";
-    
+    // Support both prefixed table sets (wp_yoc_* or pw_*)
+    $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+    $roleTable = find_first_existing_table($conn, ['wp_yoc_user_role', 'pw_user_role']);
+
+    if (!$userTable || !$roleTable) {
+        // Return empty array instead of fatal error when tables are missing
+        return [];
+    }
+
+    // Alias role name to avoid clobbering the numeric role id from the users table
+    $sql = "SELECT `$userTable`.*, `$roleTable`.`user_role` AS role_name
+            FROM `$userTable`
+            INNER JOIN `$roleTable` ON `$roleTable`.`id` = `$userTable`.`user_role`
+            WHERE `$userTable`.`user_role` != 1";
+
     $stmt = $conn->query($sql);
     $return = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return $return;

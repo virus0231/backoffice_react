@@ -106,7 +106,6 @@ const Dashboard = () => {
       default:
         return (
           <>
-            <Header />
             <FilterProvider>
               <div className="flex justify-center px-8 py-6">
                 <div className="w-full max-w-7xl">
@@ -131,7 +130,10 @@ const Dashboard = () => {
   return (
     <div className="dashboard-layout">
       <Sidebar activeMenu={currentPage} onMenuChange={setCurrentPage} />
-      <div className="dashboard-main">{renderContent()}</div>
+      <div className="dashboard-main">
+        <Header />
+        {renderContent()}
+      </div>
     </div>
   );
 };
