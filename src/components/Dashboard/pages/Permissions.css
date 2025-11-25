@@ -86,8 +86,34 @@
 .permissions-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   margin-bottom: 30px;
+}
+
+.permission-category {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fafbfc 0%, #ffffff 100%);
+}
+
+.category-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 1px solid #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-permissions {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .permission-item {

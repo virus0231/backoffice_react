@@ -1,21 +1,10 @@
 import { useEffect, useState } from 'react';
 import API from '../../../utils/api';
+import { getAllPermissions, getGroupedPermissions } from '../../../config/routes';
 import './Permissions.css';
 
-// Define all available permissions/modules
-const AVAILABLE_PERMISSIONS = [
-  { id: 1, name: 'Users', path: '/backend/pages/users/' },
-  { id: 2, name: 'Permissions', path: '/backend/pages/permission/' },
-  { id: 3, name: 'Causes', path: '/backend/pages/causes/' },
-  { id: 4, name: 'Donor', path: '/backend/pages/donor/' },
-  { id: 5, name: 'Donation', path: '/backend/pages/donation/' },
-  { id: 6, name: 'Schedules', path: '/backend/pages/schedules/' },
-  { id: 7, name: 'Configuration', path: '/backend/pages/dm/' },
-  { id: 8, name: 'Reports', path: '/backend/pages/report/' },
-  { id: 9, name: 'CRM', path: '/backend/pages/crm/' },
-  { id: 10, name: 'Seasons', path: '/backend/pages/seasons/' },
-  { id: 11, name: 'Manual Transaction', path: '/backend/pages/ManualTransaction/' },
-];
+// Get all available permissions dynamically from route configuration
+const AVAILABLE_PERMISSIONS = getAllPermissions();
 
 const Permissions = () => {
   const [roles, setRoles] = useState([]);
@@ -181,16 +170,23 @@ const Permissions = () => {
           ) : selectedRole ? (
             <>
               <div className="permissions-list">
-                {AVAILABLE_PERMISSIONS.map((perm) => (
-                  <label key={perm.id} className="permission-item">
-                    <input
-                      type="checkbox"
-                      checked={!!permissions[perm.id]}
-                      onChange={() => handlePermissionChange(perm.id)}
-                      disabled={saving}
-                    />
-                    <span>{perm.name}</span>
-                  </label>
+                {Object.entries(getGroupedPermissions()).map(([category, routes]) => (
+                  <div key={category} className="permission-category">
+                    <h3 className="category-title">{category}</h3>
+                    <div className="category-permissions">
+                      {routes.map((route) => (
+                        <label key={route.id} className="permission-item">
+                          <input
+                            type="checkbox"
+                            checked={!!permissions[route.id]}
+                            onChange={() => handlePermissionChange(route.id)}
+                            disabled={saving}
+                          />
+                          <span>{route.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
 
