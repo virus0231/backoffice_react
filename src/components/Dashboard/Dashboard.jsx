@@ -57,6 +57,30 @@ function RightColumn() {
   );
 }
 
+const pageTitles = {
+  dashboard: "Dashboard",
+  users: "Users",
+  permissions: "Permissions",
+  donors: "Donors",
+  donation: "Donation",
+  schedule: "Schedule",
+  configuration: "Configuration",
+  "donations-report": "Donation Report",
+  "fund-report": "Fund Report",
+  "campaign-report": "Campaign Report",
+  "monthly-report": "Monthly Report",
+  "donor-report": "Donor Report",
+  "causes-report": "Causes Report",
+  causes: "Causes",
+  appeal: "Appeal",
+  amount: "Amount",
+  "fund-list": "Fund List",
+  "featured-amount": "Featured Amount",
+  "fund-amount": "Fund-Amount",
+  category: "Category",
+  country: "Country",
+};
+
 const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
 
@@ -107,15 +131,12 @@ const Dashboard = () => {
         return (
           <>
             <FilterProvider>
-              <div className="flex justify-center px-8 py-6">
+              <div className="flex justify-center px-6 py-4">
                 <div className="w-full max-w-7xl">
                   <div className="flex gap-6">
-                    {/* Main Content - Centered */}
                     <main className="flex-1 lg:max-w-[calc(100%-320px)]">
                       <InsightsPage />
                     </main>
-
-                    {/* Right Column (hidden on auth pages) */}
                     <RightColumn />
                   </div>
                 </div>
@@ -131,7 +152,7 @@ const Dashboard = () => {
     <div className="dashboard-layout">
       <Sidebar activeMenu={currentPage} onMenuChange={setCurrentPage} />
       <div className="dashboard-main">
-        <Header />
+        <Header pageTitle={pageTitles[currentPage] || "Dashboard"} />
         {renderContent()}
       </div>
     </div>
