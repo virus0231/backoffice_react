@@ -58,7 +58,7 @@ class PerformanceMonitor {
     }
 
     // Log in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.warn(`⏱️ ${name}: ${duration.toFixed(2)}ms`, marker.metadata || '');
     }
 

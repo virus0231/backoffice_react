@@ -32,8 +32,8 @@ class Analytics {
 
   constructor() {
     this.sessionId = this.generateSessionId();
-    this.isEnabled = process.env.NODE_ENV === 'production';
-    this.endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || '/api/analytics';
+    this.isEnabled = import.meta.env.PROD;
+    this.endpoint = '/api/analytics';
 
     if (typeof window !== 'undefined') {
       this.initializeTracking();
@@ -237,7 +237,7 @@ class Analytics {
 
     try {
       // In development, just log to console
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.warn('📊 Analytics Events:', events.length);
         events.forEach(event => {
           console.warn(`${event.event}:`, event.properties);
@@ -273,7 +273,7 @@ class Analytics {
   }
 
   public enable() {
-    this.isEnabled = process.env.NODE_ENV === 'production';
+    this.isEnabled = import.meta.env.PROD;
   }
 }
 

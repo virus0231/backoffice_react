@@ -1,47 +1,14 @@
 // Utilities to build PHP API URLs for the frontend
-
-function normalizeBase(base?: string): string {
-  if (!base) return '';
-  return base.endsWith('/') ? base.slice(0, -1) : base;
-}
+// Simplified to use single client - matches pattern from src/utils/api.js
 
 /**
- * Get API base URL for the selected client
- * This function should be called from client components only
+ * Get API base URL
+ * In development, uses Vite proxy. In production, uses full URL.
  */
-export function getPhpApiBase(clientId?: string): string {
-  // If no client specified, try to get from store (client-side only)
-  let selectedClient = clientId;
-
-  if (!selectedClient && typeof window !== 'undefined') {
-    try {
-      const stored = localStorage.getItem('insights-filter-store');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        selectedClient = parsed.state?.selectedClient || 'mausa';
-      }
-    } catch {
-      selectedClient = 'mausa';
-    }
-  }
-
-  // Map client IDs to their API URLs (must be explicit for Next.js env vars)
-  const clientUrls: Record<string, string | undefined> = {
-    'mausa': process.env.NEXT_PUBLIC_API_URL_MAUSA,
-    'amoud': process.env.NEXT_PUBLIC_API_URL_AMOUD,
-    'afghan': process.env.NEXT_PUBLIC_API_URL_AFGHAN,
-    'rusard': process.env.NEXT_PUBLIC_API_URL_RUSARD,
-  };
-
-  const clientUrl = clientUrls[selectedClient || 'mausa'];
-
-  if (clientUrl) {
-    return normalizeBase(clientUrl);
-  }
-
-  // Fallback to default
-  const fromEnv = normalizeBase(process.env.NEXT_PUBLIC_PHP_API_BASE_URL);
-  return fromEnv || '/php-api';
+export function getPhpApiBase(): string {
+  return import.meta.env.DEV
+    ? '/backoffice/yoc'  // Development: Use Vite proxy
+    : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc'; // Production: Full URL
 }
 
 export function buildAppealsUrl(): string {
@@ -172,16 +139,14 @@ export function buildRetentionUrl(searchParams: URLSearchParams): string {
 
 // Auth endpoints
 export function buildLoginUrl(): string {
-  // Always use 'mausa' client for login
-  const base = getPhpApiBase('mausa');
+  const base = getPhpApiBase();
   if (!base) return '/login.php';
   const url = new URL(`${base}/login.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
   return url.toString();
 }
 
 export function buildAddUserUrl(): string {
-  // Use 'mausa' client for user creation
-  const base = getPhpApiBase('mausa');
+  const base = getPhpApiBase();
   if (!base) return '/add_user.php';
   const url = new URL(`${base}/add_user.php`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
   return url.toString();

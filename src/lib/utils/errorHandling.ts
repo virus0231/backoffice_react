@@ -208,7 +208,7 @@ export function logError(error: unknown, context?: string) {
     url: typeof window !== 'undefined' ? window.location.href : undefined
   };
 
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.error('Error logged:', errorInfo);
   } else {
     // In production, send to analytics
