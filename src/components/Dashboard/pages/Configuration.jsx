@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Configuration.css';
 
 const Configuration = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to home page when directly accessing this page
+    navigate('/', { replace: true });
+  }, [navigate]);
   const [services, setServices] = useState([
     {
       id: 1,

@@ -15,7 +15,6 @@ const menuItems = [
     hasSubmenu: true,
     submenu: [{ id: 'schedule', label: 'Schedule', path: '/schedule' }],
   },
-  { id: 'configuration', label: 'Configuration', icon: 'settings', path: '/configuration' },
   {
     id: 'reports',
     label: 'Reports',
