@@ -151,3 +151,49 @@ function frequency_condition(string $frequency): string {
       return '';
   }
 }
+
+/**
+ * Detects and returns the correct table prefix (wp_yoc_ or pw_)
+ * Caches the result for performance
+ */
+function get_table_prefix(): string {
+  static $prefix = null;
+
+  if ($prefix !== null) {
+    return $prefix;
+  }
+
+  try {
+    $pdo = get_pdo();
+
+    // Try wp_yoc_ prefix first
+    $stmt = $pdo->query("SHOW TABLES LIKE 'wp_yoc_%'");
+    if ($stmt && $stmt->rowCount() > 0) {
+      $prefix = 'wp_yoc_';
+      return $prefix;
+    }
+
+    // Try pw_ prefix
+    $stmt = $pdo->query("SHOW TABLES LIKE 'pw_%'");
+    if ($stmt && $stmt->rowCount() > 0) {
+      $prefix = 'pw_';
+      return $prefix;
+    }
+
+    // Default to wp_yoc_ if neither found
+    $prefix = 'wp_yoc_';
+    error_log('[php-api][warning] No tables found with wp_yoc_ or pw_ prefix, defaulting to wp_yoc_');
+  } catch (Throwable $e) {
+    error_log('[php-api][error] Failed to detect table prefix: ' . $e->getMessage());
+    $prefix = 'wp_yoc_'; // Default fallback
+  }
+
+  return $prefix;
+}
+
+/**
+ * Returns the full table name with the correct prefix
+ */
+function table(string $tableName): string {
+  return get_table_prefix() . $tableName;
+}

@@ -19,6 +19,23 @@ try {
       'status' => $status,
       'start_date' => $start,
       'end_date' => $end,
+      'description' => $r['description'] ?? null,
+      'image' => $r['image'] ?? null,
+      'category' => $r['category'] ?? null,
+      'goal' => isset($r['goal']) ? (float)$r['goal'] : null,
+      'sort' => isset($r['sort']) ? (int)$r['sort'] : null,
+      'ishome_v' => isset($r['ishome_v']) ? (int)$r['ishome_v'] : null,
+      'isfooter' => isset($r['isfooter']) ? (int)$r['isfooter'] : null,
+      'isdonate_v' => isset($r['isdonate_v']) ? (int)$r['isdonate_v'] : null,
+      'isother_v' => isset($r['isother_v']) ? (int)$r['isother_v'] : null,
+      'isquantity_v' => isset($r['isquantity_v']) ? (int)$r['isquantity_v'] : null,
+      'isdropdown_v' => isset($r['isdropdown_v']) ? (int)$r['isdropdown_v'] : null,
+      'isrecurring_v' => isset($r['isrecurring_v']) ? (int)$r['isrecurring_v'] : null,
+      'recurring_interval' => $r['recurring_interval'] ?? null,
+      'isassociate' => isset($r['isassociate']) ? (int)$r['isassociate'] : null,
+      'type' => $r['type'] ?? null,
+      'country' => $r['country'] ?? null,
+      'cause' => $r['cause'] ?? null,
     ];
   }, $rows);
 
@@ -31,4 +48,3 @@ try {
 } catch (Throwable $e) {
   error_response('Database error fetching appeals', 500, ['message' => $e->getMessage()]);
 }
-

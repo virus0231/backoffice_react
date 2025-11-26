@@ -40,7 +40,7 @@ if(isset($_POST['action'])){
         exit();
     }
     if($_POST['action']=="add-new-user"){
-        $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+        $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
         if (!$userTable) {
             http_response_code(500);
             echo 'user table not found';
@@ -71,7 +71,7 @@ if(isset($_POST['action'])){
     }
     else if($_POST['action']=="change-user-status"){
 
-        $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+        $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
         if (!$userTable) {
             http_response_code(500);
             echo 'user table not found';
@@ -90,7 +90,7 @@ if(isset($_POST['action'])){
     }
       else if($_POST['action']=="update-user"){
 
-        $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+        $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
         if (!$userTable) {
             http_response_code(500);
             echo 'user table not found';
@@ -121,7 +121,7 @@ if(isset($_POST['action'])){
 }
 
 function get_user_details($conn,$username,$email,$tableName=null){
-    $userTable = $tableName ?: find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+    $userTable = $tableName ?: find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
     if (!$userTable) return [];
 
     $sql="SELECT * FROM `$userTable` WHERE `user_login`=:username AND `user_email`=:email LIMIT 1;";

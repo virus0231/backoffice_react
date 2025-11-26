@@ -223,9 +223,9 @@ function find_first_existing_table($conn, $candidates) {
 
 //users
 function get_all_users($conn) {
-    // Support both prefixed table sets (wp_yoc_* or pw_*)
-    $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
-    $roleTable = find_first_existing_table($conn, ['wp_yoc_user_role', 'pw_user_role']);
+    // Support both prefixed table sets (pw_* or wp_yoc_*)
+    $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
+    $roleTable = find_first_existing_table($conn, ['pw_user_role', 'wp_yoc_user_role']);
 
     if (!$userTable || !$roleTable) {
         // Return empty array instead of fatal error when tables are missing
@@ -245,7 +245,9 @@ function get_all_users($conn) {
 
 
 function get_usersss($conn, $id) {
-    $sql = "SELECT * FROM `wp_yoc_users` WHERE ID = :id";
+    $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
+    if (!$userTable) return null;
+    $sql = "SELECT * FROM `$userTable` WHERE ID = :id";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();

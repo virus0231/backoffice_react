@@ -2,17 +2,17 @@
 include("config.php");
 session_start();
 
-// Check if the table exists
-$checkTableQuery = "SHOW TABLES LIKE 'wp_yoc_dm_services'";
-$tableExists = $conn->query($checkTableQuery);
+// Check if the table exists - support both table prefixes
+include_once('functions.php');
+$dmTable = find_first_existing_table($conn, ['pw_dm_services', 'wp_yoc_dm_services']);
 
-if ($tableExists->rowCount() == 0) {
+if (!$dmTable) {
     header("Location: /backend/yoc/configuration.php");
     exit();
 }
 
 try{
-    $sql = "SELECT * FROM wp_yoc_dm_services WHERE status = 1";
+    $sql = "SELECT * FROM `$dmTable` WHERE status = 1";
     $stmt = $conn->query( $sql);
     
     $site_name = '';

@@ -1,17 +1,21 @@
 <?php
 ini_set('display_errors', '1'); ini_set('display_startup_errors', '1'); error_reporting(E_ALL);
 session_start();
-include('config.php'); 
-
+include('config.php');
+include_once('functions.php');
 
 include_once '../mail/vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
+
+$userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
+$otpTable = find_first_existing_table($conn, ['pw_otp', 'wp_yoc_otp']);
+
 try {
 
     if (isset($_POST['generate_otp'])) {
         $email = $_POST["email"];
 
-        $query = "SELECT * FROM wp_yoc_users WHERE user_email = :email";
+        $query = "SELECT * FROM `$userTable` WHERE user_email = :email";
         $stmt = $conn->prepare($query);
         $stmt->execute(['email' => $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -21,7 +25,7 @@ try {
             $emails = $user['user_email'];
             $otp = rand(100000, 999999);
 
-            $insertTokenQuery = "INSERT INTO wp_yoc_otp (did, email, otp) VALUES (:userId, :email, :otp)";
+            $insertTokenQuery = "INSERT INTO `$otpTable` (did, email, otp) VALUES (:userId, :email, :otp)";
             $insertStmt = $conn->prepare($insertTokenQuery);
             $insertStmt->execute([
                 'userId' => $userId,
@@ -64,7 +68,7 @@ try {
         $id = $_POST['id'];
         $otp = $_POST['otp'];
 
-        $query = "SELECT otp FROM wp_yoc_otp WHERE did = :id ORDER BY id DESC LIMIT 1";
+        $query = "SELECT otp FROM `$otpTable` WHERE did = :id ORDER BY id DESC LIMIT 1";
         $stmt = $conn->prepare($query);
         $stmt->execute(['id' => $id]);
         $checkotp = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -86,7 +90,7 @@ try {
         $password = $_POST['password'];    
         $expected_password = hash_hmac("sha256", $password, $company);
 
-        $query = "UPDATE wp_yoc_users SET user_pass = :password WHERE ID = :id";
+        $query = "UPDATE `$userTable` SET user_pass = :password WHERE ID = :id";
         $stmt = $conn->prepare($query);
         $stmt->execute(['password' => $expected_password, 'id' => $id]);
 

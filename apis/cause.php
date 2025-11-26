@@ -10,7 +10,8 @@ error_reporting(E_ALL);
 try {
     if (isset($_POST['action'])) {
         if ($_POST['action'] == "add_appeal") {
-            $stmt = $conn->prepare("INSERT INTO `wp_yoc_appeal`(`name`, `description`, `image`, `ishome_v`, `country`, `cause`, `category`, `goal`, `sort`, `isfooter`, `isdonate_v`, `isother_v`, `isquantity_v`, `isdropdown_v`, `isrecurring_v`, `recurring_interval`, `isassociate`, `type`) 
+            // Use pw_appeal (primary table used by analytics/filters)
+            $stmt = $conn->prepare("INSERT INTO `pw_appeal`(`name`, `description`, `image`, `ishome_v`, `country`, `cause`, `category`, `goal`, `sort`, `isfooter`, `isdonate_v`, `isother_v`, `isquantity_v`, `isdropdown_v`, `isrecurring_v`, `recurring_interval`, `isassociate`, `type`) 
             VALUES (:name, :description, :image, :ishome_v, :country, :cause, :category, :goal, :sort, :isfooter, :isdonate_v, :isother_v, :isquantity_v, :isdropdown_v, :isrecurring_v, :recurring_interval, :isassociate, :type)");
 
             $stmt->execute([
@@ -41,7 +42,14 @@ try {
         }
 
         if ($_POST['action'] == "update_appeal") {
-            $stmt = $conn->prepare("UPDATE `wp_yoc_appeal` SET `name`=:name, `description`=:description, `image`=:image, `ishome_v`=:ishome_v, `country`=:country, `cause`=:cause, `category`=:category, `goal`=:goal, `sort`=:sort, `isfooter`=:isfooter, `isdonate_v`=:isdonate_v, `isother_v`=:isother_v, `isquantity_v`=:isquantity_v, `isdropdown_v`=:isdropdown_v, `isrecurring_v`=:isrecurring_v, `recurring_interval`=:recurring_interval, `isassociate`=:isassociate, `type`=:type, `disable`=:disable WHERE id=:id");
+            // Allow explicit appeal_id from request, fallback to session (legacy behaviour)
+            $targetId = isset($_POST['appeal_id']) ? (int)$_POST['appeal_id'] : ($_SESSION['new_appeal_id'] ?? null);
+            if (!$targetId) {
+                echo "Missing appeal id";
+                exit;
+            }
+
+            $stmt = $conn->prepare("UPDATE `pw_appeal` SET `name`=:name, `description`=:description, `image`=:image, `ishome_v`=:ishome_v, `country`=:country, `cause`=:cause, `category`=:category, `goal`=:goal, `sort`=:sort, `isfooter`=:isfooter, `isdonate_v`=:isdonate_v, `isother_v`=:isother_v, `isquantity_v`=:isquantity_v, `isdropdown_v`=:isdropdown_v, `isrecurring_v`=:isrecurring_v, `recurring_interval`=:recurring_interval, `isassociate`=:isassociate, `type`=:type, `disable`=:disable WHERE id=:id");
 
             $stmt->execute([
                 ':name' => stripslashes($_POST['appeal_name']),
@@ -63,7 +71,7 @@ try {
                 ':isassociate' => $_POST['appeal_isassociate'],
                 ':type' => $_POST['appeal_type'],
                 ':disable' => $_POST['appeal_status'],
-                ':id' => $_SESSION['new_appeal_id']
+                ':id' => $targetId
             ]);
 
             security($_POST['appeal_name'] . " Appeal Updated", $conn);

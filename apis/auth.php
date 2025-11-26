@@ -32,7 +32,7 @@ function json_response($payload, $code = 200) {
 }
 
 function get_user_details_dynamic($conn, $username){
-    $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+    $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
     if (!$userTable) {
         return null;
     }
@@ -44,9 +44,9 @@ function get_user_details_dynamic($conn, $username){
 }
 
 function hydrate_permissions($conn, $role_id, $username) {
-    $permTable = find_first_existing_table($conn, ['wp_yoc_permissions']);
-    $rolePermTable = find_first_existing_table($conn, ['wp_yoc_role_permissions']);
-    $userTable = find_first_existing_table($conn, ['wp_yoc_users', 'pw_users']);
+    $permTable = find_first_existing_table($conn, ['pw_permissions', 'wp_yoc_permissions']);
+    $rolePermTable = find_first_existing_table($conn, ['pw_role_permissions', 'wp_yoc_role_permissions']);
+    $userTable = find_first_existing_table($conn, ['pw_users', 'wp_yoc_users']);
 
     if (!$permTable || !$rolePermTable || !$userTable) {
         $_SESSION['permissions'] = [];
