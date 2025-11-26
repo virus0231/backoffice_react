@@ -15,7 +15,7 @@ class PerformanceMonitor {
   private isEnabled: boolean;
 
   constructor() {
-    this.isEnabled = typeof window !== "undefined" && "performance" in window;
+    this.isEnabled = typeof window !== 'undefined' && 'performance' in window;
   }
 
   /**
@@ -27,7 +27,7 @@ class PerformanceMonitor {
     this.markers.set(name, {
       name,
       startTime: performance.now(),
-      metadata,
+      metadata
     });
 
     // Also use native performance marks if available
@@ -58,11 +58,8 @@ class PerformanceMonitor {
     }
 
     // Log in development
-    if (import.meta.env.NODE_ENV === "development") {
-      console.warn(
-        `⏱️ ${name}: ${duration.toFixed(2)}ms`,
-        marker.metadata || ""
-      );
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`⏱️ ${name}: ${duration.toFixed(2)}ms`, marker.metadata || '');
     }
 
     return duration;
@@ -92,13 +89,13 @@ class PerformanceMonitor {
    * Get memory usage information
    */
   public getMemoryInfo() {
-    if (!this.isEnabled || !("memory" in performance)) return null;
+    if (!this.isEnabled || !('memory' in performance)) return null;
 
     const memory = (performance as any).memory;
     return {
       usedJSSize: memory.usedJSSize,
       totalJSSize: memory.totalJSSize,
-      jsLimit: memory.jsLimit,
+      jsLimit: memory.jsLimit
     };
   }
 
@@ -128,26 +125,24 @@ class PerformanceMonitor {
   public getResourceMetrics() {
     if (!this.isEnabled) return [];
 
-    const resources = performance.getEntriesByType(
-      "resource"
-    ) as PerformanceResourceTiming[];
-    return resources.map((resource) => ({
+    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+    return resources.map(resource => ({
       name: resource.name,
       duration: resource.duration,
       size: resource.transferSize,
       type: this.getResourceType(resource.name),
       startTime: resource.startTime,
       fetchStart: resource.fetchStart,
-      responseEnd: resource.responseEnd,
+      responseEnd: resource.responseEnd
     }));
   }
 
   private getResourceType(url: string): string {
-    if (url.includes(".js")) return "javascript";
-    if (url.includes(".css")) return "stylesheet";
-    if (url.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i)) return "image";
-    if (url.match(/\.(woff|woff2|ttf|otf)$/i)) return "font";
-    return "other";
+    if (url.includes('.js')) return 'javascript';
+    if (url.includes('.css')) return 'stylesheet';
+    if (url.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i)) return 'image';
+    if (url.match(/\.(woff|woff2|ttf|otf)$/i)) return 'font';
+    return 'other';
   }
 
   /**
@@ -156,9 +151,7 @@ class PerformanceMonitor {
   public getNavigationMetrics() {
     if (!this.isEnabled) return null;
 
-    const navigation = performance.getEntriesByType(
-      "navigation"
-    )[0] as PerformanceNavigationTiming;
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
     if (!navigation) return null;
 
     return {
@@ -167,7 +160,7 @@ class PerformanceMonitor {
       request: navigation.responseStart - navigation.requestStart,
       response: navigation.responseEnd - navigation.responseStart,
       domParsing: navigation.domContentLoadedEventEnd - navigation.responseEnd,
-      totalLoadTime: navigation.loadEventEnd - navigation.fetchStart,
+      totalLoadTime: navigation.loadEventEnd - navigation.fetchStart
     };
   }
 }
@@ -197,7 +190,7 @@ export const getPerformanceReport = () => {
     markers: performanceMonitor.getMarkers(),
     memory: performanceMonitor.getMemoryInfo(),
     resources: performanceMonitor.getResourceMetrics(),
-    navigation: performanceMonitor.getNavigationMetrics(),
+    navigation: performanceMonitor.getNavigationMetrics()
   };
 };
 

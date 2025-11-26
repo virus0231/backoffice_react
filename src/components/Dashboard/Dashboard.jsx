@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import "./Dashboard.css";
+import "./dashboard.css";
 
 const titleMap = {
   "/": "Dashboard",
@@ -43,7 +43,10 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-layout">
-      <Sidebar isMobileMenuOpen={isMobileMenuOpen} onClose={handleCloseMobileMenu} />
+      <Sidebar
+        isMobileMenuOpen={isMobileMenuOpen}
+        onClose={handleCloseMobileMenu}
+      />
       <div className="dashboard-main">
         <Header pageTitle={pageTitle} onMenuClick={handleMenuToggle} />
         <Outlet />

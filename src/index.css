@@ -72,7 +72,7 @@
   --font-family-mono: ui-monospace, 'SFMono-Regular', 'Consolas', monospace;
 }
 
-* {
+/* * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -90,7 +90,7 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
-}
+} */
 
 /* Hide legacy per-page breadcrumbs to avoid duplicate nav bars */
 .add-appeal-breadcrumb,

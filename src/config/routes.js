@@ -1,26 +1,26 @@
 // Central route configuration
 // Add new routes here and they'll automatically appear in routing AND permissions
 
-import Users from '../components/Dashboard/pages/Users';
-import Permissions from '../components/Dashboard/pages/Permissions';
-import Donors from '../components/Dashboard/pages/Donors';
-import Donation from '../components/Dashboard/pages/Donation';
-import Schedule from '../components/Dashboard/pages/Schedule';
-import Configuration from '../components/Dashboard/pages/Configuration';
-import DonationsReport from '../components/Dashboard/pages/DonationsReport';
-import FundReport from '../components/Dashboard/pages/FundReport';
-import CampaignReport from '../components/Dashboard/pages/CampaignReport';
-import MonthlyReport from '../components/Dashboard/pages/MonthlyReport';
-import DonorReport from '../components/Dashboard/pages/DonorReport';
-import CausesReport from '../components/Dashboard/pages/CausesReport';
-import Causes from '../components/Dashboard/pages/Causes';
-import Appeal from '../components/Dashboard/pages/Appeal';
-import Amount from '../components/Dashboard/pages/Amount';
-import FundList from '../components/Dashboard/pages/FundList';
-import FeaturedAmount from '../components/Dashboard/pages/FeaturedAmount';
-import FundAmount from '../components/Dashboard/pages/FundAmount';
-import Category from '../components/Dashboard/pages/Category';
-import Country from '../components/Dashboard/pages/Country';
+import Users from "../components/dashboard/pages/Users";
+import Permissions from "../components/dashboard/pages/Permissions";
+import Donors from "../components/dashboard/pages/Donors";
+import Donation from "../components/dashboard/pages/Donation";
+import Schedule from "../components/dashboard/pages/Schedule";
+import Configuration from "../components/dashboard/pages/Configuration";
+import DonationsReport from "../components/dashboard/pages/DonationsReport";
+import FundReport from "../components/dashboard/pages/FundReport";
+import CampaignReport from "../components/dashboard/pages/CampaignReport";
+import MonthlyReport from "../components/dashboard/pages/MonthlyReport";
+import DonorReport from "../components/dashboard/pages/DonorReport";
+import CausesReport from "../components/dashboard/pages/CausesReport";
+import Causes from "../components/dashboard/pages/Causes";
+import Appeal from "../components/dashboard/pages/Appeal";
+import Amount from "../components/dashboard/pages/Amount";
+import FundList from "../components/dashboard/pages/FundList";
+import FeaturedAmount from "../components/dashboard/pages/FeaturedAmount";
+import FundAmount from "../components/dashboard/pages/FundAmount";
+import Category from "../components/dashboard/pages/Category";
+import Country from "../components/dashboard/pages/Country";
 
 // Define all application routes
 // When you add a new route here, it will automatically:
@@ -29,151 +29,151 @@ import Country from '../components/Dashboard/pages/Country';
 export const APP_ROUTES = [
   {
     id: 1,
-    path: 'users',
-    name: 'Users',
+    path: "users",
+    name: "Users",
     component: Users,
-    category: 'User Management'
+    category: "User Management",
   },
   {
     id: 2,
-    path: 'permissions',
-    name: 'Permissions',
+    path: "permissions",
+    name: "Permissions",
     component: Permissions,
-    category: 'User Management'
+    category: "User Management",
   },
   {
     id: 3,
-    path: 'donors',
-    name: 'Donors',
+    path: "donors",
+    name: "Donors",
     component: Donors,
-    category: 'Donor Management'
+    category: "Donor Management",
   },
   {
     id: 4,
-    path: 'donation',
-    name: 'Donation',
+    path: "donation",
+    name: "Donation",
     component: Donation,
-    category: 'Donations'
+    category: "Donations",
   },
   {
     id: 5,
-    path: 'schedule',
-    name: 'Schedule',
+    path: "schedule",
+    name: "Schedule",
     component: Schedule,
-    category: 'Schedule Management'
+    category: "Schedule Management",
   },
   {
     id: 6,
-    path: 'configuration',
-    name: 'Configuration',
+    path: "configuration",
+    name: "Configuration",
     component: Configuration,
-    category: 'System'
+    category: "System",
   },
   {
     id: 7,
-    path: 'donations-report',
-    name: 'Donations Report',
+    path: "donations-report",
+    name: "Donations Report",
     component: DonationsReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 8,
-    path: 'fund-report',
-    name: 'Fund Report',
+    path: "fund-report",
+    name: "Fund Report",
     component: FundReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 9,
-    path: 'campaign-report',
-    name: 'Campaign Report',
+    path: "campaign-report",
+    name: "Campaign Report",
     component: CampaignReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 10,
-    path: 'monthly-report',
-    name: 'Monthly Report',
+    path: "monthly-report",
+    name: "Monthly Report",
     component: MonthlyReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 11,
-    path: 'donor-report',
-    name: 'Donor Report',
+    path: "donor-report",
+    name: "Donor Report",
     component: DonorReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 12,
-    path: 'causes-report',
-    name: 'Causes Report',
+    path: "causes-report",
+    name: "Causes Report",
     component: CausesReport,
-    category: 'Reports'
+    category: "Reports",
   },
   {
     id: 13,
-    path: 'causes',
-    name: 'Causes',
+    path: "causes",
+    name: "Causes",
     component: Causes,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 14,
-    path: 'appeal',
-    name: 'Appeal',
+    path: "appeal",
+    name: "Appeal",
     component: Appeal,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 15,
-    path: 'amount',
-    name: 'Amount',
+    path: "amount",
+    name: "Amount",
     component: Amount,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 16,
-    path: 'fund-list',
-    name: 'Fund List',
+    path: "fund-list",
+    name: "Fund List",
     component: FundList,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 17,
-    path: 'featured-amount',
-    name: 'Featured Amount',
+    path: "featured-amount",
+    name: "Featured Amount",
     component: FeaturedAmount,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 18,
-    path: 'fund-amount',
-    name: 'Fund-Amount',
+    path: "fund-amount",
+    name: "Fund-Amount",
     component: FundAmount,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 19,
-    path: 'category',
-    name: 'Category',
+    path: "category",
+    name: "Category",
     component: Category,
-    category: 'Campaign Management'
+    category: "Campaign Management",
   },
   {
     id: 20,
-    path: 'country',
-    name: 'Country',
+    path: "country",
+    name: "Country",
     component: Country,
-    category: 'Campaign Management'
-  }
+    category: "Campaign Management",
+  },
 ];
 
 // Get permissions grouped by category for better UI
 export const getGroupedPermissions = () => {
   const grouped = {};
 
-  APP_ROUTES.forEach(route => {
+  APP_ROUTES.forEach((route) => {
     if (!grouped[route.category]) {
       grouped[route.category] = [];
     }
@@ -185,10 +185,10 @@ export const getGroupedPermissions = () => {
 
 // Get all permissions as flat list
 export const getAllPermissions = () => {
-  return APP_ROUTES.map(route => ({
+  return APP_ROUTES.map((route) => ({
     id: route.id,
     name: route.name,
     path: `/${route.path}`,
-    category: route.category
+    category: route.category,
   }));
 };

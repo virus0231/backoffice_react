@@ -4,7 +4,7 @@ import { useState } from "react";
 import DateRangePicker from "@/components/filters/DateRangePicker";
 import ComparisonDatePicker from "@/components/charts/ComparisonDatePicker";
 import SimpleLineChart from "@/components/charts/SimpleLineChart";
-import type { DateRange } from "@/types/filters";
+import { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
 import { useRecurringPlansData } from "@/hooks/useRecurringPlansData";
 

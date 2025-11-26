@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
-import type { DateRange } from '@/types/filters';
+import { DateRange } from '@/types/filters';
 import { getComparisonPresetOptions, formatDateRangeDisplay } from '@/lib/utils/dateHelpers';
 
 interface ComparisonDatePickerProps {

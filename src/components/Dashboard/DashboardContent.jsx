@@ -1,9 +1,9 @@
-import PopularProductChart from './charts/PopularProductChart';
-import PopularProductList from './charts/PopularProductList';
-import AppealRevenueChart from './charts/AppealRevenueChart';
-import WeeklyTransactionChart from './charts/WeeklyTransactionChart';
-import MonthlyRevenueChart from './charts/MonthlyRevenueChart';
-import './DashboardContent.css';
+import PopularProductChart from "./charts/PopularProductChart";
+import PopularProductList from "./charts/PopularProductList";
+import AppealRevenueChart from "./charts/AppealRevenueChart";
+import WeeklyTransactionChart from "./charts/WeeklyTransactionChart";
+import MonthlyRevenueChart from "./charts/MonthlyRevenueChart";
+import "./dashboardContent.css";
 
 const DashboardContent = ({ timeFilter }) => {
   return (

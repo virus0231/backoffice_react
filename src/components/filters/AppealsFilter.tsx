@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { clsx } from 'clsx';
 
-import type { Appeal } from '@/types/filters';
+import { Appeal } from '@/types/filters';
 import { buildAppealsUrl } from '@/lib/config/phpApi';
 import { safeFetch, parseAPIResponse, logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
 import LoadingSpinner from '@/components/common/LoadingSpinner';

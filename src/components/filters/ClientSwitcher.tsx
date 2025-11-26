@@ -22,7 +22,7 @@ export const CLIENTS = [
     name: "Mausa",
     icon: "🏢",
     apiUrl:
-      import.meta.env.NEXT_PUBLIC_API_URL_MAUSA ||
+      process.env.NEXT_PUBLIC_API_URL_MAUSA ||
       "https://backend.mausa.org/insights/api",
   },
   {
@@ -30,7 +30,7 @@ export const CLIENTS = [
     name: "Amoud",
     icon: "🏛️",
     apiUrl:
-      import.meta.env.NEXT_PUBLIC_API_URL_AMOUD ||
+      process.env.NEXT_PUBLIC_API_URL_AMOUD ||
       "https://backend.amoud.org/insights/api",
   },
   {
@@ -38,7 +38,7 @@ export const CLIENTS = [
     name: "Afghan Relief",
     icon: "🏫",
     apiUrl:
-      import.meta.env.NEXT_PUBLIC_API_URL_AFGHAN ||
+      process.env.NEXT_PUBLIC_API_URL_AFGHAN ||
       "https://afghan-relief.org/backend/insights/api",
   },
   {
@@ -46,7 +46,7 @@ export const CLIENTS = [
     name: "Rusard",
     icon: "🏥",
     apiUrl:
-      import.meta.env.NEXT_PUBLIC_API_URL_RUSARD ||
+      process.env.NEXT_PUBLIC_API_URL_RUSARD ||
       "https://rusard.org/backend/insights/api",
   },
 ];
@@ -238,6 +238,6 @@ export function useClientApiUrl(): string {
 
   const client = CLIENTS.find((c) => c.id === selectedClient);
   return (
-    client?.apiUrl || import.meta.env.NEXT_PUBLIC_PHP_API_BASE_URL || "/php-api"
+    client?.apiUrl || process.env.NEXT_PUBLIC_PHP_API_BASE_URL || "/php-api"
   );
 }

@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import type { FilterState, DateRange, Appeal, Fund, FrequencyType } from '@/types/filters';
+import { FilterState, DateRange, Appeal, Fund, FrequencyType } from '@/types/filters';
 import { getDefaultDateRange, validateDateRange } from '@/lib/utils/dateHelpers';
 import type { ChartComparison, ComparisonMapping } from '@/types/charts';
 import { validateComparisonRange, coerceComparisonAwayFromMain } from '@/lib/validation/comparisonDates';
@@ -245,35 +245,14 @@ export const useFilterStore = create<FilterStore>()(
         }
 
         if (state) {
-          const clearPersisted = () => {
-            try { localStorage.removeItem('insights-filter-store'); } catch {}
-          };
-
-          // Normalize and validate rehydrated date range
+          // Validate rehydrated date range
           if (state.dateRange) {
-            try {
-              state.dateRange = {
-                startDate: new Date((state.dateRange as any).startDate),
-                endDate: new Date((state.dateRange as any).endDate),
-                preset: (state.dateRange as any).preset || 'last30days',
-              };
-            } catch {
-              state.dateRange = getDefaultDateRange();
-            }
             const validation = validateDateRange(state.dateRange);
             if (!validation.isValid) {
               console.warn('Invalid persisted date range, resetting to default');
               state.dateRange = getDefaultDateRange();
-              clearPersisted();
             }
-          } else {
-            state.dateRange = getDefaultDateRange();
           }
-
-          state.selectedAppeals = state.selectedAppeals || [];
-          state.selectedFunds = state.selectedFunds || [];
-          state.frequency = state.frequency || 'all';
-          state.selectedClient = state.selectedClient || 'mausa';
 
           // Sanitize comparison ranges
           if ((state as any).comparisons) {

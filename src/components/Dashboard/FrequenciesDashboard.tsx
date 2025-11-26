@@ -2,32 +2,29 @@
 
 import { useState } from "react";
 import DateRangePicker from "@/components/filters/DateRangePicker";
-import type { DateRange } from "@/types/filters";
+import { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
-import { usePaymentMethodsData } from "@/hooks/usePaymentMethodsData";
+import { useFrequenciesData } from "@/hooks/useFrequenciesData";
 import LoadingState from "@/components/common/LoadingState";
 import ChartErrorFallback from "@/components/common/ChartErrorFallback";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// Payment methods with their colors - mapped to database values
-const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string }> = {
-  'cc': { label: 'Credit Card', color: '#3b82f6' },
-  'applepay': { label: 'Apple Pay', color: '#8b5cf6' },
-  'gpay': { label: 'Google Pay', color: '#06b6d4' },
-  'PAYPAL': { label: 'PayPal', color: '#ec4899' },
-  'Stripe': { label: 'Stripe', color: '#10b981' },
-  'paypal_ipn': { label: 'PayPal IPN', color: '#f59e0b' },
-};
+// Frequency types with their colors (matching database values)
+const FREQUENCIES = [
+  { key: 'monthly', label: 'Monthly', color: '#8b5cf6' },
+  { key: 'one_time', label: 'One-time', color: '#6366f1' },
+  { key: 'yearly', label: 'Yearly', color: '#ec4899' },
+  { key: 'weekly', label: 'Weekly', color: '#14b8a6' },
+  { key: 'daily', label: 'Daily', color: '#06b6d4' },
+];
 
-const PAYMENT_METHODS = Object.entries(PAYMENT_METHOD_CONFIG).map(([key, cfg]) => ({
-  key,
-  label: cfg.label,
-  color: cfg.color,
-}));
+interface FrequencyData {
+  frequency: string;
+  donations: number;
+  totalRaised: number;
+}
 
-// No mock data; using real API data via hook
-
-export default function PaymentMethodsDashboard() {
+export default function FrequenciesDashboard() {
   // Get global filter context
   const {
     dateRange: globalDateRange,
@@ -49,9 +46,14 @@ export default function PaymentMethodsDashboard() {
   const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
   const fundIds = selectedFunds.length > 0 ? selectedFunds.map(f => f.id).join(',') : null;
 
-  const { chartData, tableData, isLoading, hasError, error } = usePaymentMethodsData(
+  const {
+    chartData,
+    tableData,
+    isLoading,
+    hasError,
+    error
+  } = useFrequenciesData(
     effectiveDateRange,
-    granularity,
     appealIds,
     fundIds
   );
@@ -63,22 +65,22 @@ export default function PaymentMethodsDashboard() {
   const paginatedData = tableData.slice(startIndex, endIndex);
 
   // Calculate legend totals from paginated data only
-  const paginatedMethods = paginatedData.map(d => d.paymentMethod);
-  const visibleMethods = PAYMENT_METHODS.filter(method =>
-    paginatedMethods.includes(method.key)
+  const paginatedFrequencies = paginatedData.map(d => d.frequency.toLowerCase());
+  const visibleFrequencies = FREQUENCIES.filter(freq =>
+    paginatedFrequencies.includes(freq.label.toLowerCase())
   );
 
-  const legendTotals = visibleMethods.map((method) => {
-    const total = tableData.find(d => d.paymentMethod === method.key)?.totalRaised || 0;
-    return { ...method, total };
+  const legendTotals = visibleFrequencies.map(freq => {
+    const total = tableData.find(d => d.frequency.toLowerCase() === freq.label.toLowerCase())?.totalRaised || 0;
+    return { ...freq, total };
   });
 
-  // Filter chart data to only include visible payment method keys
-  const visibleKeys = visibleMethods.map(m => m.key);
+  // Filter chart data to only include visible frequency keys
+  const visibleKeys = visibleFrequencies.map(f => f.key);
   const filteredChartData = chartData.map(dataPoint => {
     const filtered: any = { date: dataPoint.date };
     visibleKeys.forEach(key => {
-      filtered[key] = dataPoint[key] || 0;
+      filtered[key] = dataPoint[key as keyof typeof dataPoint] || 0;
     });
     return filtered;
   });
@@ -110,7 +112,7 @@ export default function PaymentMethodsDashboard() {
   if (!isHydrated || isLoading) {
     return (
       <div className="space-y-6">
-        <LoadingState size="lg" message="Loading payment methods data..." fullHeight />
+        <LoadingState size="lg" message="Loading frequencies data..." fullHeight />
       </div>
     );
   }
@@ -120,9 +122,9 @@ export default function PaymentMethodsDashboard() {
     return (
       <div className="space-y-6">
         <ChartErrorFallback
-          error={new Error(error || "Failed to load payment methods data")}
+          error={new Error(error || "Failed to load frequencies data")}
           resetError={() => window.location.reload()}
-          title="Failed to load payment methods data"
+          title="Failed to load frequencies data"
         />
       </div>
     );
@@ -130,43 +132,48 @@ export default function PaymentMethodsDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Chart Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Payment methods</h2>
-          <div className="flex items-center gap-2">
-            <DateRangePicker
-              value={effectiveDateRange}
-              onChange={(range) => setLocalDateRange(range)}
-            />
-            <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
-              <button
-                onClick={() => setGranularity("daily")}
-                className={`px-3 py-1 text-xs rounded transition-all ${
-                  granularity === "daily"
-                    ? "bg-white text-gray-900 shadow-sm font-medium"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Daily
-              </button>
-              <button
-                onClick={() => setGranularity("weekly")}
-                className={`px-3 py-1 text-xs rounded transition-all ${
-                  granularity === "weekly"
-                    ? "bg-white text-gray-900 shadow-sm font-medium"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                Weekly
-              </button>
-            </div>
-          </div>
+      {/* Header Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Frequencies</h2>
+          <p className="text-sm text-gray-600 mt-1">Donations shown by frequency.</p>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangePicker
+            value={effectiveDateRange}
+            onChange={(range) => setLocalDateRange(range)}
+          />
+          <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+            <button
+              onClick={() => setGranularity("daily")}
+              className={`px-3 py-1 text-xs rounded transition-all ${
+                granularity === "daily"
+                  ? "bg-white text-gray-900 shadow-sm font-medium"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Daily
+            </button>
+            <button
+              onClick={() => setGranularity("weekly")}
+              className={`px-3 py-1 text-xs rounded transition-all ${
+                granularity === "weekly"
+                  ? "bg-white text-gray-900 shadow-sm font-medium"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Weekly
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="h-96">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart key={`payment-methods-chart-page-${currentPage}`} data={filteredChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <LineChart key={`frequencies-chart-page-${currentPage}`} data={filteredChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
                 dataKey="date"
@@ -183,25 +190,25 @@ export default function PaymentMethodsDashboard() {
               <Legend
                 content={() => (
                   <div className="flex flex-wrap gap-x-4 gap-y-2 mt-6 px-4">
-                    {legendTotals.map((method) => (
-                      <div key={method.key} className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: method.color }}></div>
-                        <span className="text-xs text-gray-700">{method.label}</span>
-                        <span className="text-xs font-medium text-gray-900">${method.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    {legendTotals.map((freq) => (
+                      <div key={freq.key} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: freq.color }}></div>
+                        <span className="text-xs text-gray-700">{freq.label}</span>
+                        <span className="text-xs font-medium text-gray-900">${freq.total.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               />
-              {visibleMethods.map((method) => (
+              {visibleFrequencies.map((freq) => (
                 <Line
-                  key={method.key}
+                  key={freq.key}
                   type="monotone"
-                  dataKey={method.key}
-                  stroke={method.color}
+                  dataKey={freq.key}
+                  stroke={freq.color}
                   strokeWidth={2}
                   dot={false}
-                  name={method.label}
+                  name={freq.label}
                 />
               ))}
             </LineChart>
@@ -215,7 +222,7 @@ export default function PaymentMethodsDashboard() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                Payment method
+                Donation frequency
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Donations
@@ -230,13 +237,13 @@ export default function PaymentMethodsDashboard() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {paginatedData.map((row, index) => {
-              const cfg = PAYMENT_METHOD_CONFIG[row.paymentMethod];
+              const freq = FREQUENCIES.find(f => f.label.toLowerCase() === row.frequency.toLowerCase());
               return (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cfg?.color || '#9ca3af' }}></div>
-                      <span className="text-sm text-gray-900">{cfg?.label || row.paymentMethod}</span>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: freq?.color || '#gray' }}></div>
+                      <span className="text-sm text-gray-900">{row.frequency}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
@@ -258,7 +265,7 @@ export default function PaymentMethodsDashboard() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} payment methods
+              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} frequencies
             </div>
             <div className="flex items-center gap-2">
               <button

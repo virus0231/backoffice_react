@@ -4,10 +4,10 @@
  * Fetches data from the monitoring dashboard API with caching and error handling
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { MonitoringDashboardResponse } from '@/types/monitoring';
-import { cachedFetch } from '@/lib/cache/apiCache';
-import { logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
+import { useState, useEffect, useCallback } from "react";
+import { MonitoringDashboardResponse } from "@/types/monitoring";
+import { cachedFetch } from "@/lib/cache/apiCache";
+import { logError, formatErrorForDisplay } from "@/lib/utils/errorHandling";
 
 interface UseMonitoringDataReturn {
   data: MonitoringDashboardResponse | null;
@@ -35,7 +35,7 @@ export function useMonitoringData(
       setError(null);
 
       const response = await cachedFetch<MonitoringDashboardResponse>(
-        'https://website-uptime-monitor-jet.vercel.app/api/dashboard',
+        "https://website-uptime-monitor-jet.vercel.app/api/dashboard",
         {},
         {
           ttl: 1 * 60 * 1000, // 1 minute cache
@@ -46,7 +46,7 @@ export function useMonitoringData(
 
       setData(response);
     } catch (err) {
-      logError(err, 'Error fetching monitoring data');
+      logError(err, "Error fetching monitoring data");
       const { message } = formatErrorForDisplay(err);
       setError(message);
     } finally {

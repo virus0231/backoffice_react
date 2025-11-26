@@ -6,7 +6,7 @@ import DateRangePicker from '@/components/filters/DateRangePicker';
 import ComparisonDatePicker from '@/components/charts/ComparisonDatePicker';
 import { useRevenueData } from '@/hooks/useRevenueData';
 import { useFilterContext } from '@/providers/FilterProvider';
-import type { DateRange } from '@/types/filters';
+import { DateRange } from '@/types/filters';
 
 export default function PrimaryRevenueDashboard() {
   // Get global filter context

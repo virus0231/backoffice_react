@@ -1,13 +1,13 @@
 import FilterBar from "@/components/filters/FilterBar";
-import PrimaryRevenueDashboard from "@/components/dashborad/PrimaryRevenueDashboard";
-import RecurringPlansDashboard from "@/components/dashborad/RecurringPlansDashboard";
-import RecurringRevenueDashboard from "@/components/dashborad/RecurringRevenueDashboard";
-import FrequenciesDashboard from "@/components/dashborad/FrequenciesDashboard";
-import PaymentMethodsDashboard from "@/components/dashborad/PaymentMethodsDashboard";
-import RetentionDashboard from "@/components/dashborad/RetentionDashboard";
-import DayAndTimeDashboard from "@/components/dashborad/DayAndTimeDashboard";
-import CampaignsDashboard from "@/components/dashborad/CampaignsDashboard";
-import CountriesDashboard from "@/components/dashborad/CountriesDashboard";
+import PrimaryRevenueDashboard from "@/components/dashboard/PrimaryRevenueDashboard";
+import RecurringPlansDashboard from "@/components/dashboard/RecurringPlansDashboard";
+import RecurringRevenueDashboard from "@/components/dashboard/RecurringRevenueDashboard";
+import FrequenciesDashboard from "@/components/dashboard/FrequenciesDashboard";
+import PaymentMethodsDashboard from "@/components/dashboard/PaymentMethodsDashboard";
+import RetentionDashboard from "@/components/dashboard/RetentionDashboard";
+import DayAndTimeDashboard from "@/components/dashboard/DayAndTimeDashboard";
+import CampaignsDashboard from "@/components/dashboard/CampaignsDashboard";
+import CountriesDashboard from "@/components/dashboard/CountriesDashboard";
 
 export default function DashboardPage() {
   return (

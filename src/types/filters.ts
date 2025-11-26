@@ -9,19 +9,19 @@ export interface DateRange {
 }
 
 export type DatePreset =
-  | "all"
-  | "today"
-  | "yesterday"
-  | "last7days"
-  | "last14days"
-  | "last30days"
-  | "thisWeek"
-  | "thisMonth"
-  | "thisYear"
-  | "lastWeek"
-  | "lastMonth"
-  | "lastYear"
-  | "custom";
+  | 'all'
+  | 'today'
+  | 'yesterday'
+  | 'last7days'
+  | 'last14days'
+  | 'last30days'
+  | 'thisWeek'
+  | 'thisMonth'
+  | 'thisYear'
+  | 'lastWeek'
+  | 'lastMonth'
+  | 'lastYear'
+  | 'custom';
 
 export interface DatePresetOption {
   label: string;
@@ -32,7 +32,7 @@ export interface DatePresetOption {
 export interface Appeal {
   id: number;
   appeal_name: string;
-  status: "active" | "inactive";
+  status: 'active' | 'inactive';
   start_date: Date | null;
   end_date: Date | null;
 }
@@ -47,11 +47,11 @@ export interface Fund {
 }
 
 export type FrequencyType =
-  | "all"
-  | "one-time"
-  | "recurring"
-  | "recurring-first"
-  | "recurring-next";
+  | 'all'
+  | 'one-time'
+  | 'recurring'
+  | 'recurring-first'
+  | 'recurring-next';
 
 export interface FrequencyOption {
   label: string;

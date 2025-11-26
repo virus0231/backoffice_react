@@ -2,24 +2,28 @@
 
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import * as flags from 'country-flag-icons/react/3x2';
 import DateRangePicker from "@/components/filters/DateRangePicker";
-import type { DateRange } from "@/types/filters";
+import { DateRange } from "@/types/filters";
 import { useFilterContext } from "@/providers/FilterProvider";
-import { useCampaignsData } from "@/hooks/useCampaignsData";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import LoadingState from "@/components/common/LoadingState";
 import ChartErrorFallback from "@/components/common/ChartErrorFallback";
+import { getISO2Code, getCountryName, getCountryColor } from "@/lib/utils/countryMapping";
 
-// Color palette for campaigns
-const CAMPAIGN_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#ef4444', // red
-  '#14b8a6', // teal
-];
+// Helper function to get Flag component
+const getFlagComponent = (countryCode: string) => {
+  const iso2 = getISO2Code(countryCode);
+  if (!iso2) return null;
+
+  // Check if flag exists in library
+  try {
+    const FlagComponent = (flags as any)[iso2];
+    return FlagComponent || null;
+  } catch {
+    return null;
+  }
+};
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -36,20 +40,31 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-w-xs">
         <p className="text-sm font-medium text-gray-900 mb-2">{formattedDate}</p>
         <div className="space-y-1.5">
-          {sortedPayload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: entry.color }}
-                ></div>
-                <span className="text-sm text-gray-600 truncate">{entry.name}</span>
+          {sortedPayload.map((entry: any, index: number) => {
+            const FlagComponent = getFlagComponent(entry.name);
+
+            return (
+              <div key={index} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: entry.color }}
+                  ></div>
+                  {FlagComponent ? (
+                    <FlagComponent className="w-5 h-4 flex-shrink-0" />
+                  ) : (
+                    <div className="w-5 h-4 flex-shrink-0 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                      <span className="text-[8px] text-gray-500 font-medium">{getISO2Code(entry.name)}</span>
+                    </div>
+                  )}
+                  <span className="text-sm text-gray-600 truncate">{getCountryName(entry.name)}</span>
+                </div>
+                <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
+                  ${entry.value.toFixed(2)}
+                </span>
               </div>
-              <span className="text-sm font-semibold text-gray-900 flex-shrink-0">
-                ${entry.value.toFixed(2)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -57,12 +72,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function CampaignsDashboard() {
+export default function CountriesDashboard() {
   // Get global filter context
   const {
     dateRange: globalDateRange,
     isHydrated,
-    selectedAppeals
+    selectedAppeals,
+    selectedFunds
   } = useFilterContext();
 
   // Local state for date range override
@@ -76,42 +92,20 @@ export default function CampaignsDashboard() {
 
   // Fetch real data from API
   const appealIds = selectedAppeals.length > 0 ? selectedAppeals.map(a => a.id).join(',') : null;
+  const fundIds = selectedFunds.length > 0 ? selectedFunds.map(f => f.id).join(',') : null;
 
-  const { chartData, tableData, isLoading, hasError, error } = useCampaignsData(
+  const { chartData, tableData, isLoading, hasError, error } = useCountriesData(
     effectiveDateRange,
     granularity,
-    appealIds
+    appealIds,
+    fundIds
   );
-
-  // Pagination
-  const totalPages = Math.ceil(tableData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedData = tableData.slice(startIndex, endIndex);
-
-  // Create campaign configuration from paginated data for chart
-  const campaignConfig = paginatedData.map((campaign, index) => ({
-    appealId: campaign.appealId,
-    appealName: campaign.appealName,
-    color: CAMPAIGN_COLORS[(startIndex + index) % CAMPAIGN_COLORS.length],
-    total: campaign.totalRaised
-  }));
-
-  // Filter chart data to only include current page campaigns
-  const currentCampaignIds = paginatedData.map(c => `appeal_${c.appealId}`);
-  const filteredChartData = chartData.map(dataPoint => {
-    const filtered: any = { date: dataPoint.date };
-    currentCampaignIds.forEach(campaignKey => {
-      filtered[campaignKey] = dataPoint[campaignKey] || 0;
-    });
-    return filtered;
-  });
 
   // Show loading state
   if (!isHydrated || isLoading) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <LoadingState size="lg" message="Loading campaigns data..." fullHeight />
+        <LoadingState size="lg" message="Loading countries data..." fullHeight />
       </div>
     );
   }
@@ -121,23 +115,38 @@ export default function CampaignsDashboard() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <ChartErrorFallback
-          error={new Error(error || "Failed to load campaigns data")}
+          error={new Error(error || "Failed to load countries data")}
           resetError={() => window.location.reload()}
-          title="Failed to load campaigns data"
+          title="Failed to load countries data"
         />
       </div>
     );
   }
 
-  // Calculate max value for Y-axis from filtered data
-  const maxValue = Math.max(
-    ...filteredChartData.flatMap(d =>
-      Object.keys(d)
-        .filter(k => k.startsWith('appeal_'))
-        .map(k => d[k])
-    ),
-    0
+  // Pagination
+  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentStats = tableData.slice(startIndex, endIndex);
+
+  // Filter chart data to only include current page countries
+  const currentCountryCodes = currentStats.map(s => s.countryCode);
+
+  const filteredChartData = chartData.map(dataPoint => {
+    const filtered: any = { date: dataPoint.date };
+    currentCountryCodes.forEach(code => {
+      filtered[code] = dataPoint[code] || 0;
+    });
+    return filtered;
+  });
+
+  // Calculate max value for Y-axis based on filtered data
+  const allValues = filteredChartData.flatMap(d =>
+    Object.entries(d)
+      .filter(([key]) => key !== 'date')
+      .map(([, value]) => value as number)
   );
+  const maxValue = allValues.length > 0 ? Math.max(...allValues) : 100;
   // Use dynamic scaling based on actual data
   const yAxisMax = maxValue <= 10 ? Math.ceil(maxValue) :
                    maxValue <= 50 ? Math.ceil(maxValue / 10) * 10 :
@@ -151,10 +160,10 @@ export default function CampaignsDashboard() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-1">
-            <span className="text-gray-400">🎯</span>
-            Campaigns
+            <span className="text-gray-400">🌍</span>
+            Countries
           </h2>
-          <p className="text-sm text-gray-600">Donations shown by campaign.</p>
+          <p className="text-sm text-gray-600">Donations shown by geolocation.</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -192,7 +201,7 @@ export default function CampaignsDashboard() {
       <div className="h-[300px] mb-6">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            key={`campaigns-chart-page-${currentPage}`}
+            key={`countries-chart-page-${currentPage}`}
             data={filteredChartData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
           >
@@ -214,15 +223,15 @@ export default function CampaignsDashboard() {
               tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip content={<CustomTooltip />} />
-            {campaignConfig.map((campaign) => (
+            {currentStats.map((country) => (
               <Line
-                key={campaign.appealId}
+                key={country.countryCode}
                 type="monotone"
-                dataKey={`appeal_${campaign.appealId}`}
-                stroke={campaign.color}
+                dataKey={country.countryCode}
+                stroke={getCountryColor(country.countryCode)}
                 strokeWidth={2}
                 dot={false}
-                name={campaign.appealName}
+                name={country.countryCode}
               />
             ))}
           </LineChart>
@@ -234,24 +243,33 @@ export default function CampaignsDashboard() {
         <table className="w-full">
           <thead>
             <tr className="text-left">
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Campaign</th>
+              <th className="pb-3 text-xs font-medium text-gray-500 uppercase">Country</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Donations</th>
-              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">
-                Average donation
-              </th>
+              <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Average donation</th>
               <th className="pb-3 text-xs font-medium text-gray-500 uppercase text-right">Total raised</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((stat, index) => {
-              const globalIndex = startIndex + index;
-              const color = CAMPAIGN_COLORS[globalIndex % CAMPAIGN_COLORS.length];
+            {currentStats.map((stat, index) => {
+              const FlagComponent = getFlagComponent(stat.countryCode);
+              const countryName = getCountryName(stat.countryCode);
+
               return (
-                <tr key={stat.appealId} className="border-t border-gray-100">
+                <tr key={`${stat.countryCode}-${startIndex + index}`} className="border-t border-gray-100">
                   <td className="py-3 text-sm text-gray-900">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }}></div>
-                      {stat.appealName}
+                      <div
+                        className="w-3 h-3 rounded-sm flex-shrink-0"
+                        style={{ backgroundColor: getCountryColor(stat.countryCode) }}
+                      ></div>
+                      {FlagComponent ? (
+                        <FlagComponent className="w-5 h-4 flex-shrink-0" />
+                      ) : (
+                        <div className="w-5 h-4 flex-shrink-0 bg-gray-100 rounded border border-gray-300 flex items-center justify-center">
+                          <span className="text-[8px] text-gray-500 font-medium">{getISO2Code(stat.countryCode)}</span>
+                        </div>
+                      )}
+                      <span>{countryName}</span>
                     </div>
                   </td>
                   <td className="py-3 text-sm text-gray-900 text-right">{stat.donations}</td>
@@ -268,38 +286,56 @@ export default function CampaignsDashboard() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-            <div className="text-sm text-gray-600">
-              Showing {startIndex + 1}-{Math.min(endIndex, tableData.length)} of {tableData.length} campaigns
-            </div>
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Prev
+            </button>
+
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let page;
+                if (totalPages <= 5) {
+                  page = i + 1;
+                } else if (currentPage <= 3) {
+                  page = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  page = totalPages - 4 + i;
+                } else {
+                  page = currentPage - 2 + i;
+                }
+                return (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 text-sm rounded-md ${
+                    className={`px-3 py-1.5 text-sm rounded transition-colors ${
                       currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-gray-300 hover:bg-gray-50'
+                        ? 'bg-blue-50 text-blue-600 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {page}
                   </button>
-                ))}
-              </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">{tableData.length} records</span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
                 Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           </div>

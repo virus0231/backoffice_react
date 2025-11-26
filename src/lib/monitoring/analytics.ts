@@ -32,11 +32,10 @@ class Analytics {
 
   constructor() {
     this.sessionId = this.generateSessionId();
-    this.isEnabled = import.meta.env.NODE_ENV === "production";
-    this.endpoint =
-      import.meta.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || "/api/analytics";
+    this.isEnabled = process.env.NODE_ENV === 'production';
+    this.endpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT || '/api/analytics';
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       this.initializeTracking();
     }
   }
@@ -56,7 +55,7 @@ class Analytics {
     this.setupEventListeners();
 
     // Send queued events before page unload
-    window.addEventListener("beforeunload", () => {
+    window.addEventListener('beforeunload', () => {
       this.flushQueue();
     });
 
@@ -68,41 +67,41 @@ class Analytics {
 
   private setupEventListeners() {
     // Track clicks on buttons and links
-    document.addEventListener("click", (event) => {
+    document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
-      if (target.tagName === "BUTTON" || target.tagName === "A") {
-        this.track("click", {
+      if (target.tagName === 'BUTTON' || target.tagName === 'A') {
+        this.track('click', {
           element: target.tagName.toLowerCase(),
-          text: target.textContent?.slice(0, 100) || "",
+          text: target.textContent?.slice(0, 100) || '',
           className: target.className,
-          id: target.id,
+          id: target.id
         });
       }
     });
 
     // Track form submissions
-    document.addEventListener("submit", (event) => {
+    document.addEventListener('submit', (event) => {
       const target = event.target as HTMLFormElement;
-      this.track("form_submit", {
+      this.track('form_submit', {
         formId: target.id,
-        formAction: target.action,
+        formAction: target.action
       });
     });
 
     // Track errors
-    window.addEventListener("error", (event) => {
-      this.trackError("javascript_error", {
+    window.addEventListener('error', (event) => {
+      this.trackError('javascript_error', {
         message: event.message,
         filename: event.filename,
         lineno: event.lineno,
-        colno: event.colno,
+        colno: event.colno
       });
     });
 
     // Track unhandled promise rejections
-    window.addEventListener("unhandledrejection", (event) => {
-      this.trackError("unhandled_promise_rejection", {
-        reason: event.reason?.toString() || "Unknown error",
+    window.addEventListener('unhandledrejection', (event) => {
+      this.trackError('unhandled_promise_rejection', {
+        reason: event.reason?.toString() || 'Unknown error'
       });
     });
   }
@@ -118,63 +117,60 @@ class Analytics {
       sessionId: this.sessionId,
       userAgent: navigator.userAgent,
       url: window.location.href,
-      referrer: document.referrer,
+      referrer: document.referrer
     };
 
     this.queue.push(analyticsEvent);
 
     // Send immediately for important events
-    if (["error", "form_submit", "page_view"].includes(event)) {
+    if (['error', 'form_submit', 'page_view'].includes(event)) {
       this.flushQueue();
     }
   }
 
   public trackPageView(path?: string) {
-    this.track("page_view", {
+    this.track('page_view', {
       path: path || window.location.pathname,
       title: document.title,
-      loadTime: Date.now(),
+      loadTime: Date.now()
     });
   }
 
   public trackError(errorType: string, errorDetails: Record<string, any>) {
-    this.track("error", {
+    this.track('error', {
       errorType,
       ...errorDetails,
       userAgent: navigator.userAgent,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     });
   }
 
   private trackPerformanceMetrics() {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
-    window.addEventListener("load", () => {
+    window.addEventListener('load', () => {
       setTimeout(() => {
-        const navigation = performance.getEntriesByType(
-          "navigation"
-        )[0] as PerformanceNavigationTiming;
-        const paint = performance.getEntriesByType("paint");
+        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const paint = performance.getEntriesByType('paint');
 
         const metrics: PerformanceMetrics = {
           pageLoadTime: navigation.loadEventEnd - navigation.fetchStart,
-          domContentLoaded:
-            navigation.domContentLoadedEventEnd - navigation.fetchStart,
+          domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
         };
 
         // Add paint timings if available
-        paint.forEach((entry) => {
-          if (entry.name === "first-contentful-paint") {
+        paint.forEach(entry => {
+          if (entry.name === 'first-contentful-paint') {
             metrics.firstContentfulPaint = entry.startTime;
           }
         });
 
         // Get Web Vitals if available
-        if ("web-vitals" in window) {
+        if ('web-vitals' in window) {
           this.trackWebVitals();
         }
 
-        this.track("performance_metrics", metrics);
+        this.track('performance_metrics', metrics);
       }, 1000);
     });
   }
@@ -185,16 +181,16 @@ class Analytics {
     try {
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (entry.entryType === "largest-contentful-paint") {
-            this.track("web_vital", {
-              metric: "LCP",
-              value: entry.startTime,
+          if (entry.entryType === 'largest-contentful-paint') {
+            this.track('web_vital', {
+              metric: 'LCP',
+              value: entry.startTime
             });
           }
         }
       });
 
-      observer.observe({ entryTypes: ["largest-contentful-paint"] });
+      observer.observe({ entryTypes: ['largest-contentful-paint'] });
 
       // Track CLS
       let clsValue = 0;
@@ -206,15 +202,16 @@ class Analytics {
         }
       });
 
-      clsObserver.observe({ entryTypes: ["layout-shift"] });
+      clsObserver.observe({ entryTypes: ['layout-shift'] });
 
       // Send CLS value after 5 seconds
       setTimeout(() => {
-        this.track("web_vital", {
-          metric: "CLS",
-          value: clsValue,
+        this.track('web_vital', {
+          metric: 'CLS',
+          value: clsValue
         });
       }, 5000);
+
     } catch (error) {
       // Performance Observer not supported
     }
@@ -226,9 +223,9 @@ class Analytics {
 
   public identify(userId: string, properties?: Record<string, any>) {
     this.setUserId(userId);
-    this.track("identify", {
+    this.track('identify', {
       userId,
-      ...properties,
+      ...properties
     });
   }
 
@@ -240,9 +237,9 @@ class Analytics {
 
     try {
       // In development, just log to console
-      if (import.meta.env.NODE_ENV === "development") {
-        console.warn("📊 Analytics Events:", events.length);
-        events.forEach((event) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('📊 Analytics Events:', events.length);
+        events.forEach(event => {
           console.warn(`${event.event}:`, event.properties);
         });
         return;
@@ -250,18 +247,19 @@ class Analytics {
 
       // In production, send to analytics endpoint
       await fetch(this.endpoint, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           events,
           batch: true,
-          timestamp: Date.now(),
-        }),
+          timestamp: Date.now()
+        })
       });
+
     } catch (error) {
-      console.warn("Failed to send analytics events:", error);
+      console.warn('Failed to send analytics events:', error);
       // Re-queue events on failure (up to a limit)
       if (this.queue.length < 100) {
         this.queue.unshift(...events);
@@ -275,7 +273,7 @@ class Analytics {
   }
 
   public enable() {
-    this.isEnabled = import.meta.env.NODE_ENV === "production";
+    this.isEnabled = process.env.NODE_ENV === 'production';
   }
 }
 
@@ -291,17 +289,11 @@ export const trackPageView = (path?: string) => {
   analytics.trackPageView(path);
 };
 
-export const trackError = (
-  errorType: string,
-  errorDetails: Record<string, any>
-) => {
+export const trackError = (errorType: string, errorDetails: Record<string, any>) => {
   analytics.trackError(errorType, errorDetails);
 };
 
-export const identifyUser = (
-  userId: string,
-  properties?: Record<string, any>
-) => {
+export const identifyUser = (userId: string, properties?: Record<string, any>) => {
   analytics.identify(userId, properties);
 };
 
