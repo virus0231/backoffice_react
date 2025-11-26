@@ -1,57 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Donors.css';
+
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
 
 const Donors = () => {
   const [searchEmail, setSearchEmail] = useState('');
-  const [donors, setDonors] = useState([
-    {
-      id: 1,
-      firstName: 'Muhammad',
-      lastName: 'Shuja',
-      phone: '923505551212',
-      email: 'muhammad.shuja@youronlineconversation.com'
-    },
-    {
-      id: 2,
-      firstName: 'Saladin',
-      lastName: 'Ali',
-      phone: '447470709329',
-      email: 'sali@forgottenwomen.org'
-    },
-    {
-      id: 3,
-      firstName: 'Hunain',
-      lastName: 'Hyder',
-      phone: '921231234567',
-      email: 'taha@youronlineconversation.com'
-    },
-    {
-      id: 4,
-      firstName: 'SHAHZAIB',
-      lastName: 'Siddiqui',
-      phone: '44208146020',
-      email: 'shahzaib@youronlineconversation.com'
-    },
-    {
-      id: 5,
-      firstName: 'Hunain',
-      lastName: 'Hyder',
-      phone: '921231234567',
-      email: 'saadsaifi@youronlineconversation.com'
-    }
-  ]);
+  const [donors, setDonors] = useState([]);
+  const [filteredDonors, setFilteredDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [filteredDonors, setFilteredDonors] = useState(donors);
+  // Fetch all donors on mount
+  useEffect(() => {
+    fetchDonors();
+  }, []);
+
+  const fetchDonors = async (email = '') => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const url = email
+        ? `${BASE_URL}/donors.php?email=${encodeURIComponent(email)}`
+        : `${BASE_URL}/donors.php`;
+
+      const response = await fetch(url, {
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setDonors(result.data);
+        setFilteredDonors(result.data);
+      } else {
+        setError('Failed to load donors');
+      }
+    } catch (err) {
+      console.error('Error fetching donors:', err);
+      setError('Failed to load donors. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
-    if (searchEmail.trim() === '') {
-      setFilteredDonors(donors);
-    } else {
-      const filtered = donors.filter(donor =>
-        donor.email.toLowerCase().includes(searchEmail.toLowerCase())
-      );
-      setFilteredDonors(filtered);
-    }
+    fetchDonors(searchEmail.trim());
   };
 
   const handleEdit = (donor) => {
@@ -83,6 +79,12 @@ const Donors = () => {
       </div>
 
       <div className="donors-content">
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
         <div className="search-section">
           <div className="search-input-group">
             <label htmlFor="donor-email">Donor Email</label>
@@ -95,12 +97,31 @@ const Donors = () => {
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </div>
-          <button className="search-btn" onClick={handleSearch}>
-            Search
+          <button className="search-btn" onClick={handleSearch} disabled={loading}>
+            {loading ? 'Searching...' : 'Search'}
           </button>
+          {searchEmail && (
+            <button
+              className="clear-btn"
+              onClick={() => {
+                setSearchEmail('');
+                fetchDonors();
+              }}
+              disabled={loading}
+            >
+              Clear
+            </button>
+          )}
         </div>
 
-        <div className="donors-table-container">
+        {loading && (
+          <div className="loading-message">
+            Loading donors...
+          </div>
+        )}
+
+        {!loading && (
+          <div className="donors-table-container">
           <table className="donors-table">
             <thead>
               <tr>
@@ -140,10 +161,11 @@ const Donors = () => {
 
           {filteredDonors.length === 0 && (
             <div className="no-results">
-              <p>No donors found matching "{searchEmail}"</p>
+              <p>No donors found{searchEmail && ` matching "${searchEmail}"`}</p>
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );
