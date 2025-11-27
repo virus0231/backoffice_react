@@ -92,7 +92,7 @@ if(isset($_POST['action'])){
         $_SESSION['login_user_name'] = $userdata['display_name'] ?? '';
         $_SESSION['login_user_id'] = $userdata['ID'] ?? '';
 
-        if (!hash_equals($expected_password, $actual_password)) {
+        if (hash_equals($expected_password, $actual_password)) {
             $_SESSION['user_details'] = $userdata;
             $_SESSION['user_role'] = $userdata['user_role'] ?? null;
             $_SESSION['user_login'] = $userdata['user_login'] ?? '';

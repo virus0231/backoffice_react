@@ -1,15 +1,31 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/functions.php';
 
 try {
   $pdo = get_pdo();
+
+  // TEMPORARY: Hard-coded to pw_donors for testing
+  $donorTable = 'pw_donors';
+
+  // Support multiple table name variations for donors table
+  // $conn = $pdo; // For find_first_existing_table compatibility
+  // $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+
+  // if (!$donorTable) {
+  //   error_response('Donors table not found', 500, ['message' => 'No donors table found with names: pw_donors, wp_yoc_donors, or donors']);
+  //   exit;
+  // }
+
+  // Log which table we're using for debugging
+  error_log('[donors.php] Using table: ' . $donorTable);
 
   // Get optional email search parameter
   $emailSearch = isset($_GET['email']) ? trim($_GET['email']) : '';
 
   // Build the SQL query
-  $sql = 'SELECT id, fourdigit, stripe_id, email, firstname, lastname, add1, add2, city, country, postcode, phone, Date_Added, organization
-          FROM ' . table('donors');
+  $sql = "SELECT id, fourdigit, stripe_id, email, firstname, lastname, add1, add2, city, country, postcode, phone, Date_Added, organization
+          FROM `$donorTable`";
 
   // Add email filter if provided
   if (!empty($emailSearch)) {

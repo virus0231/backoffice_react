@@ -265,7 +265,10 @@ function get_user_role($conn) {
 
 // donor
 function get_all_donors_count($conn) {
-    $sql_total = "SELECT COUNT(*) as total FROM wp_yoc_donors";
+    $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+    if (!$donorTable) return 0;
+
+    $sql_total = "SELECT COUNT(*) as total FROM `$donorTable`";
     $stmt_total = $conn->query($sql_total);
     $total_rows = $stmt_total->fetch(PDO::FETCH_ASSOC)['total'];
     $total_pages = ceil($total_rows / 25);
@@ -276,7 +279,10 @@ function get_all_donors_count($conn) {
 
 
 function get_all_donors($conn, $start) {
-    $sql = "SELECT * FROM `wp_yoc_donors` ORDER BY id DESC LIMIT :start, 25";
+    $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+    if (!$donorTable) return [];
+
+    $sql = "SELECT * FROM `$donorTable` ORDER BY id DESC LIMIT :start, 25";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':start', $start, PDO::PARAM_INT);
     $stmt->execute();
@@ -287,7 +293,10 @@ function get_all_donors($conn, $start) {
 
 
 function get_donor($conn, $id) {
-    $sql = "SELECT * FROM `wp_yoc_donors` WHERE id = :id";
+    $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+    if (!$donorTable) return [];
+
+    $sql = "SELECT * FROM `$donorTable` WHERE id = :id";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':id', $id, PDO::PARAM_INT);
     $stmt->execute();
@@ -297,7 +306,10 @@ function get_donor($conn, $id) {
 
 
 function search_donor($conn, $email) {
-    $sql = "SELECT * FROM `wp_yoc_donors` WHERE email = :email";
+    $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+    if (!$donorTable) return [];
+
+    $sql = "SELECT * FROM `$donorTable` WHERE email = :email";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':email', $email, PDO::PARAM_STR);
     $stmt->execute();

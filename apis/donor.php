@@ -4,7 +4,7 @@ include('config.php');
 include_once('functions.php');
 ini_set('display_errors', '1'); ini_set('display_startup_errors', '1'); error_reporting(E_ALL);
 
-$donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors']);
+$donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
 
 if(isset($_POST['action'])){
     if($_POST['action']=="update-donor"){
