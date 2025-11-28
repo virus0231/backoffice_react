@@ -14,7 +14,7 @@ try {
   $frequency = $_GET['frequency'] ?? null;
 
   // Build WHERE conditions
-  $conditions = ['t.freq IN (1, 2, 3)'];
+  $conditions = ['td.freq IN (1, 2, 3)'];
   $params = [];
 
   if ($status) {
@@ -33,7 +33,7 @@ try {
   }
 
   if ($frequency) {
-    $conditions[] = 't.freq = ?';
+    $conditions[] = 'td.freq = ?';
     $params[] = (int)$frequency;
   }
 
@@ -58,16 +58,17 @@ try {
       d.phone,
       t.totalamount as amount,
       CASE
-        WHEN t.freq = 0 THEN 'One-Time'
-        WHEN t.freq = 1 THEN 'Monthly'
-        WHEN t.freq = 2 THEN 'Yearly'
-        WHEN t.freq = 3 THEN 'Daily'
+        WHEN td.freq = 0 THEN 'One-Time'
+        WHEN td.freq = 1 THEN 'Monthly'
+        WHEN td.freq = 2 THEN 'Yearly'
+        WHEN td.freq = 3 THEN 'Daily'
         ELSE 'Unknown'
       END as frequency,
       t.status,
       t.paymenttype as payment_method
     FROM `{$tables['transactions']}` t
-    LEFT JOIN `{$tables['donors']}` d ON d.email = t.email
+    LEFT JOIN `{$tables['transaction_details']}` td ON t.id = td.TID
+    LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
     WHERE {$whereClause}
     ORDER BY t.date DESC
   ";

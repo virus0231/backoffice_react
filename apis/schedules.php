@@ -12,9 +12,11 @@ try {
   $toDate = $_GET['to_date'] ?? null;
   $search = $_GET['search'] ?? null;
   $frequency = $_GET['frequency'] ?? null;
+  $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+  $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
 
   // Build WHERE conditions
-  $conditions = ['t.freq IN (1, 2, 3)']; // Only recurring (Monthly=1, Yearly=2, Daily=3)
+  $conditions = ['td.freq IN (1, 2, 3)']; // Only recurring (Monthly=1, Yearly=2, Daily=3)
   $params = [];
 
   if ($status) {
@@ -33,7 +35,7 @@ try {
   }
 
   if ($frequency) {
-    $conditions[] = 't.freq = ?';
+    $conditions[] = 'td.freq = ?';
     $params[] = (int)$frequency;
   }
 
@@ -48,6 +50,21 @@ try {
 
   $whereClause = implode(' AND ', $conditions);
 
+  // If offset is 0, get total count first
+  $totalCount = 0;
+  if ($offset === 0) {
+    $countSql = "
+      SELECT COUNT(DISTINCT t.id) as total
+      FROM `{$tables['transactions']}` t
+      LEFT JOIN `{$tables['transaction_details']}` td ON t.id = td.TID
+      LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
+      WHERE {$whereClause}
+    ";
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $totalCount = (int)$countStmt->fetchColumn();
+  }
+
   // Query to get recurring schedules/subscriptions
   $sql = "
     SELECT
@@ -55,7 +72,7 @@ try {
       t.order_id,
       t.date as start_date,
       t.totalamount as amount,
-      t.freq,
+      td.freq,
       t.status,
       t.paymenttype as donation_type,
       d.firstname,
@@ -63,24 +80,27 @@ try {
       d.email,
       d.phone,
       CASE
-        WHEN t.freq = 0 THEN 'One-Time'
-        WHEN t.freq = 1 THEN 'Monthly'
-        WHEN t.freq = 2 THEN 'Yearly'
-        WHEN t.freq = 3 THEN 'Daily'
+        WHEN td.freq = 0 THEN 'One-Time'
+        WHEN td.freq = 1 THEN 'Monthly'
+        WHEN td.freq = 2 THEN 'Yearly'
+        WHEN td.freq = 3 THEN 'Daily'
         ELSE 'Unknown'
       END as frequency_name
     FROM `{$tables['transactions']}` t
-    LEFT JOIN `{$tables['donors']}` d ON d.email = t.email
+    LEFT JOIN `{$tables['transaction_details']}` td ON t.id = td.TID
+    LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
     WHERE {$whereClause}
+    GROUP BY t.id, t.order_id, t.date, t.totalamount, td.freq, t.status, t.paymenttype, d.firstname, d.lastname, d.email, d.phone
     ORDER BY t.date DESC
-    LIMIT 1000
+    LIMIT ? OFFSET ?
   ";
 
   $stmt = $pdo->prepare($sql);
-  $stmt->execute($params);
+  $allParams = array_merge($params, [$limit, $offset]);
+  $stmt->execute($allParams);
   $rows = $stmt->fetchAll();
 
-  json_response([
+  $response = [
     'success' => true,
     'data' => array_map(function($r) {
       return [
@@ -98,7 +118,14 @@ try {
     }, $rows),
     'count' => count($rows),
     'message' => 'Retrieved schedules'
-  ]);
+  ];
+
+  // Add total count only on first request (offset = 0)
+  if ($offset === 0) {
+    $response['totalCount'] = $totalCount;
+  }
+
+  json_response($response);
 } catch (Throwable $e) {
   error_response('Database error fetching schedules', 500, ['message' => $e->getMessage()]);
 }

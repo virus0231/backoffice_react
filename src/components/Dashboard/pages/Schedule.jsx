@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import API from '../../../utils/api';
 import './Schedule.css';
 
 const BASE_URL = import.meta.env.DEV
@@ -16,7 +17,11 @@ const Schedule = () => {
 
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingCSV, setLoadingCSV] = useState(false);
   const [error, setError] = useState(null);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -26,10 +31,103 @@ const Schedule = () => {
   };
 
   const handleSearch = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setSchedules([]);
+    setTotalRecords(0);
+    setCurrentPage(1);
+    setError(null);
 
+    try {
+      // Step 1: Get first chunk with total count
+      const chunkSize = 500;
+      const params = new URLSearchParams();
+      if (filters.status) params.append('status', filters.status);
+      if (filters.frequency) params.append('frequency', filters.frequency);
+      if (filters.fromDate) params.append('from_date', filters.fromDate);
+      if (filters.toDate) params.append('to_date', filters.toDate);
+      if (filters.search) params.append('search', filters.search);
+      params.append('offset', '0');
+      params.append('limit', chunkSize.toString());
+
+      const firstResponse = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
+        credentials: 'include'
+      });
+      const firstResult = await firstResponse.json();
+
+      if (!firstResult.success) {
+        setError(firstResult.error || 'Failed to load schedules');
+        setLoading(false);
+        return;
+      }
+
+      const totalCount = firstResult.totalCount || firstResult.count;
+      const firstChunkData = firstResult.data || [];
+
+      if (totalCount === 0) {
+        setError('No schedules found. Try adjusting your filters.');
+        setLoading(false);
+        return;
+      }
+
+      // Show first chunk immediately
+      setSchedules(firstChunkData);
+      setTotalRecords(firstChunkData.length);
+      setLoading(false);
+
+      // Step 2: Load remaining chunks in background
+      const totalChunks = Math.ceil(totalCount / chunkSize);
+      if (totalChunks > 1) {
+        loadRemainingChunks(1, totalChunks, chunkSize, firstChunkData);
+      }
+
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+      setError('Failed to load schedules. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const loadRemainingChunks = async (startChunk, totalChunks, chunkSize, initialData) => {
+    let allData = [...initialData];
+
+    for (let chunk = startChunk; chunk < totalChunks; chunk++) {
+      try {
+        const offset = chunk * chunkSize;
+        const params = new URLSearchParams();
+        if (filters.status) params.append('status', filters.status);
+        if (filters.frequency) params.append('frequency', filters.frequency);
+        if (filters.fromDate) params.append('from_date', filters.fromDate);
+        if (filters.toDate) params.append('to_date', filters.toDate);
+        if (filters.search) params.append('search', filters.search);
+        params.append('offset', offset.toString());
+        params.append('limit', chunkSize.toString());
+
+        const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
+          credentials: 'include'
+        });
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          allData = [...allData, ...result.data];
+          setSchedules([...allData]);
+          setTotalRecords(allData.length);
+
+          if (result.data.length < chunkSize) {
+            break;
+          }
+        } else {
+          break;
+        }
+      } catch (error) {
+        console.error('Error loading chunk:', error);
+        break;
+      }
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setLoadingCSV(true);
+    try {
       const params = new URLSearchParams();
       if (filters.status) params.append('status', filters.status);
       if (filters.frequency) params.append('frequency', filters.frequency);
@@ -37,37 +135,60 @@ const Schedule = () => {
       if (filters.toDate) params.append('to_date', filters.toDate);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
+      const response = await fetch(`${BASE_URL}/schedules-export.php?${params.toString()}`, {
         credentials: 'include'
       });
-      const result = await response.json();
 
-      if (result.success) {
-        setSchedules(result.data);
-      } else {
-        setError('Failed to load schedules');
+      if (!response.ok) {
+        throw new Error('Failed to export CSV');
       }
-    } catch (err) {
-      console.error('Error fetching schedules:', err);
-      setError('Failed to load schedules. Please try again.');
+
+      const blob = await response.blob();
+
+      if (blob.size === 0) {
+        alert('No data to export. Please adjust your filters.');
+        return;
+      }
+
+      const dateString = API.getDateString();
+      API.downloadFile(blob, `ForgottenWomen_Schedules_${dateString}.csv`);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV: ' + error.message);
     } finally {
-      setLoading(false);
+      setLoadingCSV(false);
     }
-  };
-
-  const handleExportCSV = () => {
-    const params = new URLSearchParams();
-    if (filters.status) params.append('status', filters.status);
-    if (filters.frequency) params.append('frequency', filters.frequency);
-    if (filters.fromDate) params.append('from_date', filters.fromDate);
-    if (filters.toDate) params.append('to_date', filters.toDate);
-    if (filters.search) params.append('search', filters.search);
-
-    window.open(`${BASE_URL}/schedules-export.php?${params.toString()}`, '_blank');
   };
 
   const handleDetail = (schedule) => {
     alert(`Order ID: ${schedule.order_id}\nName: ${schedule.name}\nEmail: ${schedule.email}\nAmount: $${schedule.amount}\nFrequency: ${schedule.frequency}`);
+  };
+
+  // Pagination helpers
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = schedules.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(schedules.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getPaginationRange = () => {
+    const range = [];
+    const showPages = 5;
+    let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let end = Math.min(totalPages, start + showPages - 1);
+
+    if (end - start < showPages - 1) {
+      start = Math.max(1, end - showPages + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    return range;
   };
 
   return (
@@ -83,7 +204,7 @@ const Schedule = () => {
 
       <div className="schedule-content">
         {error && (
-          <div className="users-error" style={{ marginBottom: 12 }}>
+          <div className="schedule-error">
             <strong>Error:</strong> {error}
           </div>
         )}
@@ -165,10 +286,19 @@ const Schedule = () => {
           </div>
 
           <div className="export-row">
-            <button className="export-csv-btn" onClick={handleExportCSV}>
-              Export CSV
+            <button
+              className="export-csv-btn"
+              onClick={handleExportCSV}
+              disabled={loadingCSV}
+            >
+              {loadingCSV ? 'Exporting...' : 'Export CSV'}
             </button>
           </div>
+          {totalRecords > 0 && (
+            <div className="data-counter">
+              <p>Filtered Value: {totalRecords}</p>
+            </div>
+          )}
         </div>
 
         {loading && (
@@ -197,16 +327,16 @@ const Schedule = () => {
               </tr>
             </thead>
             <tbody>
-              {!loading && schedules.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan="9" className="no-data">
-                    No schedules found. Use filters to search for schedules.
+                  <td colSpan="9" className="loading-data">
+                    Loading data...
                   </td>
                 </tr>
-              ) : (
-                schedules.map((schedule, index) => (
+              ) : schedules.length > 0 ? (
+                currentItems.map((schedule, index) => (
                   <tr key={schedule.id}>
-                    <td>{index + 1}</td>
+                    <td>{indexOfFirstItem + index + 1}</td>
                     <td className="schedule-type">{schedule.donationType}</td>
                     <td className="schedule-date">{new Date(schedule.startDate).toLocaleDateString()}</td>
                     <td className="schedule-name">{schedule.name}</td>
@@ -228,9 +358,64 @@ const Schedule = () => {
                     </td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan="9" className="no-data">
+                    No schedules found. Use filters and click "Search" to search for schedules.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
+
+          {schedules.length > 0 && totalPages > 1 && (
+            <div className="pagination-container">
+              <div className="pagination-info">
+                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, schedules.length)} of {schedules.length} records
+              </div>
+              <div className="pagination-controls">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                >
+                  First
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+
+                {getPaginationRange().map(pageNum => (
+                  <button
+                    key={pageNum}
+                    className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
