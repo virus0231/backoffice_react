@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import API from '../../../utils/api';
 import './Schedule.css';
 
@@ -22,6 +22,13 @@ const Schedule = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -71,7 +78,7 @@ const Schedule = () => {
 
       // Show first chunk immediately
       setSchedules(firstChunkData);
-      setTotalRecords(firstChunkData.length);
+      setTotalRecords(totalCount);
       setLoading(false);
 
       // Step 2: Load remaining chunks in background
@@ -91,6 +98,12 @@ const Schedule = () => {
     let allData = [...initialData];
 
     for (let chunk = startChunk; chunk < totalChunks; chunk++) {
+      // Stop if component unmounted
+      if (!isMountedRef.current) {
+        console.log('Component unmounted, stopping background load');
+        break;
+      }
+
       try {
         const offset = chunk * chunkSize;
         const params = new URLSearchParams();
@@ -107,10 +120,20 @@ const Schedule = () => {
         });
         const result = await response.json();
 
+        // Check again after async operation
+        if (!isMountedRef.current) {
+          console.log('Component unmounted during fetch, stopping background load');
+          break;
+        }
+
         if (result.success && result.data) {
           allData = [...allData, ...result.data];
-          setSchedules([...allData]);
-          setTotalRecords(allData.length);
+
+          // Update only if still mounted
+          if (isMountedRef.current) {
+            setSchedules([...allData]);
+            setTotalRecords(allData.length);
+          }
 
           if (result.data.length < chunkSize) {
             break;

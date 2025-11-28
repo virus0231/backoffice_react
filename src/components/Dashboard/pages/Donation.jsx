@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import API from '../../../utils/api';
 import './Donation.css';
 
@@ -8,7 +8,6 @@ const Donation = () => {
     toDate: '',
     paymentStatus: '',
     search: '',
-    donations: '',
     frequency: '',
     orderSearch: '',
     paymentType: ''
@@ -21,6 +20,13 @@ const Donation = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -91,7 +97,7 @@ const Donation = () => {
 
       // Show first chunk immediately
       setDonations(firstChunkData);
-      setTotalRecords(firstChunkData.length);
+      setTotalRecords(totalCount);
       setLoadingReport(false); // Stop loading indicator
 
       // Step 3: Load remaining chunks in background
@@ -110,6 +116,12 @@ const Donation = () => {
     let allData = [...initialData];
 
     for (let chunk = startChunk; chunk < totalChunks; chunk++) {
+      // Stop if component unmounted
+      if (!isMountedRef.current) {
+        console.log('Component unmounted, stopping background load');
+        break;
+      }
+
       try {
         const offset = chunk * chunkSize;
 
@@ -119,6 +131,12 @@ const Donation = () => {
           chunkSize: chunkSize.toString(),
           ...baseRequestData
         });
+
+        // Check again after async operation
+        if (!isMountedRef.current) {
+          console.log('Component unmounted during fetch, stopping background load');
+          break;
+        }
 
         let chunkData = [];
         if (typeof chunkResponse === 'string') {
@@ -134,9 +152,10 @@ const Donation = () => {
 
         allData = [...allData, ...chunkData];
 
-        // Update table with new data in background
-        setDonations([...allData]);
-        setTotalRecords(allData.length);
+        // Update table with new data in background only if still mounted
+        if (isMountedRef.current) {
+          setDonations([...allData]);
+        }
 
         // Break if we got less data than expected
         if (chunkData.length < chunkSize) {
@@ -306,17 +325,6 @@ const Donation = () => {
 
           <div className="filter-row">
             <div className="filter-group">
-              <label htmlFor="donations">Donations:</label>
-              <input
-                type="text"
-                id="donations"
-                className="text-input"
-                value={filters.donations}
-                onChange={(e) => handleFilterChange('donations', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
               <label htmlFor="frequency">Frequency:</label>
               <select
                 id="frequency"
@@ -327,8 +335,8 @@ const Donation = () => {
                 <option value="">All</option>
                 <option value="0">One-Time</option>
                 <option value="1">Monthly</option>
-                <option value="2">Quarterly</option>
-                <option value="3">Yearly</option>
+                <option value="2">Yearly</option>
+                <option value="3">Daily</option>
               </select>
             </div>
 
@@ -414,7 +422,7 @@ const Donation = () => {
                 </tr>
               ) : donations.length > 0 ? (
                 currentItems.map((donation, index) => (
-                  <tr key={index}>
+                  <tr key={donation.id || donation.order_id || `donation-${indexOfFirstItem + index}`}>
                     <td>{indexOfFirstItem + index + 1}</td>
                     <td className="donation-date">{donation.date || 'N/A'}</td>
                     <td className="donation-name">{`${donation.firstname || ''} ${donation.lastname || ''}`.trim() || 'N/A'}</td>
