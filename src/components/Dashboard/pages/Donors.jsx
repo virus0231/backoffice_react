@@ -20,6 +20,21 @@ const Donors = () => {
   });
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDonationsModal, setShowDonationsModal] = useState(false);
+  const [showSubscriptionsModal, setShowSubscriptionsModal] = useState(false);
+
+  // Selected donor data
+  const [selectedDonor, setSelectedDonor] = useState(null);
+  const [donorDetails, setDonorDetails] = useState(null);
+  const [donations, setDonations] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+
+  // Modal loading states
+  const [modalLoading, setModalLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+
   const fetchDonors = async (email = '', page = 1) => {
     try {
       setLoading(true);
@@ -58,6 +73,110 @@ const Donors = () => {
     }
   };
 
+  const fetchDonorDetails = async (donorId) => {
+    try {
+      setModalLoading(true);
+      const response = await fetch(`${BASE_URL}/donor-details.php?id=${donorId}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setDonorDetails(result.data);
+      } else {
+        alert('Failed to load donor details');
+      }
+    } catch (err) {
+      console.error('Error fetching donor details:', err);
+      alert('Failed to load donor details');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fetchDonorDonations = async (donorId) => {
+    try {
+      setModalLoading(true);
+      const response = await fetch(`${BASE_URL}/donor-donations.php?id=${donorId}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setDonations(result.data || []);
+      } else {
+        alert('Failed to load donations');
+      }
+    } catch (err) {
+      console.error('Error fetching donations:', err);
+      alert('Failed to load donations');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fetchDonorSubscriptions = async (donorId) => {
+    try {
+      setModalLoading(true);
+      const response = await fetch(`${BASE_URL}/donor-subscriptions.php?id=${donorId}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setSubscriptions(result.data || []);
+      } else {
+        alert('Failed to load subscriptions');
+      }
+    } catch (err) {
+      console.error('Error fetching subscriptions:', err);
+      alert('Failed to load subscriptions');
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const updateDonor = async (updatedData) => {
+    try {
+      setUpdateLoading(true);
+
+      const formData = new FormData();
+      formData.append('action', 'update-donor');
+      formData.append('donor_id', updatedData.id);
+      formData.append('firstName', updatedData.firstName);
+      formData.append('lastName', updatedData.lastName);
+      formData.append('email', updatedData.email);
+      formData.append('phone', updatedData.phone);
+      formData.append('organization', updatedData.organization);
+      formData.append('street', updatedData.address1);
+      formData.append('state', updatedData.address2);
+      formData.append('city', updatedData.city);
+      formData.append('country', updatedData.country);
+      formData.append('postcode', updatedData.postcode);
+
+      const response = await fetch(`${BASE_URL}/donor.php`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Donor updated successfully!');
+        setShowEditModal(false);
+        fetchDonors(searchEmail.trim(), pagination.currentPage);
+      } else {
+        alert('Failed to update donor: ' + (result.meta?.message || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Error updating donor:', err);
+      alert('Failed to update donor. Please try again.');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   const handleSearch = () => {
     if (searchEmail.trim() || !hasSearched) {
       fetchDonors(searchEmail.trim(), 1);
@@ -85,19 +204,32 @@ const Donors = () => {
     return range;
   };
 
-  const handleEdit = (donor) => {
-    console.log('Edit donor:', donor);
-    alert(`Edit donor: ${donor.firstName} ${donor.lastName}`);
+  const handleEdit = async (donor) => {
+    setSelectedDonor(donor);
+    setShowEditModal(true);
+    await fetchDonorDetails(donor.id);
   };
 
-  const handleDonation = (donor) => {
-    console.log('View donations for:', donor);
-    alert(`View donations for: ${donor.firstName} ${donor.lastName}`);
+  const handleDonation = async (donor) => {
+    setSelectedDonor(donor);
+    setShowDonationsModal(true);
+    await fetchDonorDonations(donor.id);
   };
 
-  const handleSubscription = (donor) => {
-    console.log('View subscription for:', donor);
-    alert(`View subscription for: ${donor.firstName} ${donor.lastName}`);
+  const handleSubscription = async (donor) => {
+    setSelectedDonor(donor);
+    setShowSubscriptionsModal(true);
+    await fetchDonorSubscriptions(donor.id);
+  };
+
+  const closeModals = () => {
+    setShowEditModal(false);
+    setShowDonationsModal(false);
+    setShowSubscriptionsModal(false);
+    setSelectedDonor(null);
+    setDonorDetails(null);
+    setDonations([]);
+    setSubscriptions([]);
   };
 
   return (
@@ -305,6 +437,390 @@ const Donors = () => {
             )}
           </>
         )}
+      </div>
+
+      {showEditModal && (
+        <EditDonorModal
+          donor={donorDetails}
+          loading={modalLoading}
+          updateLoading={updateLoading}
+          onClose={closeModals}
+          onSave={updateDonor}
+        />
+      )}
+
+      {showDonationsModal && (
+        <DonationsModal
+          donor={selectedDonor}
+          donations={donations}
+          loading={modalLoading}
+          onClose={closeModals}
+        />
+      )}
+
+      {showSubscriptionsModal && (
+        <SubscriptionsModal
+          donor={selectedDonor}
+          subscriptions={subscriptions}
+          loading={modalLoading}
+          onClose={closeModals}
+        />
+      )}
+    </div>
+  );
+};
+
+const EditDonorModal = ({ donor, loading, updateLoading, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    id: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    organization: '',
+    address1: '',
+    address2: '',
+    city: '',
+    country: '',
+    postcode: ''
+  });
+
+  useEffect(() => {
+    if (donor) {
+      setFormData({
+        id: donor.id,
+        firstName: donor.firstName || '',
+        lastName: donor.lastName || '',
+        email: donor.email || '',
+        phone: donor.phone || '',
+        organization: donor.organization || '',
+        address1: donor.address1 || '',
+        address2: donor.address2 || '',
+        city: donor.city || '',
+        country: donor.country || '',
+        postcode: donor.postcode || ''
+      });
+    }
+  }, [donor]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Edit Donor</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        {loading ? (
+          <div className="modal-body">
+            <p>Loading donor details...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Organization</label>
+                  <input
+                    type="text"
+                    name="organization"
+                    value={formData.organization}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Address 1</label>
+                  <input
+                    type="text"
+                    name="address1"
+                    value={formData.address1}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Address 2</label>
+                  <input
+                    type="text"
+                    name="address2"
+                    value={formData.address2}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>City</label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Country</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Postcode</label>
+                  <input
+                    type="text"
+                    name="postcode"
+                    value={formData.postcode}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn-cancel" onClick={onClose} disabled={updateLoading}>
+                Cancel
+              </button>
+              <button type="submit" className="btn-save" disabled={updateLoading}>
+                {updateLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DonationsModal = ({ donor, donations, loading, onClose }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+  };
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Donations - {donor?.firstName} {donor?.lastName}</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        <div className="modal-body">
+          {loading ? (
+            <p>Loading donations...</p>
+          ) : donations.length === 0 ? (
+            <p>No donations found for this donor.</p>
+          ) : (
+            <div className="donations-list">
+              {donations.map((donation) => (
+                <div key={donation.id} className="donation-card">
+                  <div className="donation-header">
+                    <h3>Order #{donation.orderId || donation.id}</h3>
+                    <span className={`status-badge status-${donation.status?.toLowerCase()}`}>
+                      {donation.status}
+                    </span>
+                  </div>
+                  <div className="donation-info">
+                    <div className="info-row">
+                      <strong>Total Amount:</strong> {formatCurrency(donation.totalAmount, donation.currency)}
+                    </div>
+                    <div className="info-row">
+                      <strong>Payment Type:</strong> {donation.paymentType}
+                    </div>
+                    <div className="info-row">
+                      <strong>Date:</strong> {formatDate(donation.date)}
+                    </div>
+                  </div>
+                  {donation.details && donation.details.length > 0 && (
+                    <div className="donation-details">
+                      <h4>Details:</h4>
+                      <table className="details-table">
+                        <thead>
+                          <tr>
+                            <th>Appeal</th>
+                            <th>Amount</th>
+                            <th>Fund</th>
+                            <th>Qty</th>
+                            <th>Frequency</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {donation.details.map((detail, idx) => (
+                            <tr key={idx}>
+                              <td>{detail.appealName || `Appeal #${detail.appealId}`}</td>
+                              <td>{detail.amountName || `Amount #${detail.amountId}`}</td>
+                              <td>{detail.fundName || `Fund #${detail.fundId}`}</td>
+                              <td>{detail.quantity}</td>
+                              <td>{detail.frequency}</td>
+                              <td>{formatCurrency(detail.amount * detail.quantity, donation.currency)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-cancel" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SubscriptionsModal = ({ donor, subscriptions, loading, onClose }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  const formatCurrency = (amount, currency = 'USD') => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Subscriptions - {donor?.firstName} {donor?.lastName}</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+
+        <div className="modal-body">
+          {loading ? (
+            <p>Loading subscriptions...</p>
+          ) : subscriptions.length === 0 ? (
+            <p>No subscriptions found for this donor.</p>
+          ) : (
+            <div className="subscriptions-list">
+              {subscriptions.map((subscription) => (
+                <div key={subscription.id} className="subscription-card">
+                  <div className="subscription-header">
+                    <h3>Subscription #{subscription.subscriptionId || subscription.id}</h3>
+                    <span className={`status-badge status-${subscription.status?.toLowerCase()}`}>
+                      {subscription.status}
+                    </span>
+                  </div>
+                  <div className="subscription-info">
+                    <div className="info-row">
+                      <strong>Stripe ID:</strong> {subscription.stripeId || 'N/A'}
+                    </div>
+                    <div className="info-row">
+                      <strong>Next Billing Date:</strong> {formatDate(subscription.nextBillingDate)}
+                    </div>
+                    <div className="info-row">
+                      <strong>Created:</strong> {formatDate(subscription.createdAt)}
+                    </div>
+                    <div className="info-row">
+                      <strong>Updated:</strong> {formatDate(subscription.updatedAt)}
+                    </div>
+                  </div>
+                  {subscription.details && subscription.details.length > 0 && (
+                    <div className="subscription-details">
+                      <h4>Subscription Details:</h4>
+                      <table className="details-table">
+                        <thead>
+                          <tr>
+                            <th>Order ID</th>
+                            <th>Appeal</th>
+                            <th>Amount</th>
+                            <th>Fund</th>
+                            <th>Frequency</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {subscription.details.map((detail, idx) => (
+                            <tr key={idx}>
+                              <td>{detail.orderId}</td>
+                              <td>{detail.appealName || `Appeal #${detail.appealId}`}</td>
+                              <td>{detail.amountName || `Amount #${detail.amountId}`}</td>
+                              <td>{detail.fundName || `Fund #${detail.fundId}`}</td>
+                              <td>{detail.frequency}</td>
+                              <td>{formatCurrency(detail.totalAmount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-cancel" onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>
   );

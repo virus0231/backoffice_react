@@ -1,9 +1,20 @@
 <?php
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/functions.php';
 
 try {
   $pdo = get_pdo();
-  $stmt = $pdo->query('SELECT id, name FROM ' . table('category') . ' ORDER BY name ASC');
+  
+  // Support multiple table name variations for category table
+  $conn = $pdo; // For find_first_existing_table compatibility
+  $categoryTable = find_first_existing_table($conn, ['pw_category', 'wp_yoc_category', 'category']);
+  
+  if (!$categoryTable) {
+    error_response('Category table not found', 500, ['message' => 'No category table found with names: pw_category, wp_yoc_category, or category']);
+    exit;
+  }
+  
+  $stmt = $pdo->query("SELECT id, name FROM `$categoryTable` ORDER BY name ASC");
   $rows = $stmt->fetchAll();
 
   json_response([

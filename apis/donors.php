@@ -28,8 +28,11 @@ try {
   $params = [];
 
   if (!empty($emailSearch)) {
-    $whereClause = ' WHERE email LIKE :email OR firstname LIKE :email OR lastname LIKE :email';
-    $params[':email'] = '%' . $emailSearch . '%';
+    $whereClause = ' WHERE email LIKE :email OR firstname LIKE :firstname OR lastname LIKE :lastname';
+    $searchTerm = '%' . $emailSearch . '%';
+    $params[':email'] = $searchTerm;
+    $params[':firstname'] = $searchTerm;
+    $params[':lastname'] = $searchTerm;
   }
 
   // Get total count
