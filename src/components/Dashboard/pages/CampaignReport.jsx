@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './CampaignReport.css';
+
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
 
 const CampaignReport = () => {
   const [filters, setFilters] = useState({
@@ -9,12 +13,44 @@ const CampaignReport = () => {
     donorEmail: ''
   });
 
-  const [campaigns, setCampaigns] = useState([
-    { id: 1, name: 'Fund Her Future', totalAmount: 85.00, donations: 5 },
-    { id: 2, name: 'Monthly Giving', totalAmount: 4268.00, donations: 157 }
-  ]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalAmount, setTotalAmount] = useState(0);
 
-  const totalAmount = campaigns.reduce((sum, campaign) => sum + campaign.totalAmount, 0);
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const fetchCampaigns = async (filterParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (filterParams.campaigns) params.append('campaigns', filterParams.campaigns);
+      if (filterParams.fromDate) params.append('from_date', filterParams.fromDate);
+      if (filterParams.toDate) params.append('to_date', filterParams.toDate);
+      if (filterParams.donorEmail) params.append('donor_email', filterParams.donorEmail);
+
+      const response = await fetch(`${BASE_URL}/campaign-report.php?${params.toString()}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setCampaigns(result.data);
+        setTotalAmount(result.total_amount || 0);
+      } else {
+        setError('Failed to load campaigns');
+      }
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
+      setError('Failed to load campaigns. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -24,8 +60,7 @@ const CampaignReport = () => {
   };
 
   const handleFilter = () => {
-    console.log('Filter with:', filters);
-    alert('Filtering campaign report...');
+    fetchCampaigns(filters);
   };
 
   return (
@@ -42,6 +77,19 @@ const CampaignReport = () => {
       </div>
 
       <div className="campaign-report-content">
+        {error && (
+          <div className="users-error" style={{ marginBottom: 12 }}>
+            <strong>Error:</strong> {error}
+            <button
+              onClick={() => fetchCampaigns()}
+              className="edit-btn"
+              style={{ marginLeft: 12, padding: '6px 12px' }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <div className="filter-box">
           <h2 className="filter-title">Filter Campaign Report</h2>
 
@@ -52,6 +100,7 @@ const CampaignReport = () => {
                 type="text"
                 id="campaigns"
                 className="text-input"
+                placeholder="Search campaign name"
                 value={filters.campaigns}
                 onChange={(e) => handleFilterChange('campaigns', e.target.value)}
               />
@@ -80,8 +129,8 @@ const CampaignReport = () => {
             </div>
           </div>
 
-          <button className="filter-button" onClick={handleFilter}>
-            Filter
+          <button className="filter-button" onClick={handleFilter} disabled={loading}>
+            {loading ? 'Filtering...' : 'Filter'}
           </button>
 
           <div className="donor-email-field">
@@ -104,6 +153,17 @@ const CampaignReport = () => {
 
         <div className="summary-section">
           <h2 className="summary-title">All Campaigns Summary</h2>
+
+          {loading && (
+            <div style={{
+              padding: '24px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              Loading campaigns...
+            </div>
+          )}
+
           <div className="summary-table-container">
             <table className="summary-table">
               <thead>
@@ -115,14 +175,22 @@ const CampaignReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {campaigns.map((campaign, index) => (
-                  <tr key={campaign.id}>
-                    <td>{index + 1}</td>
-                    <td className="campaign-name">{campaign.name}</td>
-                    <td className="campaign-amount">${campaign.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="campaign-donations">{campaign.donations}</td>
+                {!loading && campaigns.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                      No campaigns found. Try adjusting your filters.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  campaigns.map((campaign, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td className="campaign-name">{campaign.name}</td>
+                      <td className="campaign-amount">${campaign.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="campaign-donations">{campaign.donations}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

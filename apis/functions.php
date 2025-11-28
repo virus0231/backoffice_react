@@ -221,6 +221,30 @@ function find_first_existing_table($conn, $candidates) {
     return null;
 }
 
+// Helper function to get all common table names with dual prefix support
+function get_table_names($conn) {
+    static $tables = null;
+
+    if ($tables !== null) {
+        return $tables;
+    }
+
+    $tables = [
+        'transactions' => find_first_existing_table($conn, ['pw_transactions', 'wp_yoc_transactions']),
+        'transaction_details' => find_first_existing_table($conn, ['pw_transaction_details', 'wp_yoc_transaction_details']),
+        'donors' => find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']),
+        'appeal' => find_first_existing_table($conn, ['pw_appeal', 'wp_yoc_appeal']),
+        'amount' => find_first_existing_table($conn, ['pw_amount', 'wp_yoc_amount']),
+        'fundlist' => find_first_existing_table($conn, ['pw_fundlist', 'wp_yoc_fundlist']),
+        'category' => find_first_existing_table($conn, ['pw_category', 'wp_yoc_category']),
+        'country' => find_first_existing_table($conn, ['pw_country', 'wp_yoc_country']),
+        'schedule' => find_first_existing_table($conn, ['pw_schedule', 'wp_yoc_schedule']),
+        'fund_amount_combo' => find_first_existing_table($conn, ['pw_fund_amount_combo', 'wp_yoc_fund_amount_combo']),
+    ];
+
+    return $tables;
+}
+
 //users
 function get_all_users($conn) {
     // Support both prefixed table sets (pw_* or wp_yoc_*)

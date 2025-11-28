@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './FundReport.css';
+
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
 
 const FundReport = () => {
   const [filters, setFilters] = useState({
@@ -8,15 +12,59 @@ const FundReport = () => {
     toDate: ''
   });
 
-  const [funds, setFunds] = useState([
-    { id: 1, name: 'Unknown Fund', totalAmount: 77721.36, donations: 1113 },
-    { id: 2, name: '100k Grand Initiative', totalAmount: 1862.00, donations: 52 },
-    { id: 3, name: 'A Good Deed Legacy Fund', totalAmount: 2090.84, donations: 8 },
-    { id: 4, name: 'AAMAAL Justice Fund', totalAmount: 25000.00, donations: 1 },
-    { id: 5, name: 'AAMAAL-Mumtaz and Sadiq Mohammad Khan', totalAmount: 25000.00, donations: 1 }
-  ]);
+  const [funds, setFunds] = useState([]);
+  const [allFunds, setAllFunds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalAmount, setTotalAmount] = useState(0);
 
-  const totalAmount = funds.reduce((sum, fund) => sum + fund.totalAmount, 0);
+  useEffect(() => {
+    fetchFunds();
+    fetchAllFunds();
+  }, []);
+
+  const fetchAllFunds = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/funds.php`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+      if (result.success && result.data) {
+        setAllFunds(result.data);
+      }
+    } catch (err) {
+      console.error('Error fetching fund list:', err);
+    }
+  };
+
+  const fetchFunds = async (filterParams = {}) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (filterParams.fund) params.append('fund_id', filterParams.fund);
+      if (filterParams.fromDate) params.append('from_date', filterParams.fromDate);
+      if (filterParams.toDate) params.append('to_date', filterParams.toDate);
+
+      const response = await fetch(`${BASE_URL}/fund-report.php?${params.toString()}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setFunds(result.data);
+        setTotalAmount(result.total_amount || 0);
+      } else {
+        setError('Failed to load fund report');
+      }
+    } catch (err) {
+      console.error('Error fetching fund report:', err);
+      setError('Failed to load fund report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -26,8 +74,7 @@ const FundReport = () => {
   };
 
   const handleFilter = () => {
-    console.log('Filter with:', filters);
-    alert('Filtering fund report...');
+    fetchFunds(filters);
   };
 
   return (
@@ -44,6 +91,19 @@ const FundReport = () => {
       </div>
 
       <div className="fund-report-content">
+        {error && (
+          <div className="users-error" style={{ marginBottom: 12 }}>
+            <strong>Error:</strong> {error}
+            <button
+              onClick={() => fetchFunds()}
+              className="edit-btn"
+              style={{ marginLeft: 12, padding: '6px 12px' }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <div className="filter-box">
           <h2 className="filter-title">Filter Fund Report</h2>
           <div className="filter-row">
@@ -55,11 +115,12 @@ const FundReport = () => {
                 value={filters.fund}
                 onChange={(e) => handleFilterChange('fund', e.target.value)}
               >
-                <option value="">Select Fund</option>
-                <option value="unknown">Unknown Fund</option>
-                <option value="100k">100k Grand Initiative</option>
-                <option value="good-deed">A Good Deed Legacy Fund</option>
-                <option value="justice">AAMAAL Justice Fund</option>
+                <option value="">All Funds</option>
+                {allFunds.map((fund) => (
+                  <option key={fund.id} value={fund.id}>
+                    {fund.name}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -85,8 +146,8 @@ const FundReport = () => {
               />
             </div>
 
-            <button className="filter-button" onClick={handleFilter}>
-              Filter
+            <button className="filter-button" onClick={handleFilter} disabled={loading}>
+              {loading ? 'Filtering...' : 'Filter'}
             </button>
           </div>
         </div>
@@ -98,6 +159,17 @@ const FundReport = () => {
 
         <div className="summary-section">
           <h2 className="summary-title">All Fund Summary</h2>
+
+          {loading && (
+            <div style={{
+              padding: '24px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              Loading funds...
+            </div>
+          )}
+
           <div className="summary-table-container">
             <table className="summary-table">
               <thead>
@@ -109,14 +181,22 @@ const FundReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {funds.map((fund, index) => (
-                  <tr key={fund.id}>
-                    <td>{index + 1}</td>
-                    <td className="fund-name">{fund.name}</td>
-                    <td className="fund-amount">${fund.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td className="fund-donations">{fund.donations}</td>
+                {!loading && funds.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                      No funds found. Try adjusting your filters.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  funds.map((fund, index) => (
+                    <tr key={fund.id}>
+                      <td>{index + 1}</td>
+                      <td className="fund-name">{fund.name}</td>
+                      <td className="fund-amount">${fund.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      <td className="fund-donations">{fund.donations}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

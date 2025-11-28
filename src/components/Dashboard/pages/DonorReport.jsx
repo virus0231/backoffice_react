@@ -1,22 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './DonorReport.css';
 
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+
 const DonorReport = () => {
-  const lybuntDonors = [
-    { name: 'saad', email: 'saadsajid@youronlineconversation.com', phone: '0987654', lastDonation: '76' }
-  ];
+  const [lybuntDonors, setLybuntDonors] = useState([]);
+  const [sybuntDonors, setSybuntDonors] = useState([]);
+  const [topLevelDonors, setTopLevelDonors] = useState([]);
+  const [midLevelDonors, setMidLevelDonors] = useState([]);
+  const [lowLevelDonors, setLowLevelDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const sybuntDonors = [];
+  useEffect(() => {
+    fetchDonorSegmentation();
+  }, []);
 
-  const topLevelDonors = [];
+  const fetchDonorSegmentation = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const midLevelDonors = [];
+      const response = await fetch(`${BASE_URL}/donor-segmentation.php`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
 
-  const lowLevelDonors = [];
+      if (result.success && result.data) {
+        setLybuntDonors(result.data.lybunt || []);
+        setSybuntDonors(result.data.sybunt || []);
+        setTopLevelDonors(result.data.topLevel || []);
+        setMidLevelDonors(result.data.midLevel || []);
+        setLowLevelDonors(result.data.lowLevel || []);
+      } else {
+        setError('Failed to load donor segmentation');
+      }
+    } catch (err) {
+      console.error('Error fetching donor segmentation:', err);
+      setError('Failed to load donor segmentation. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleExport = (section) => {
-    console.log(`Export ${section}`);
-    alert(`Exporting ${section} donors...`);
+    alert(`Export functionality for ${section} donors will be implemented`);
   };
 
   return (
@@ -26,49 +56,74 @@ const DonorReport = () => {
       </div>
 
       <div className="donor-report-content">
-        {/* LYBUNT Donors Section */}
-        <div className="segment-section">
-          <div className="segment-header">
-            <div>
-              <h2 className="segment-title">LYBUNT Donors</h2>
-              <p className="segment-subtitle">Last Year But Not This Year</p>
-            </div>
-            <button className="export-btn" onClick={() => handleExport('LYBUNT')}>
-              Export
+        {error && (
+          <div className="users-error" style={{ marginBottom: 12 }}>
+            <strong>Error:</strong> {error}
+            <button
+              onClick={fetchDonorSegmentation}
+              className="edit-btn"
+              style={{ marginLeft: 12, padding: '6px 12px' }}
+            >
+              Retry
             </button>
           </div>
-          <div className="segment-table-container">
-            <table className="segment-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Last Donation</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lybuntDonors.length > 0 ? (
-                  lybuntDonors.map((donor, index) => (
-                    <tr key={index}>
-                      <td className="donor-name">{donor.name}</td>
-                      <td className="donor-email">{donor.email}</td>
-                      <td className="donor-phone">{donor.phone}</td>
-                      <td className="donor-date">{donor.lastDonation}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="no-data">No donors in this segment</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
 
-        {/* SYBUNT Donors Section */}
-        <div className="segment-section">
+        {loading && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            Loading donor segmentation...
+          </div>
+        )}
+
+        {/* LYBUNT Donors Section */}
+        {!loading && (
+          <>
+            <div className="segment-section">
+              <div className="segment-header">
+                <div>
+                  <h2 className="segment-title">LYBUNT Donors</h2>
+                  <p className="segment-subtitle">Last Year But Not This Year</p>
+                </div>
+                <button className="export-btn" onClick={() => handleExport('LYBUNT')}>
+                  Export
+                </button>
+              </div>
+              <div className="segment-table-container">
+                <table className="segment-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Last Donation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lybuntDonors.length > 0 ? (
+                      lybuntDonors.map((donor, index) => (
+                        <tr key={index}>
+                          <td className="donor-name">{donor.name}</td>
+                          <td className="donor-email">{donor.email}</td>
+                          <td className="donor-phone">{donor.phone}</td>
+                          <td className="donor-date">{donor.lastDonation}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="no-data">No donors in this segment</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SYBUNT Donors Section */}
+            <div className="segment-section">
           <div className="segment-header">
             <div>
               <h2 className="segment-title">SYBUNT Donors</h2>
@@ -230,6 +285,8 @@ const DonorReport = () => {
             </table>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

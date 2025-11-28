@@ -1,17 +1,124 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './FundAmount.css';
+
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
 
 const FundAmount = () => {
   const [selectedAppeal, setSelectedAppeal] = useState('');
+  const [appeals, setAppeals] = useState([]);
+  const [amounts, setAmounts] = useState([]);
+  const [funds, setFunds] = useState([]);
+  const [associations, setAssociations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('amount-to-fund');
 
-  const handleSubmit = () => {
-    console.log('Submit appeal:', selectedAppeal);
-    alert('Appeal submitted');
+  useEffect(() => {
+    fetchAppeals();
+  }, []);
+
+  const fetchAppeals = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/filters/appeals.php`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setAppeals(result.data);
+      }
+    } catch (err) {
+      console.error('Error fetching appeals:', err);
+    }
   };
 
-  const handleUpdateAssociation = () => {
-    alert('Amount association updated successfully');
+  const handleSubmit = async () => {
+    if (!selectedAppeal) {
+      setError('Please select an appeal');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`${BASE_URL}/fund-amount-associations.php?appeal_id=${selectedAppeal}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setAmounts(result.data.amounts);
+        setFunds(result.data.funds);
+        setAssociations(result.data.associations);
+      } else {
+        setError('Failed to load data');
+      }
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleAssociation = (amountId, fundId) => {
+    setAssociations(prev => {
+      const exists = prev.some(a => a.amountId === amountId && a.fundId === fundId);
+      if (exists) {
+        return prev.filter(a => !(a.amountId === amountId && a.fundId === fundId));
+      } else {
+        return [...prev, { amountId, fundId }];
+      }
+    });
+  };
+
+  const isAssociated = (amountId, fundId) => {
+    return associations.some(a => a.amountId === amountId && a.fundId === fundId);
+  };
+
+  const handleUpdateAssociation = async () => {
+    if (!selectedAppeal) {
+      setError('Please select an appeal first');
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append('action', 'update_amount_to_fund');
+
+      // Build fund_ids array
+      const fundIds = associations.map(assoc => `${selectedAppeal}_${assoc.amountId}_${assoc.fundId}`);
+      fundIds.forEach((id, index) => {
+        formData.append(`fund_ids[${index}]`, id);
+      });
+
+      const response = await fetch(`${BASE_URL}/cause.php`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      const text = await response.text();
+
+      if (text.toLowerCase().includes('updated')) {
+        alert('Amount association updated successfully');
+        handleSubmit(); // Reload data
+      } else {
+        setError(text || 'Failed to update association');
+      }
+    } catch (err) {
+      console.error('Error updating association:', err);
+      setError('Failed to update association. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -35,72 +142,147 @@ const FundAmount = () => {
             className="appeal-select"
           >
             <option value="">Select Appeal</option>
-            <option value="world-emergencies">World Emergencies</option>
-            <option value="indonesia">Indonesia Emergency</option>
-            <option value="rohingya">Rohingya Emergency</option>
-            <option value="syria">Syrian Refugees</option>
-            <option value="yemen">Yemen Emergency</option>
-            <option value="gaza">Gaza Emergency</option>
+            {appeals.map((appeal) => (
+              <option key={appeal.id} value={appeal.id}>
+                {appeal.appeal_name}
+              </option>
+            ))}
           </select>
-          <button className="submit-btn" onClick={handleSubmit}>
-            Submit
+          <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Loading...' : 'Submit'}
           </button>
         </div>
 
-        <div className="tabs-container">
-          <div className="tabs">
-            <button
-              className={`tab-btn ${activeTab === 'amount-to-fund' ? 'active' : ''}`}
-              onClick={() => setActiveTab('amount-to-fund')}
-            >
-              Amount To Fund
-            </button>
-            <button
-              className={`tab-btn ${activeTab === 'fund-to-amount' ? 'active' : ''}`}
-              onClick={() => setActiveTab('fund-to-amount')}
-            >
-              Fund To Amount
-            </button>
+        {error && (
+          <div className="users-error" style={{ marginTop: 12 }}>
+            <strong>Error:</strong> {error}
           </div>
+        )}
 
-          <div className="tab-content">
-            {activeTab === 'amount-to-fund' ? (
-              <div className="matching-columns">
-                <div className="matching-column">
-                  <h3 className="column-title">Amount Name</h3>
-                  <div className="column-content">
-                    {/* Content for Amount Name will be loaded here */}
-                  </div>
-                </div>
-                <div className="matching-column">
-                  <h3 className="column-title">Fund List</h3>
-                  <div className="column-content">
-                    {/* Content for Fund List will be loaded here */}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="matching-columns">
-                <div className="matching-column">
-                  <h3 className="column-title">Fund Name</h3>
-                  <div className="column-content">
-                    {/* Content for Fund Name will be loaded here */}
-                  </div>
-                </div>
-                <div className="matching-column">
-                  <h3 className="column-title">Amount List</h3>
-                  <div className="column-content">
-                    {/* Content for Amount List will be loaded here */}
-                  </div>
-                </div>
-              </div>
-            )}
+        {loading && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            Loading associations...
           </div>
-        </div>
+        )}
 
-        <button className="update-btn" onClick={handleUpdateAssociation}>
-          Update Amount Association
-        </button>
+        {!loading && selectedAppeal && amounts.length > 0 && funds.length > 0 && (
+          <>
+            <div className="tabs-container">
+              <div className="tabs">
+                <button
+                  className={`tab-btn ${activeTab === 'amount-to-fund' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('amount-to-fund')}
+                >
+                  Amount To Fund
+                </button>
+                <button
+                  className={`tab-btn ${activeTab === 'fund-to-amount' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('fund-to-amount')}
+                >
+                  Fund To Amount
+                </button>
+              </div>
+
+              <div className="tab-content">
+                {activeTab === 'amount-to-fund' ? (
+                  <div className="matching-columns">
+                    <div className="matching-column">
+                      <h3 className="column-title">Amount Name</h3>
+                      <div className="column-content">
+                        {amounts.map(amount => (
+                          <div key={amount.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            <strong>{amount.name}</strong> (${amount.amount})
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="matching-column">
+                      <h3 className="column-title">Fund List</h3>
+                      <div className="column-content">
+                        {amounts.map(amount => (
+                          <div key={amount.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {funds.map(fund => (
+                              <label key={fund.id} style={{ display: 'block', marginBottom: '4px' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isAssociated(amount.id, fund.id)}
+                                  onChange={() => handleToggleAssociation(amount.id, fund.id)}
+                                />
+                                <span style={{ marginLeft: '8px' }}>{fund.name}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="matching-columns">
+                    <div className="matching-column">
+                      <h3 className="column-title">Fund Name</h3>
+                      <div className="column-content">
+                        {funds.map(fund => (
+                          <div key={fund.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            <strong>{fund.name}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="matching-column">
+                      <h3 className="column-title">Amount List</h3>
+                      <div className="column-content">
+                        {funds.map(fund => (
+                          <div key={fund.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {amounts.map(amount => (
+                              <label key={amount.id} style={{ display: 'block', marginBottom: '4px' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={isAssociated(amount.id, fund.id)}
+                                  onChange={() => handleToggleAssociation(amount.id, fund.id)}
+                                />
+                                <span style={{ marginLeft: '8px' }}>{amount.name} (${amount.amount})</span>
+                              </label>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button className="update-btn" onClick={handleUpdateAssociation} disabled={updating}>
+              {updating ? 'Updating...' : 'Update Amount Association'}
+            </button>
+          </>
+        )}
+
+        {!loading && selectedAppeal && (amounts.length === 0 || funds.length === 0) && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            {amounts.length === 0 && 'No amounts found for this appeal. '}
+            {funds.length === 0 && 'No funds found for this appeal. '}
+            Please add amounts and funds first.
+          </div>
+        )}
+
+        {!selectedAppeal && !loading && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            Please select an appeal and click Submit to manage associations.
+          </div>
+        )}
       </div>
     </div>
   );

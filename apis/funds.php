@@ -1,6 +1,7 @@
 <?php
 // Include bootstrap for DB connection and CORS
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json');
 
@@ -19,6 +20,7 @@ try {
 
     // Get database connection
     $pdo = get_pdo();
+    $tables = get_table_names($pdo);
 
     // Convert appeal IDs to array
     $appealIdsArray = $appealIds ? explode(',', $appealIds) : [];
@@ -42,11 +44,11 @@ try {
               SELECT DISTINCT
                 ap.id AS appeal_id,
                 ap.name AS appeal_name
-              FROM pw_appeal ap
+              FROM `{$tables['appeal']}` ap
               WHERE EXISTS (
                 SELECT 1
-                FROM pw_transaction_details td
-                JOIN pw_transactions t ON t.id = td.TID
+                FROM `{$tables['transaction_details']}` td
+                JOIN `{$tables['transactions']}` t ON t.id = td.TID
                 WHERE td.appeal_id = ap.id
                   AND t.status IN ('Completed', 'pending')
                   AND t.date >= {$startDateLiteral}
@@ -69,16 +71,16 @@ try {
                 DATE(t.date) AS d,
                 td.appeal_id,
                 SUM(t.totalamount) AS amount
-              FROM pw_transactions t
-              JOIN pw_transaction_details td ON td.TID = t.id
+              FROM `{$tables['transactions']}` t
+              JOIN `{$tables['transaction_details']}` td ON td.TID = t.id
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details d
-                  JOIN pw_appeal a ON a.id = d.appeal_id
-                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  FROM `{$tables['transaction_details']}` d
+                  JOIN `{$tables['appeal']}` a ON a.id = d.appeal_id
+                  JOIN `{$tables['fundlist']}` f ON f.id = d.fundlist_id
                   WHERE d.TID = t.id
                   {$appealFilter}
                 )
@@ -121,11 +123,11 @@ try {
               SELECT DISTINCT
                 ap.id AS appeal_id,
                 ap.name AS appeal_name
-              FROM pw_appeal ap
+              FROM `{$tables['appeal']}` ap
               WHERE EXISTS (
                 SELECT 1
-                FROM pw_transaction_details td
-                JOIN pw_transactions t ON t.id = td.TID
+                FROM `{$tables['transaction_details']}` td
+                JOIN `{$tables['transactions']}` t ON t.id = td.TID
                 WHERE td.appeal_id = ap.id
                   AND t.status IN ('Completed', 'pending')
                   AND t.date >= {$startDateLiteral}
@@ -148,16 +150,16 @@ try {
                 YEARWEEK(t.date, 1) AS week_number,
                 td.appeal_id,
                 SUM(t.totalamount) AS amount
-              FROM pw_transactions t
-              JOIN pw_transaction_details td ON td.TID = t.id
+              FROM `{$tables['transactions']}` t
+              JOIN `{$tables['transaction_details']}` td ON td.TID = t.id
               WHERE t.status IN ('Completed', 'pending')
                 AND t.date >= {$startDateLiteral}
                 AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
                 AND EXISTS (
                   SELECT 1
-                  FROM pw_transaction_details d
-                  JOIN pw_appeal a ON a.id = d.appeal_id
-                  JOIN pw_fundlist f ON f.id = d.fundlist_id
+                  FROM `{$tables['transaction_details']}` d
+                  JOIN `{$tables['appeal']}` a ON a.id = d.appeal_id
+                  JOIN `{$tables['fundlist']}` f ON f.id = d.fundlist_id
                   WHERE d.TID = t.id
                   {$appealFilter}
                 )
@@ -170,7 +172,7 @@ try {
               SELECT DISTINCT
                 YEARWEEK(date, 1) AS week_number,
                 DATE(DATE_SUB(date, INTERVAL WEEKDAY(date) DAY)) AS week_start
-              FROM pw_transactions
+              FROM `{$tables['transactions']}`
               WHERE date >= {$startDateLiteral}
                 AND date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
             ),
@@ -222,17 +224,17 @@ try {
           ap.name AS appeal_name,
           COUNT(DISTINCT t.id) AS donation_count,
           SUM(t.totalamount) AS total_raised
-        FROM pw_transactions t
-        JOIN pw_transaction_details td ON td.TID = t.id
-        JOIN pw_appeal ap ON ap.id = td.appeal_id
+        FROM `{$tables['transactions']}` t
+        JOIN `{$tables['transaction_details']}` td ON td.TID = t.id
+        JOIN `{$tables['appeal']}` ap ON ap.id = td.appeal_id
         WHERE t.status IN ('Completed', 'pending')
           AND t.date >= {$startDateLiteral}
           AND t.date < DATE_ADD({$endDateLiteral}, INTERVAL 1 DAY)
           AND EXISTS (
             SELECT 1
-            FROM pw_transaction_details d
-            JOIN pw_appeal a ON a.id = d.appeal_id
-            JOIN pw_fundlist f ON f.id = d.fundlist_id
+            FROM `{$tables['transaction_details']}` d
+            JOIN `{$tables['appeal']}` a ON a.id = d.appeal_id
+            JOIN `{$tables['fundlist']}` f ON f.id = d.fundlist_id
             WHERE d.TID = t.id
             {$appealFilter}
           )

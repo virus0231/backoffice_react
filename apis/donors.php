@@ -5,42 +5,58 @@ require_once __DIR__ . '/functions.php';
 try {
   $pdo = get_pdo();
 
-  // TEMPORARY: Hard-coded to pw_donors for testing
-  $donorTable = 'pw_donors';
-
   // Support multiple table name variations for donors table
-  // $conn = $pdo; // For find_first_existing_table compatibility
-  // $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
+  $conn = $pdo; // For find_first_existing_table compatibility
+  $donorTable = find_first_existing_table($conn, ['pw_donors', 'wp_yoc_donors', 'donors']);
 
-  // if (!$donorTable) {
-  //   error_response('Donors table not found', 500, ['message' => 'No donors table found with names: pw_donors, wp_yoc_donors, or donors']);
-  //   exit;
-  // }
+  if (!$donorTable) {
+    error_response('Donors table not found', 500, ['message' => 'No donors table found with names: pw_donors, wp_yoc_donors, or donors']);
+    exit;
+  }
 
   // Log which table we're using for debugging
   error_log('[donors.php] Using table: ' . $donorTable);
 
-  // Get optional email search parameter
+  // Get optional parameters
   $emailSearch = isset($_GET['email']) ? trim($_GET['email']) : '';
+  $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+  $limit = isset($_GET['limit']) ? min(100, max(10, (int)$_GET['limit'])) : 50;
+  $offset = ($page - 1) * $limit;
 
-  // Build the SQL query
-  $sql = "SELECT id, fourdigit, stripe_id, email, firstname, lastname, add1, add2, city, country, postcode, phone, Date_Added, organization
-          FROM `$donorTable`";
+  // Build the base WHERE clause
+  $whereClause = '';
+  $params = [];
 
-  // Add email filter if provided
   if (!empty($emailSearch)) {
-    $sql .= ' WHERE email LIKE :email';
+    $whereClause = ' WHERE email LIKE :email OR firstname LIKE :email OR lastname LIKE :email';
+    $params[':email'] = '%' . $emailSearch . '%';
   }
 
-  $sql .= ' ORDER BY id DESC';
+  // Get total count
+  $countSql = "SELECT COUNT(*) FROM `$donorTable`" . $whereClause;
+  $countStmt = $pdo->prepare($countSql);
+  foreach ($params as $key => $val) {
+    $countStmt->bindValue($key, $val, PDO::PARAM_STR);
+  }
+  $countStmt->execute();
+  $totalCount = (int)$countStmt->fetchColumn();
+
+  // Build the paginated query
+  $sql = "SELECT id, fourdigit, stripe_id, email, firstname, lastname, add1, add2, city, country, postcode, phone, Date_Added, organization
+          FROM `$donorTable`" . $whereClause . "
+          ORDER BY id DESC
+          LIMIT :limit OFFSET :offset";
 
   $stmt = $pdo->prepare($sql);
 
-  // Bind email parameter if search is provided
-  if (!empty($emailSearch)) {
-    $emailPattern = '%' . $emailSearch . '%';
-    $stmt->bindValue(':email', $emailPattern, PDO::PARAM_STR);
+  // Bind search parameters
+  foreach ($params as $key => $val) {
+    $stmt->bindValue($key, $val, PDO::PARAM_STR);
   }
+
+  // Bind pagination parameters
+  $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+  $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
   $stmt->execute();
   $rows = $stmt->fetchAll();
@@ -65,13 +81,23 @@ try {
     ];
   }, $rows);
 
+  $totalPages = ceil($totalCount / $limit);
+
   json_response([
     'success' => true,
     'data' => $data,
+    'pagination' => [
+      'currentPage' => $page,
+      'totalPages' => $totalPages,
+      'totalCount' => $totalCount,
+      'perPage' => $limit,
+      'hasNext' => $page < $totalPages,
+      'hasPrev' => $page > 1
+    ],
     'count' => count($data),
     'message' => !empty($emailSearch)
       ? 'Retrieved donors matching "' . $emailSearch . '"'
-      : 'Retrieved all donors'
+      : 'Retrieved paginated donors'
   ]);
 } catch (Throwable $e) {
   error_response('Database error fetching donors', 500, ['message' => $e->getMessage()]);

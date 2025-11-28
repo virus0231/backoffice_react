@@ -1,32 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './MonthlyReport.css';
 
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+
 const MonthlyReport = () => {
-  const stats = [
-    { label: 'Total Amount This Mo.', value: '$6,928', color: 'blue' },
-    { label: 'Total Amount Raised', value: '$9,838,928.847', color: 'green' },
-    { label: 'Failed Donors', value: '12287', color: 'yellow' },
-    { label: 'Last Failed Date', value: '2025-09-28 16:02:28', color: 'red' }
-  ];
+  const [stats, setStats] = useState({
+    thisMonth: 0,
+    allTime: 0,
+    failedDonors: 0,
+    lastFailedDate: 'N/A'
+  });
+  const [chartData, setChartData] = useState([]);
+  const [activeDonors, setActiveDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const chartData = [
-    { month: 'Jan', value: 11200 },
-    { month: 'Feb', value: 3800 },
-    { month: 'Mar', value: 0 },
-    { month: 'Apr', value: 12800 },
-    { month: 'May', value: 0 },
-    { month: 'Jun', value: 4200 },
-    { month: 'Jul', value: 4800 },
-    { month: 'Aug', value: 3400 }
-  ];
+  useEffect(() => {
+    fetchMonthlyReport();
+  }, []);
 
-  const maxValue = Math.max(...chartData.map(d => d.value));
+  const fetchMonthlyReport = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  const activeDonors = [
-    { name: 'Abdirahman Effendi', email: 'saqibrahim@yahoo.com', phone: '4032666612', lastDonation: '2025-09-26 15:45:57' },
-    { name: 'Adan Maali', email: 'qanisilwan@yahoo.com', phone: '4674668474', lastDonation: '2025-03-26 19:49:56' },
-    { name: 'Ali Elgmala', email: 'ganovdmil@gmail.com', phone: '8143739196', lastDonation: '2025-09-26 18:02:28' }
-  ];
+      const response = await fetch(`${BASE_URL}/monthly-report.php`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setStats(result.data.stats);
+        setChartData(result.data.monthlyGrowth || []);
+        setActiveDonors(result.data.activeDonors || []);
+      } else {
+        setError('Failed to load monthly report');
+      }
+    } catch (err) {
+      console.error('Error fetching monthly report:', err);
+      setError('Failed to load monthly report. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const maxValue = chartData.length > 0 ? Math.max(...chartData.map(d => d.value)) : 1;
 
   return (
     <div className="monthly-report-page">
@@ -35,15 +55,50 @@ const MonthlyReport = () => {
       </div>
 
       <div className="monthly-report-content">
-        {/* Stat Cards */}
-        <div className="stat-cards">
-          {stats.map((stat, index) => (
-            <div key={index} className={`stat-card stat-${stat.color}`}>
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
+        {error && (
+          <div className="users-error" style={{ marginBottom: 12 }}>
+            <strong>Error:</strong> {error}
+            <button
+              onClick={fetchMonthlyReport}
+              className="edit-btn"
+              style={{ marginLeft: 12, padding: '6px 12px' }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {loading && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            Loading monthly report...
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* Stat Cards */}
+            <div className="stat-cards">
+              <div className="stat-card stat-blue">
+                <div className="stat-label">Total Amount This Mo.</div>
+                <div className="stat-value">${stats.thisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+              <div className="stat-card stat-green">
+                <div className="stat-label">Total Amount Raised</div>
+                <div className="stat-value">${stats.allTime.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+              <div className="stat-card stat-yellow">
+                <div className="stat-label">Failed Donors</div>
+                <div className="stat-value">{stats.failedDonors.toLocaleString()}</div>
+              </div>
+              <div className="stat-card stat-red">
+                <div className="stat-label">Last Failed Date</div>
+                <div className="stat-value">{stats.lastFailedDate}</div>
+              </div>
             </div>
-          ))}
-        </div>
 
         {/* Monthly Donor Growth Chart */}
         <div className="chart-section">
@@ -93,18 +148,26 @@ const MonthlyReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {activeDonors.map((donor, index) => (
-                  <tr key={index}>
-                    <td className="donor-name">{donor.name}</td>
-                    <td className="donor-email">{donor.email}</td>
-                    <td className="donor-phone">{donor.phone}</td>
-                    <td className="donor-date">{donor.lastDonation}</td>
+                {activeDonors.length > 0 ? (
+                  activeDonors.map((donor, index) => (
+                    <tr key={index}>
+                      <td className="donor-name">{donor.name}</td>
+                      <td className="donor-email">{donor.email}</td>
+                      <td className="donor-phone">{donor.phone}</td>
+                      <td className="donor-date">{donor.lastDonation}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="no-data">No active donors this month</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

@@ -117,6 +117,8 @@ try {
 
         if ($_POST['action'] == "update_fund") {
             $fund_count = $_POST['funds_count'];
+            // Allow explicit appeal_id from request, fallback to session (legacy behaviour)
+            $targetAppealId = isset($_POST['appeal_id']) ? (int)$_POST['appeal_id'] : ($_SESSION['new_appeal_id'] ?? null);
 
             if ($fund_count > 0) {
                 for ($i = 1; $i <= $fund_count; $i++) {
@@ -130,10 +132,10 @@ try {
                         ]);
                         security("Fund Updated", $conn);
                         echo "Updated";
-                    } else if (isset($_POST['fund_name_' . $i])) {
+                    } else if (isset($_POST['fund_name_' . $i]) && $targetAppealId) {
                         $stmt = $conn->prepare("INSERT INTO `wp_yoc_fundlist`(`appeal_id`, `name`, `sort`, `disable`) VALUES (:appeal_id, :name, :sort, :disable)");
                         $stmt->execute([
-                            ':appeal_id' => $_SESSION['new_appeal_id'],
+                            ':appeal_id' => $targetAppealId,
                             ':name' => $_POST['fund_name_' . $i],
                             ':sort' => $_POST['fund_sort_' . $i],
                             ':disable' => $_POST['fund_enable_' . $i]

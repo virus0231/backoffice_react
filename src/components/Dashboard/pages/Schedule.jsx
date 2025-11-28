@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import './Schedule.css';
 
+const BASE_URL = import.meta.env.DEV
+  ? '/backoffice/yoc'
+  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+
 const Schedule = () => {
   const [filters, setFilters] = useState({
     status: '',
-    donations: '',
+    frequency: '',
     fromDate: '',
     toDate: '',
     search: ''
   });
 
   const [schedules, setSchedules] = useState([]);
-  const [filteredSchedules, setFilteredSchedules] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
@@ -20,31 +25,49 @@ const Schedule = () => {
     }));
   };
 
-  const handleSearch = () => {
-    console.log('Search with filters:', filters);
-    // Implement search logic
-    if (filters.search.trim() === '') {
-      setFilteredSchedules(schedules);
-    } else {
-      const filtered = schedules.filter(schedule =>
-        schedule.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        schedule.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (schedule.phone && schedule.phone.includes(filters.search)) ||
-        (schedule.organization && schedule.organization.toLowerCase().includes(filters.search.toLowerCase()))
-      );
-      setFilteredSchedules(filtered);
+  const handleSearch = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (filters.status) params.append('status', filters.status);
+      if (filters.frequency) params.append('frequency', filters.frequency);
+      if (filters.fromDate) params.append('from_date', filters.fromDate);
+      if (filters.toDate) params.append('to_date', filters.toDate);
+      if (filters.search) params.append('search', filters.search);
+
+      const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
+        credentials: 'include'
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        setSchedules(result.data);
+      } else {
+        setError('Failed to load schedules');
+      }
+    } catch (err) {
+      console.error('Error fetching schedules:', err);
+      setError('Failed to load schedules. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleExportCSV = () => {
-    console.log('Export CSV with filters:', filters);
-    // Implement CSV export logic
-    alert('Exporting CSV...');
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.frequency) params.append('frequency', filters.frequency);
+    if (filters.fromDate) params.append('from_date', filters.fromDate);
+    if (filters.toDate) params.append('to_date', filters.toDate);
+    if (filters.search) params.append('search', filters.search);
+
+    window.open(`${BASE_URL}/schedules-export.php?${params.toString()}`, '_blank');
   };
 
   const handleDetail = (schedule) => {
-    console.log('View detail for schedule:', schedule);
-    alert(`View detail for: ${schedule.name}`);
+    alert(`Order ID: ${schedule.order_id}\nName: ${schedule.name}\nEmail: ${schedule.email}\nAmount: $${schedule.amount}\nFrequency: ${schedule.frequency}`);
   };
 
   return (
@@ -59,6 +82,12 @@ const Schedule = () => {
       </div>
 
       <div className="schedule-content">
+        {error && (
+          <div className="users-error" style={{ marginBottom: 12 }}>
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
         <div className="filter-section">
           <div className="filter-row-first">
             <div className="filter-group">
@@ -69,26 +98,26 @@ const Schedule = () => {
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
               >
-                <option value="">Select</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="">All</option>
+                <option value="Completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="Failed">Failed</option>
+                <option value="Refunded">Refunded</option>
               </select>
             </div>
 
             <div className="filter-group">
-              <label htmlFor="donations">Donations :</label>
+              <label htmlFor="frequency">Frequency :</label>
               <select
-                id="donations"
+                id="frequency"
                 className="select-input"
-                value={filters.donations}
-                onChange={(e) => handleFilterChange('donations', e.target.value)}
+                value={filters.frequency}
+                onChange={(e) => handleFilterChange('frequency', e.target.value)}
               >
-                <option value="">Select</option>
-                <option value="one-time">One-Time</option>
-                <option value="recurring">Recurring</option>
-                <option value="pledge">Pledge</option>
+                <option value="">All</option>
+                <option value="1">Monthly</option>
+                <option value="2">Yearly</option>
+                <option value="3">Daily</option>
               </select>
             </div>
 
@@ -128,8 +157,8 @@ const Schedule = () => {
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 />
-                <button className="search-btn" onClick={handleSearch}>
-                  Search
+                <button className="search-btn" onClick={handleSearch} disabled={loading}>
+                  {loading ? 'Searching...' : 'Search'}
                 </button>
               </div>
             </div>
@@ -141,6 +170,16 @@ const Schedule = () => {
             </button>
           </div>
         </div>
+
+        {loading && (
+          <div style={{
+            padding: '24px',
+            textAlign: 'center',
+            color: '#666'
+          }}>
+            Loading schedules...
+          </div>
+        )}
 
         <div className="schedule-table-container">
           <table className="schedule-table">
@@ -158,15 +197,21 @@ const Schedule = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredSchedules.length > 0 ? (
-                filteredSchedules.map((schedule, index) => (
+              {!loading && schedules.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="no-data">
+                    No schedules found. Use filters to search for schedules.
+                  </td>
+                </tr>
+              ) : (
+                schedules.map((schedule, index) => (
                   <tr key={schedule.id}>
                     <td>{index + 1}</td>
                     <td className="schedule-type">{schedule.donationType}</td>
-                    <td className="schedule-date">{schedule.startDate}</td>
+                    <td className="schedule-date">{new Date(schedule.startDate).toLocaleDateString()}</td>
                     <td className="schedule-name">{schedule.name}</td>
                     <td className="schedule-email">{schedule.email}</td>
-                    <td className="schedule-amount">${schedule.amount}</td>
+                    <td className="schedule-amount">${schedule.amount.toFixed(2)}</td>
                     <td className="schedule-frequency">{schedule.frequency}</td>
                     <td>
                       <span className={`status-badge status-${schedule.status.toLowerCase()}`}>
@@ -183,12 +228,6 @@ const Schedule = () => {
                     </td>
                   </tr>
                 ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="no-data">
-                    No schedules found. Use filters to search for schedules.
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
