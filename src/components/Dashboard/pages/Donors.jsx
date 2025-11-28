@@ -771,16 +771,22 @@ const SubscriptionsModal = ({ donor, subscriptions, loading, onClose }) => {
                   </div>
                   <div className="subscription-info">
                     <div className="info-row">
-                      <strong>Stripe ID:</strong> {subscription.stripeId || 'N/A'}
+                      <strong>Order ID:</strong> {subscription.subscriptionId || 'N/A'}
+                    </div>
+                    <div className="info-row">
+                      <strong>Amount:</strong> {formatCurrency(subscription.amount || 0)}
+                    </div>
+                    <div className="info-row">
+                      <strong>Frequency:</strong> {subscription.frequency || 'N/A'}
                     </div>
                     <div className="info-row">
                       <strong>Next Billing Date:</strong> {formatDate(subscription.nextBillingDate)}
                     </div>
                     <div className="info-row">
-                      <strong>Created:</strong> {formatDate(subscription.createdAt)}
+                      <strong>Start Date:</strong> {formatDate(subscription.createdAt)}
                     </div>
                     <div className="info-row">
-                      <strong>Updated:</strong> {formatDate(subscription.updatedAt)}
+                      <strong>Remaining Payments:</strong> {subscription.remainingCount || 'N/A'} / {subscription.totalCount || 'N/A'}
                     </div>
                   </div>
                   {subscription.details && subscription.details.length > 0 && (

@@ -28,17 +28,11 @@ try {
   }
   
   // Get all subscriptions for this donor
-  $sql = "SELECT 
-            id,
-            stripe_id,
-            sub_id,
-            status,
-            next_billing_date,
-            created_at,
-            updated_at
+  // Use * to get all available columns and handle missing ones in PHP
+  $sql = "SELECT *
           FROM `$scheduleTable`
           WHERE did = :donor_id
-          ORDER BY created_at DESC";
+          ORDER BY id DESC";
   
   $stmt = $pdo->prepare($sql);
   $stmt->bindValue(':donor_id', $donorId, PDO::PARAM_INT);
@@ -132,12 +126,17 @@ try {
     
     $subscriptions[] = [
       'id' => (int)$schedule['id'],
-      'stripeId' => $schedule['stripe_id'] ?? '',
-      'subscriptionId' => $schedule['sub_id'] ?? '',
+      'stripeId' => $schedule['sub_id'] ?? '',
+      'subscriptionId' => $schedule['order_id'] ?? '',
       'status' => $schedule['status'] ?? '',
-      'nextBillingDate' => $schedule['next_billing_date'] ?? '',
-      'createdAt' => $schedule['created_at'] ?? '',
-      'updatedAt' => $schedule['updated_at'] ?? '',
+      'nextBillingDate' => $schedule['nextrun_date'] ?? '',
+      'createdAt' => $schedule['startdate'] ?? $schedule['date'] ?? '',
+      'updatedAt' => $schedule['date'] ?? '',
+      'amount' => $schedule['amount'] ?? '',
+      'quantity' => $schedule['quantity'] ?? '',
+      'frequency' => $schedule['frequency'] ?? '',
+      'remainingCount' => $schedule['remainingcount'] ?? '',
+      'totalCount' => $schedule['totalcount'] ?? '',
       'details' => $subscriptionDetails
     ];
   }

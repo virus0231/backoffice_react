@@ -27,14 +27,13 @@ try {
   }
   
   // Get all transactions for this donor
-  $sql = "SELECT 
+  $sql = "SELECT
             t.id,
             t.order_id,
             t.totalamount,
             t.paymenttype,
             t.status,
-            t.date,
-            t.currency
+            t.date
           FROM `$transactionsTable` t
           WHERE t.DID = :donor_id
           ORDER BY t.date DESC";
