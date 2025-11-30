@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import DateRangePicker from '@/components/filters/DateRangePicker';
 import './FundReport.css';
 
 const BASE_URL = import.meta.env.DEV
@@ -10,6 +12,11 @@ const FundReport = () => {
     fund: '',
     fromDate: '',
     toDate: ''
+  });
+  const [dateRange, setDateRange] = useState({
+    startDate: null,
+    endDate: null,
+    preset: null
   });
 
   const [funds, setFunds] = useState([]);
@@ -73,6 +80,28 @@ const FundReport = () => {
     }));
   };
 
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+    setFilters(prev => ({
+      ...prev,
+      fromDate: format(range.startDate, 'yyyy-MM-dd'),
+      toDate: format(range.endDate, 'yyyy-MM-dd')
+    }));
+  };
+
+  const handleClearDateRange = () => {
+    setDateRange({
+      startDate: null,
+      endDate: null,
+      preset: null
+    });
+    setFilters(prev => ({
+      ...prev,
+      fromDate: '',
+      toDate: ''
+    }));
+  };
+
   const handleFilter = () => {
     fetchFunds(filters);
   };
@@ -124,26 +153,25 @@ const FundReport = () => {
               </select>
             </div>
 
-            <div className="filter-field">
-              <label htmlFor="from-date">From Date:</label>
-              <input
-                type="date"
-                id="from-date"
-                className="date-input"
-                value={filters.fromDate}
-                onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-field">
-              <label htmlFor="to-date">To Date:</label>
-              <input
-                type="date"
-                id="to-date"
-                className="date-input"
-                value={filters.toDate}
-                onChange={(e) => handleFilterChange('toDate', e.target.value)}
-              />
+            <div className="filter-field" style={{ gridColumn: 'span 2' }}>
+              <label htmlFor="date-range">Date Range:</label>
+              <div className="flex items-center gap-3">
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  placeholder="Select date range"
+                  className="w-full"
+                />
+                {(dateRange.startDate && dateRange.endDate) && (
+                  <button
+                    type="button"
+                    onClick={handleClearDateRange}
+                    className="text-sm text-white underline decoration-white/60 hover:decoration-white"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             <button className="filter-button" onClick={handleFilter} disabled={loading}>

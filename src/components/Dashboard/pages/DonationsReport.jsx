@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import DateRangePicker from '@/components/filters/DateRangePicker';
 import API from '../../../utils/api';
 import './DonationsReport.css';
 
@@ -14,6 +16,11 @@ const DonationsReport = () => {
     frequency: '',
     season: ''
   });
+  const [dateRange, setDateRange] = useState({
+    startDate: null,
+    endDate: null,
+    preset: null
+  });
 
   const [donations, setDonations] = useState([]);
   const [loadingReport, setLoadingReport] = useState(false);
@@ -27,6 +34,28 @@ const DonationsReport = () => {
     setFilters(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+    setFilters(prev => ({
+      ...prev,
+      fromDate: format(range.startDate, 'yyyy-MM-dd'),
+      toDate: format(range.endDate, 'yyyy-MM-dd')
+    }));
+  };
+
+  const handleClearDateRange = () => {
+    setDateRange({
+      startDate: null,
+      endDate: null,
+      preset: null
+    });
+    setFilters(prev => ({
+      ...prev,
+      fromDate: '',
+      toDate: ''
     }));
   };
 
@@ -214,10 +243,17 @@ const DonationsReport = () => {
   };
 
   // Pagination helpers
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = donations.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(donations.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(donations.length / itemsPerPage));
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return donations.slice(start, start + itemsPerPage);
+  }, [donations, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -256,26 +292,25 @@ const DonationsReport = () => {
       <div className="donations-report-content">
         <div className="report-filter-section">
           <div className="filter-grid">
-            <div className="filter-group">
-              <label htmlFor="from-date">From:</label>
-              <input
-                type="date"
-                id="from-date"
-                className="date-input"
-                value={filters.fromDate}
-                onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="to-date">To:</label>
-              <input
-                type="date"
-                id="to-date"
-                className="date-input"
-                value={filters.toDate}
-                onChange={(e) => handleFilterChange('toDate', e.target.value)}
-              />
+            <div className="filter-group" style={{ gridColumn: 'span 2' }}>
+              <label htmlFor="date-range">Date Range:</label>
+              <div className="flex items-center gap-3">
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  placeholder="Select date range"
+                  className="w-full"
+                />
+                {(dateRange.startDate && dateRange.endDate) && (
+                  <button
+                    type="button"
+                    onClick={handleClearDateRange}
+                    className="text-sm text-blue-600 underline decoration-blue-200 hover:decoration-blue-400"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="filter-group">
@@ -435,7 +470,7 @@ const DonationsReport = () => {
                 </tr>
               ) : donations.length > 0 ? (
                 currentItems.map((donation, index) => (
-                  <tr key={index}>
+                  <tr key={donation.id || donation.order_id || `donation-${(currentPage - 1) * itemsPerPage + index}`}>
                     <td>{indexOfFirstItem + index + 1}</td>
                     <td className="donation-date">{donation.date || 'N/A'}</td>
                     <td className="donation-name">{`${donation.firstname || ''} ${donation.lastname || ''}`.trim() || 'N/A'}</td>

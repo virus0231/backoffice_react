@@ -5,7 +5,8 @@
  * Provides preset date options and custom date range selection
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { clsx } from 'clsx';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameDay } from 'date-fns';
 
@@ -13,16 +14,22 @@ import { DateRange, DatePreset, DatePresetOption } from '@/types/filters';
 import {
   datePresetOptions,
   getDateRangeForPreset,
-  validateDateRange,
   formatDateRangeDisplay
 } from '@/lib/utils/dateHelpers';
 
+type NullableDateRange = {
+  startDate: Date | null;
+  endDate: Date | null;
+  preset?: DatePreset | null;
+};
+
 interface DateRangePickerProps {
-  value: DateRange;
+  value: DateRange | NullableDateRange;
   onChange: (range: DateRange) => void;
   className?: string;
   disabled?: boolean;
   presetOptions?: DatePresetOption[];
+  placeholder?: string;
 }
 
 export default function DateRangePicker({
@@ -30,26 +37,60 @@ export default function DateRangePicker({
   onChange,
   className,
   disabled = false,
-  presetOptions = datePresetOptions
+  presetOptions = datePresetOptions,
+  placeholder = 'Select date range'
 }: DateRangePickerProps) {
+  const normalizedValue: NullableDateRange = {
+    startDate: value.startDate ?? null,
+    endDate: value.endDate ?? null,
+    preset: value.preset ?? null
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectingDate, setSelectingDate] = useState<'start' | 'end' | null>(null);
   const [tempRange, setTempRange] = useState<{start: Date | null, end: Date | null}>({
-    start: value.startDate,
-    end: value.endDate
+    start: normalizedValue.startDate,
+    end: normalizedValue.endDate
   });
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
-  const [activePreset, setActivePreset] = useState<DatePreset | null>(value.preset || null);
+  const [activePreset, setActivePreset] = useState<DatePreset | null>(normalizedValue.preset || null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   // Update internal state when value prop changes
   useEffect(() => {
-    setTempRange({ start: value.startDate, end: value.endDate });
-    setActivePreset(value.preset || null);
-  }, [value.startDate, value.endDate, value.preset]);
+    setTempRange({ start: normalizedValue.startDate, end: normalizedValue.endDate });
+    setActivePreset(normalizedValue.preset || null);
+  }, [normalizedValue.startDate, normalizedValue.endDate, normalizedValue.preset]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const updateDropdownPosition = useCallback(() => {
+    if (typeof window === 'undefined' || !buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const dropdownWidth = 660; // approximate width of calendar + presets
+    const padding = 12;
+    const maxLeft = window.scrollX + window.innerWidth - dropdownWidth - padding;
+    const left = Math.max(padding + window.scrollX, Math.min(rect.left + window.scrollX, maxLeft));
+    const top = rect.bottom + window.scrollY + 8;
+
+    setDropdownPosition({ top, left });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    updateDropdownPosition();
+    window.addEventListener('resize', updateDropdownPosition);
+    window.addEventListener('scroll', updateDropdownPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updateDropdownPosition);
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   const handleDateClick = useCallback((date: Date) => {
     if (!selectingDate) {
@@ -59,7 +100,7 @@ export default function DateRangePicker({
       setActivePreset('custom');
     } else if (selectingDate === 'end') {
       // Complete the range
-      const start = tempRange.start!;
+      const start = tempRange.start ?? date;
       const end = date;
 
       const newRange: DateRange = {
@@ -80,8 +121,8 @@ export default function DateRangePicker({
   const resetSelection = useCallback(() => {
     setSelectingDate(null);
     setHoveredDate(null);
-    setTempRange({ start: value.startDate, end: value.endDate });
-  }, [value.startDate, value.endDate]);
+    setTempRange({ start: normalizedValue.startDate, end: normalizedValue.endDate });
+  }, [normalizedValue.startDate, normalizedValue.endDate]);
 
   const handlePrevMonth = useCallback(() => {
     setCurrentDate(prev => subMonths(prev, 1));
@@ -210,7 +251,11 @@ export default function DateRangePicker({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (disabled) return;
+          if (!isOpen) updateDropdownPosition();
+          setIsOpen(!isOpen);
+        }}
         disabled={disabled}
         className={clsx(
           'flex items-center justify-between w-full px-4 py-2.5 text-sm',
@@ -226,7 +271,13 @@ export default function DateRangePicker({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span className="text-gray-700">
-            {formatDateRangeDisplay(value)}
+            {normalizedValue.startDate && normalizedValue.endDate
+              ? formatDateRangeDisplay({
+                  startDate: normalizedValue.startDate,
+                  endDate: normalizedValue.endDate,
+                  preset: (normalizedValue.preset as DatePreset) || 'custom'
+                })
+              : placeholder}
           </span>
         </div>
         <svg
@@ -243,10 +294,11 @@ export default function DateRangePicker({
       </button>
 
       {/* Dual Month Calendar Dropdown */}
-      {isOpen && !disabled && (
+      {isOpen && !disabled && createPortal(
         <div
           ref={dropdownRef}
-          className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg"
+          style={{ position: 'absolute', top: dropdownPosition.top, left: dropdownPosition.left, zIndex: 50 }}
+          className="bg-white border border-gray-200 rounded-lg shadow-lg"
         >
           <div className="flex">
             {/* Calendar Section */}
@@ -445,7 +497,8 @@ export default function DateRangePicker({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

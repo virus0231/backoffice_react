@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { format } from 'date-fns';
+import DateRangePicker from '@/components/filters/DateRangePicker';
 import API from '../../../utils/api';
 import './Donation.css';
 
@@ -11,6 +13,11 @@ const Donation = () => {
     frequency: '',
     orderSearch: '',
     paymentType: ''
+  });
+  const [dateRange, setDateRange] = useState({
+    startDate: null,
+    endDate: null,
+    preset: null
   });
 
   const [donations, setDonations] = useState([]);
@@ -32,6 +39,28 @@ const Donation = () => {
     setFilters(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+    setFilters(prev => ({
+      ...prev,
+      fromDate: format(range.startDate, 'yyyy-MM-dd'),
+      toDate: format(range.endDate, 'yyyy-MM-dd')
+    }));
+  };
+
+  const handleClearDateRange = () => {
+    setDateRange({
+      startDate: null,
+      endDate: null,
+      preset: null
+    });
+    setFilters(prev => ({
+      ...prev,
+      fromDate: '',
+      toDate: ''
     }));
   };
 
@@ -232,10 +261,18 @@ const Donation = () => {
   };
 
   // Pagination helpers
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = donations.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(donations.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(donations.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const currentItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return donations.slice(start, start + itemsPerPage);
+  }, [donations, currentPage, itemsPerPage]);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -272,26 +309,25 @@ const Donation = () => {
       <div className="donation-content">
         <div className="filter-section">
           <div className="filter-row">
-            <div className="filter-group">
-              <label htmlFor="from-date">From:</label>
-              <input
-                type="date"
-                id="from-date"
-                className="date-input"
-                value={filters.fromDate}
-                onChange={(e) => handleFilterChange('fromDate', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="to-date">To:</label>
-              <input
-                type="date"
-                id="to-date"
-                className="date-input"
-                value={filters.toDate}
-                onChange={(e) => handleFilterChange('toDate', e.target.value)}
-              />
+            <div className="filter-group" style={{ minWidth: '260px' }}>
+              <label htmlFor="date-range">Date Range:</label>
+              <div className="flex items-center gap-3">
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  placeholder="Select date range"
+                  className="w-full"
+                />
+                {(dateRange.startDate && dateRange.endDate) && (
+                  <button
+                    type="button"
+                    onClick={handleClearDateRange}
+                    className="text-sm text-blue-100 underline decoration-blue-200 hover:decoration-white"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="filter-group">
