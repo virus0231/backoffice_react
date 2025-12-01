@@ -147,7 +147,6 @@ const Donation = () => {
     for (let chunk = startChunk; chunk < totalChunks; chunk++) {
       // Stop if component unmounted
       if (!isMountedRef.current) {
-        console.log('Component unmounted, stopping background load');
         break;
       }
 
@@ -163,7 +162,6 @@ const Donation = () => {
 
         // Check again after async operation
         if (!isMountedRef.current) {
-          console.log('Component unmounted during fetch, stopping background load');
           break;
         }
 
@@ -458,8 +456,8 @@ const Donation = () => {
                 </tr>
               ) : donations.length > 0 ? (
                 currentItems.map((donation, index) => (
-                  <tr key={donation.id || donation.order_id || `donation-${indexOfFirstItem + index}`}>
-                    <td>{indexOfFirstItem + index + 1}</td>
+                  <tr key={`${donation.TID || donation.order_id || donation.id || 'row'}-${(currentPage - 1) * itemsPerPage + index}`}>
+                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     <td className="donation-date">{donation.date || 'N/A'}</td>
                     <td className="donation-name">{`${donation.firstname || ''} ${donation.lastname || ''}`.trim() || 'N/A'}</td>
                     <td className="donation-email">{donation.email || 'N/A'}</td>
@@ -492,7 +490,7 @@ const Donation = () => {
           {donations.length > 0 && totalPages > 1 && (
             <div className="pagination-container">
               <div className="pagination-info">
-                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, donations.length)} of {donations.length} records
+                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, donations.length)} of {donations.length} records
               </div>
               <div className="pagination-controls">
                 <button

@@ -50,7 +50,12 @@ const Donors = () => {
       const result = await response.json();
 
       if (result.success && result.data) {
-        setDonors(result.data);
+        const dataWithSno = result.data.map((d, idx) => ({
+          ...d,
+          sno: (page - 1) * 50 + idx + 1,
+        }));
+
+        setDonors(dataWithSno);
         setPagination(result.pagination || {
           currentPage: 1,
           totalPages: 0,
@@ -317,7 +322,7 @@ const Donors = () => {
               <table className="donors-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>S.No</th>
                     <th>First Name</th>
                     <th>Last Name</th>
                     <th>Phone</th>
@@ -328,8 +333,8 @@ const Donors = () => {
                 <tbody>
                   {donors.length > 0 ? (
                     donors.map((donor) => (
-                      <tr key={donor.id}>
-                        <td>{donor.id}</td>
+                      <tr key={donor.id ?? donor.sno}>
+                        <td>{donor.sno ?? '-'}</td>
                         <td className="donor-first-name">{donor.firstName}</td>
                         <td className="donor-last-name">{donor.lastName}</td>
                         <td className="donor-phone">{donor.phone}</td>

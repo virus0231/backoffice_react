@@ -168,7 +168,7 @@ const Permissions = () => {
               <option value="">Select User Role</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
-                  {role.name || role.user_role}
+                  {role.user_role || role.name || role.label || role.id}
                 </option>
               ))}
             </select>
