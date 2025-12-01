@@ -7,6 +7,7 @@ import './Schedule.css';
 const BASE_URL = import.meta.env.DEV
   ? '/backoffice/yoc'
   : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const CHUNK_SIZE = 500;
 
 const Schedule = () => {
   const [filters, setFilters] = useState({
@@ -32,6 +33,7 @@ const Schedule = () => {
   const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true; // ensure true on mount (handles StrictMode double-invoke)
     return () => {
       isMountedRef.current = false;
     };
@@ -66,6 +68,33 @@ const Schedule = () => {
     }));
   };
 
+  const fetchSchedulesChunk = async (cursor = null, limit = CHUNK_SIZE) => {
+    const params = new URLSearchParams();
+    if (filters.status) params.append('status', filters.status);
+    if (filters.frequency) params.append('frequency', filters.frequency);
+    if (filters.fromDate) params.append('from_date', filters.fromDate);
+    if (filters.toDate) params.append('to_date', filters.toDate);
+    if (filters.search) params.append('search', filters.search);
+    if (cursor) params.append('cursor', cursor.toString());
+    params.append('limit', limit.toString());
+
+    const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
+      credentials: 'include'
+    });
+    const result = await response.json();
+
+    if (!result?.success) {
+      throw new Error(result?.error || 'Failed to load schedules');
+    }
+
+    const data = Array.isArray(result.data) ? result.data : [];
+    const totalCount = result.totalCount || result.count || 0;
+    const hasMore = result.hasMore ?? data.length === limit;
+    const nextCursor = result.nextCursor ?? (data.length ? data[data.length - 1].id : null);
+
+    return { data, totalCount, hasMore, nextCursor };
+  };
+
   const handleSearch = async () => {
     setLoading(true);
     setSchedules([]);
@@ -75,31 +104,12 @@ const Schedule = () => {
 
     try {
       // Step 1: Get first chunk with total count
-      const chunkSize = 500;
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.frequency) params.append('frequency', filters.frequency);
-      if (filters.fromDate) params.append('from_date', filters.fromDate);
-      if (filters.toDate) params.append('to_date', filters.toDate);
-      if (filters.search) params.append('search', filters.search);
-      params.append('offset', '0');
-      params.append('limit', chunkSize.toString());
+      const firstChunk = await fetchSchedulesChunk(null, CHUNK_SIZE);
 
-      const firstResponse = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
-        credentials: 'include'
-      });
-      const firstResult = await firstResponse.json();
+      const totalCount = firstChunk.totalCount || firstChunk.data.length;
+      const firstChunkData = firstChunk.data || [];
 
-      if (!firstResult.success) {
-        setError(firstResult.error || 'Failed to load schedules');
-        setLoading(false);
-        return;
-      }
-
-      const totalCount = firstResult.totalCount || firstResult.count;
-      const firstChunkData = firstResult.data || [];
-
-      if (totalCount === 0) {
+      if (totalCount === 0 || firstChunkData.length === 0) {
         setError('No schedules found. Try adjusting your filters.');
         setLoading(false);
         return;
@@ -107,13 +117,12 @@ const Schedule = () => {
 
       // Show first chunk immediately
       setSchedules(firstChunkData);
-      setTotalRecords(totalCount);
+      setTotalRecords(Math.max(totalCount, firstChunkData.length));
       setLoading(false);
 
-      // Step 2: Load remaining chunks in background
-      const totalChunks = Math.ceil(totalCount / chunkSize);
-      if (totalChunks > 1) {
-        loadRemainingChunks(1, totalChunks, chunkSize, firstChunkData);
+      // Step 2: Load remaining chunks in background using cursor-based pagination
+      if (firstChunk.hasMore && firstChunk.nextCursor) {
+        loadRemainingChunks(firstChunk.nextCursor, firstChunkData, totalCount);
       }
 
     } catch (err) {
@@ -123,53 +132,22 @@ const Schedule = () => {
     }
   };
 
-  const loadRemainingChunks = async (startChunk, totalChunks, chunkSize, initialData) => {
+  const loadRemainingChunks = async (startCursor, initialData, reportedTotal) => {
     let allData = [...initialData];
+    let cursor = startCursor;
 
-    for (let chunk = startChunk; chunk < totalChunks; chunk++) {
-      // Stop if component unmounted
-      if (!isMountedRef.current) {
-        console.log('Component unmounted, stopping background load');
-        break;
-      }
-
+    while (cursor && isMountedRef.current) {
       try {
-        const offset = chunk * chunkSize;
-        const params = new URLSearchParams();
-        if (filters.status) params.append('status', filters.status);
-        if (filters.frequency) params.append('frequency', filters.frequency);
-        if (filters.fromDate) params.append('from_date', filters.fromDate);
-        if (filters.toDate) params.append('to_date', filters.toDate);
-        if (filters.search) params.append('search', filters.search);
-        params.append('offset', offset.toString());
-        params.append('limit', chunkSize.toString());
+        const { data: newData, hasMore, nextCursor } = await fetchSchedulesChunk(cursor, CHUNK_SIZE);
+        if (!isMountedRef.current) break;
+        if (!newData.length) break;
 
-        const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
-          credentials: 'include'
-        });
-        const result = await response.json();
+        allData = [...allData, ...newData];
+        setSchedules([...allData]);
+        setTotalRecords(Math.max(reportedTotal, allData.length));
 
-        // Check again after async operation
-        if (!isMountedRef.current) {
-          console.log('Component unmounted during fetch, stopping background load');
-          break;
-        }
-
-        if (result.success && result.data) {
-          allData = [...allData, ...result.data];
-
-          // Update only if still mounted
-          if (isMountedRef.current) {
-            setSchedules([...allData]);
-            setTotalRecords(allData.length);
-          }
-
-          if (result.data.length < chunkSize) {
-            break;
-          }
-        } else {
-          break;
-        }
+        if (!hasMore || !nextCursor || nextCursor === cursor) break;
+        cursor = nextCursor;
       } catch (error) {
         console.error('Error loading chunk:', error);
         break;
@@ -218,27 +196,32 @@ const Schedule = () => {
 
   // Pagination helpers
   const totalPages = Math.max(1, Math.ceil(schedules.length / itemsPerPage));
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
     }
-  }, [currentPage, totalPages]);
+  }, [currentPage, safeCurrentPage]);
 
   const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
+    const start = (safeCurrentPage - 1) * itemsPerPage;
     return schedules.slice(start, start + itemsPerPage);
-  }, [schedules, currentPage, itemsPerPage]);
+  }, [schedules, safeCurrentPage, itemsPerPage]);
+
+  const indexOfFirstItem = (safeCurrentPage - 1) * itemsPerPage;
+  const indexOfLastItem = indexOfFirstItem + currentItems.length;
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+    const nextPage = Math.min(Math.max(pageNumber, 1), totalPages);
+    setCurrentPage(nextPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const getPaginationRange = () => {
     const range = [];
     const showPages = 5;
-    let start = Math.max(1, currentPage - Math.floor(showPages / 2));
+    let start = Math.max(1, safeCurrentPage - Math.floor(showPages / 2));
     let end = Math.min(totalPages, start + showPages - 1);
 
     if (end - start < showPages - 1) {
@@ -393,8 +376,10 @@ const Schedule = () => {
                   </td>
                 </tr>
               ) : schedules.length > 0 ? (
-                currentItems.map((schedule, index) => (
-                  <tr key={schedule.id}>
+                currentItems.map((schedule, index) => {
+                  const rowKey = `${schedule.id || schedule.order_id || schedule.transaction_id || 'schedule'}-${indexOfFirstItem + index}`;
+                  return (
+                  <tr key={rowKey}>
                     <td>{indexOfFirstItem + index + 1}</td>
                     <td className="schedule-type">{schedule.donationType}</td>
                     <td className="schedule-date">{new Date(schedule.startDate).toLocaleDateString()}</td>
@@ -416,7 +401,7 @@ const Schedule = () => {
                       </button>
                     </td>
                   </tr>
-                ))
+                )})
               ) : (
                 <tr>
                   <td colSpan="9" className="no-data">
@@ -436,14 +421,14 @@ const Schedule = () => {
                 <button
                   className="pagination-btn"
                   onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
+                  disabled={safeCurrentPage === 1}
                 >
                   First
                 </button>
                 <button
                   className="pagination-btn"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(safeCurrentPage - 1)}
+                  disabled={safeCurrentPage === 1}
                 >
                   Previous
                 </button>
@@ -451,7 +436,7 @@ const Schedule = () => {
                 {getPaginationRange().map(pageNum => (
                   <button
                     key={pageNum}
-                    className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
+                    className={`pagination-btn ${safeCurrentPage === pageNum ? 'active' : ''}`}
                     onClick={() => handlePageChange(pageNum)}
                   >
                     {pageNum}
@@ -460,15 +445,15 @@ const Schedule = () => {
 
                 <button
                   className="pagination-btn"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(safeCurrentPage + 1)}
+                  disabled={safeCurrentPage === totalPages}
                 >
                   Next
                 </button>
                 <button
                   className="pagination-btn"
                   onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
+                  disabled={safeCurrentPage === totalPages}
                 >
                   Last
                 </button>

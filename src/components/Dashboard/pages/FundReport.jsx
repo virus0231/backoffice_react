@@ -32,12 +32,16 @@ const FundReport = () => {
 
   const fetchAllFunds = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/funds.php`, {
+      const response = await fetch(`${BASE_URL}/filters/funds.php`, {
         credentials: 'include'
       });
       const result = await response.json();
       if (result.success && result.data) {
-        setAllFunds(result.data);
+        const normalized = result.data.map((fund) => ({
+          id: fund.id,
+          name: fund.name || fund.fund_name || 'Unnamed Fund'
+        }));
+        setAllFunds(normalized);
       }
     } catch (err) {
       console.error('Error fetching fund list:', err);

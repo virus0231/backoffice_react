@@ -244,10 +244,11 @@ const DonationsReport = () => {
 
   // Pagination helpers
   const totalPages = Math.max(1, Math.ceil(donations.length / itemsPerPage));
+  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+  const indexOfLastItem = Math.min(indexOfFirstItem + itemsPerPage, donations.length);
   const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return donations.slice(start, start + itemsPerPage);
-  }, [donations, currentPage, itemsPerPage]);
+    return donations.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
+  }, [donations, indexOfFirstItem, itemsPerPage]);
 
   useEffect(() => {
     if (currentPage > totalPages) {

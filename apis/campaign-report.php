@@ -27,7 +27,7 @@ try {
   }
 
   if ($campaigns) {
-    $conditions[] = 't.campaigns LIKE ?';
+    $conditions[] = 'a.name LIKE ?';
     $params[] = '%' . $campaigns . '%';
   }
 
@@ -41,12 +41,14 @@ try {
   // Query to get campaign donations
   $sql = "
     SELECT
-      t.campaigns as campaign_name,
-      COUNT(t.id) as donation_count,
+      COALESCE(a.name, 'Unknown') as campaign_name,
+      COUNT(DISTINCT t.id) as donation_count,
       SUM(t.totalamount) as total_amount
     FROM `{$tables['transactions']}` t
+    LEFT JOIN `{$tables['transaction_details']}` td ON t.id = td.TID
+    LEFT JOIN `{$tables['appeal']}` a ON a.id = td.appeal_id
     WHERE {$whereClause}
-    GROUP BY t.campaigns
+    GROUP BY a.name
     ORDER BY total_amount DESC
   ";
 

@@ -18,13 +18,14 @@ try {
       d.phone,
       MAX(t.date) as last_donation
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
     WHERE YEAR(t.date) = ?
       AND t.status IN ('Completed', 'pending')
       AND d.email NOT IN (
-        SELECT DISTINCT email
-        FROM `{$tables['transactions']}`
-        WHERE YEAR(date) = ? AND status IN ('Completed', 'pending')
+        SELECT DISTINCT d2.email
+        FROM `{$tables['transactions']}` t2
+        INNER JOIN `{$tables['donors']}` d2 ON t2.did = d2.id
+        WHERE YEAR(t2.date) = ? AND t2.status IN ('Completed', 'pending')
       )
     GROUP BY d.email
     ORDER BY last_donation DESC
@@ -41,13 +42,14 @@ try {
       d.phone,
       MAX(t.date) as last_donation
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
     WHERE YEAR(t.date) < ?
       AND t.status IN ('Completed', 'pending')
       AND d.email NOT IN (
-        SELECT DISTINCT email
-        FROM `{$tables['transactions']}`
-        WHERE YEAR(date) >= ? AND status IN ('Completed', 'pending')
+        SELECT DISTINCT d2.email
+        FROM `{$tables['transactions']}` t2
+        INNER JOIN `{$tables['donors']}` d2 ON t2.did = d2.id
+        WHERE YEAR(t2.date) >= ? AND t2.status IN ('Completed', 'pending')
       )
     GROUP BY d.email
     ORDER BY last_donation DESC
@@ -65,7 +67,7 @@ try {
       d.phone,
       SUM(t.totalamount) as total_donated
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
     WHERE t.status IN ('Completed', 'pending')
     GROUP BY d.email
     HAVING total_donated >= 1000
@@ -83,7 +85,7 @@ try {
       d.phone,
       SUM(t.totalamount) as total_donated
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
     WHERE t.status IN ('Completed', 'pending')
     GROUP BY d.email
     HAVING total_donated >= 100 AND total_donated < 1000
@@ -101,7 +103,7 @@ try {
       d.phone,
       SUM(t.totalamount) as total_donated
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
     WHERE t.status IN ('Completed', 'pending')
     GROUP BY d.email
     HAVING total_donated < 100

@@ -30,9 +30,10 @@ try {
 
   // Failed Donors Count
   $stmtFailed = $pdo->prepare("
-    SELECT COUNT(DISTINCT email) as count
-    FROM `{$tables['transactions']}`
-    WHERE status = 'Failed'
+    SELECT COUNT(DISTINCT d.email) as count
+    FROM `{$tables['transactions']}` t
+    LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
+    WHERE t.status = 'Failed'
   ");
   $stmtFailed->execute();
   $failedCount = (int)$stmtFailed->fetchColumn();
@@ -69,8 +70,9 @@ try {
       d.phone,
       MAX(t.date) as last_donation
     FROM `{$tables['donors']}` d
-    INNER JOIN `{$tables['transactions']}` t ON t.email = d.email
-    WHERE t.freq IN (1, 2, 3)
+    INNER JOIN `{$tables['transactions']}` t ON t.did = d.id
+    INNER JOIN `{$tables['transaction_details']}` td ON td.TID = t.id
+    WHERE td.freq IN (1, 2, 3)
       AND t.status IN ('Completed', 'pending')
       AND YEAR(t.date) = ?
       AND MONTH(t.date) = ?

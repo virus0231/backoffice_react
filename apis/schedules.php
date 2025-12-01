@@ -14,6 +14,11 @@ try {
   $frequency = $_GET['frequency'] ?? null;
   $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
   $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 500;
+  $cursorId = isset($_GET['cursor']) ? (int)$_GET['cursor'] : null;
+
+  // Sanitize limit to a reasonable range to avoid runaway queries
+  if ($limit <= 0) { $limit = 500; }
+  if ($limit > 2000) { $limit = 2000; } // hard cap per page
 
   // Build WHERE conditions
   $conditions = ['td.freq IN (1, 2, 3)']; // Only recurring (Monthly=1, Yearly=2, Daily=3)
@@ -48,11 +53,18 @@ try {
     $params[] = $searchTerm;
   }
 
+  if ($cursorId) {
+    // Keyset pagination: fetch records with id below the cursor
+    $conditions[] = 't.id < ?';
+    $params[] = $cursorId;
+    $offset = 0; // offset not needed when using cursor
+  }
+
   $whereClause = implode(' AND ', $conditions);
 
   // If offset is 0, get total count first
   $totalCount = 0;
-  if ($offset === 0) {
+  if ($offset === 0 && !$cursorId) {
     $countSql = "
       SELECT COUNT(DISTINCT t.id) as total
       FROM `{$tables['transactions']}` t
@@ -91,14 +103,22 @@ try {
     LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
     WHERE {$whereClause}
     GROUP BY t.id, t.order_id, t.date, t.totalamount, td.freq, t.status, t.paymenttype, d.firstname, d.lastname, d.email, d.phone
-    ORDER BY t.date DESC
-    LIMIT ? OFFSET ?
+    ORDER BY t.id DESC, t.date DESC
+    LIMIT ?
+    " . ($cursorId ? '' : 'OFFSET ?');
   ";
 
   $stmt = $pdo->prepare($sql);
-  $allParams = array_merge($params, [$limit, $offset]);
+  $allParams = $params;
+  $allParams[] = $limit;
+  if (!$cursorId) {
+    $allParams[] = $offset;
+  }
   $stmt->execute($allParams);
   $rows = $stmt->fetchAll();
+
+  $hasMore = count($rows) === $limit;
+  $nextCursor = $hasMore && !empty($rows) ? (int)end($rows)['id'] : null;
 
   $response = [
     'success' => true,
@@ -117,11 +137,13 @@ try {
       ];
     }, $rows),
     'count' => count($rows),
+    'hasMore' => $hasMore,
+    'nextCursor' => $nextCursor,
     'message' => 'Retrieved schedules'
   ];
 
   // Add total count only on first request (offset = 0)
-  if ($offset === 0) {
+  if ($offset === 0 && !$cursorId) {
     $response['totalCount'] = $totalCount;
   }
 
