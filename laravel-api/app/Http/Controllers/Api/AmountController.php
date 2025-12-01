@@ -52,6 +52,61 @@ class AmountController extends Controller
         ]);
     }
 
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $appealId = (int)$request->input('appeal_id', 0);
+        if ($appealId <= 0) {
+            return response()->json([
+                'success' => false,
+                'error' => 'appeal_id is required',
+            ], 400);
+        }
+
+        $amounts = $request->input('amounts', []);
+
+        // Accept legacy form-data structure if amounts array is empty
+        if (empty($amounts) && $request->has('amounts_count')) {
+            $count = (int)$request->input('amounts_count', 0);
+            for ($i = 1; $i <= $count; $i++) {
+                $amounts[] = [
+                    'id' => $request->input("amount_id_{$i}"),
+                    'name' => $request->input("amount_name_{$i}", ''),
+                    'amount' => $request->input("amount_amount_{$i}", ''),
+                    'donationtype' => $request->input("amount_donation_type_{$i}", ''),
+                    'sort' => $request->input("amount_sort_{$i}", 0),
+                    'featured' => $request->input("amount_featured_{$i}", 0) ? 'enabled' : 'disabled',
+                    'status' => $request->input("amount_enable_{$i}", 0) == 0 ? 'enabled' : 'disabled',
+                ];
+            }
+        }
+
+        $table = TableResolver::prefixed('amount');
+
+        foreach ($amounts as $row) {
+            $id = isset($row['id']) ? (int)$row['id'] : null;
+            $payload = [
+                'appeal_id' => $appealId,
+                'name' => $row['name'] ?? '',
+                'amount' => $row['amount'] ?? '',
+                'donationtype' => $row['donationtype'] ?? '',
+                'sort' => isset($row['sort']) ? (int)$row['sort'] : 0,
+                'featured' => ($row['featured'] ?? '') === 'enabled' ? 1 : 0,
+                'disable' => ($row['status'] ?? '') === 'enabled' ? 0 : 1,
+            ];
+
+            if ($id) {
+                DB::table($table)->where('id', $id)->update($payload);
+            } else {
+                DB::table($table)->insert($payload);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Amounts saved',
+        ]);
+    }
+
     public function toggle(Request $request, Amount $amount): JsonResponse
     {
         $newStatus = $request->boolean('status', null);

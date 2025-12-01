@@ -74,31 +74,30 @@ const AddAppeal = () => {
       if (formData.recurringIntervals.daily) intervals.push('3');
 
       const requestData = {
-        action: 'addAppeal',
-        status: formData.status,
+        status: formData.status.toLowerCase(),
         appealName: formData.appealName,
         description: formData.description,
         image: formData.image,
         category: formData.category,
         sort: formData.sort,
-        onHome: formData.onHome,
-        onFooter: formData.onFooter,
-        onDonate: formData.onDonate,
-        allowCustomAmount: formData.allowCustomAmount,
-        allowQuantity: formData.allowQuantity,
-        allowAssociation: formData.allowAssociation,
-        allowDropdownAmount: formData.allowDropdownAmount,
-        allowRecurringType: formData.allowRecurringType,
-        recurringIntervals: intervals.join(','),
+        onHome: formData.onHome === 'Yes',
+        onFooter: formData.onFooter === 'Yes',
+        onDonate: formData.onDonate === 'Yes',
+        allowCustomAmount: formData.allowCustomAmount === 'Yes',
+        allowQuantity: formData.allowQuantity === 'Yes',
+        allowAssociation: formData.allowAssociation === 'Yes',
+        allowDropdownAmount: formData.allowDropdownAmount === 'Yes',
+        allowRecurringType: formData.allowRecurringType === 'Yes',
+        recurringIntervals: intervals,
         appealCountry: formData.appealCountry,
         appealCause: formData.appealCause,
         appealGoal: formData.appealGoal,
         appealType: formData.appealType
       };
 
-      const response = await API.post('cause.php', requestData);
+      const response = await API.post('appeals', requestData);
 
-      if (response.includes('success') || response.includes('added')) {
+      if (response.success) {
         alert('Appeal added successfully!');
         // Reset form
         setFormData({

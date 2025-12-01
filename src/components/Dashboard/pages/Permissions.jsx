@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import API from '../../../utils/api';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import { getAllPermissions, getGroupedPermissions } from '../../../config/routes';
 import './Permissions.css';
+
+const BASE_URL = getPhpApiBase();
 
 const Permissions = () => {
   const [roles, setRoles] = useState([]);
@@ -42,9 +44,13 @@ const Permissions = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await API.post('permission.php', { action: 'get-roles' });
-      if (response?.success && response?.data) {
-        setRoles(response.data);
+      const response = await fetch(`${BASE_URL}/permissions/roles`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const result = await response.json();
+      if (result?.success && result?.data) {
+        setRoles(result.data);
       }
     } catch (err) {
       console.error('Error fetching roles:', err);
@@ -56,13 +62,16 @@ const Permissions = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await API.post('permission.php', {
-        action: 'get-role-permissions',
-        role_id: roleId
+      const response = await fetch(`${BASE_URL}/permissions/list`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role_id: roleId })
       });
+      const result = await response.json();
 
-      if (response?.success) {
-        const rolePermissions = response.permissions || [];
+      if (result?.success) {
+        const rolePermissions = result.permissions || [];
         const allPermissions = getAllPermissions();
         const updatedPermissions = {};
 
@@ -106,18 +115,23 @@ const Permissions = () => {
         .filter(perm => permissions[perm.id])
         .map(perm => perm.id);
 
-      const response = await API.post('permission.php', {
-        action: 'update-role-permissions',
-        role_id: selectedRole,
-        permissions: JSON.stringify(selectedPermissions)
+      const response = await fetch(`${BASE_URL}/permissions/update`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role_id: selectedRole,
+          permissions: selectedPermissions
+        })
       });
+      const result = await response.json();
 
-      if (response?.success) {
+      if (result?.success) {
         setSuccess('Permissions updated successfully!');
         // Refresh permissions to confirm
         fetchRolePermissions(selectedRole);
       } else {
-        setError(response?.message || 'Failed to update permissions');
+        setError(result?.message || 'Failed to update permissions');
       }
     } catch (err) {
       console.error('Error updating permissions:', err);
@@ -154,7 +168,7 @@ const Permissions = () => {
               <option value="">Select User Role</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
-                  {role.user_role}
+                  {role.name || role.user_role}
                 </option>
               ))}
             </select>

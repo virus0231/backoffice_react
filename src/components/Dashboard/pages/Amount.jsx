@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './Amount.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const Amount = () => {
   const [appeals, setAppeals] = useState([]);
@@ -32,7 +31,7 @@ const Amount = () => {
   const fetchAppeals = async () => {
     try {
       setAppealsLoading(true);
-      const response = await fetch(`${BASE_URL}/filters/appeals.php`, {
+      const response = await fetch(`${BASE_URL}/filters/appeals`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -52,7 +51,7 @@ const Amount = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${BASE_URL}/amounts.php?appeal_id=${appealId}`, {
+      const response = await fetch(`${BASE_URL}/amounts?appeal_id=${appealId}`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -124,41 +123,33 @@ const Amount = () => {
       setError('');
       setSuccess('');
 
-      const formData = new FormData();
-      formData.append('action', 'update_amount');
-      formData.append('amounts_count', validRows.length);
+      const payload = {
+        appeal_id: Number(selectedAppeal),
+        amounts: validRows.map((row) => ({
+          id: row.id,
+          name: row.name,
+          amount: row.amount,
+          sort: row.sort || 0,
+          donationtype: row.donationtype || '',
+          featured: row.featured,
+          status: row.status
+        }))
+      };
 
-      validRows.forEach((row, index) => {
-        const i = index + 1;
-        if (row.id) {
-          formData.append(`amount_id_${i}`, row.id);
-        }
-        formData.append(`amount_name_${i}`, row.name);
-        formData.append(`amount_amount_${i}`, row.amount);
-        formData.append(`amount_donation_type_${i}`, row.donationtype || '');
-        formData.append(`amount_sort_${i}`, row.sort || 0);
-        formData.append(`amount_featured_${i}`, row.featured === 'enabled' ? 1 : 0);
-        formData.append(`amount_enable_${i}`, row.status === 'enabled' ? 0 : 1);
-      });
-
-      // Set appeal_id in session (backend expects this)
-      sessionStorage.setItem('new_appeal_id', selectedAppeal);
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
+      const response = await fetch(`${BASE_URL}/amounts/bulk`, {
         method: 'POST',
-        body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const text = await response.text();
-      const lowered = text.toLowerCase();
+      const result = await response.json();
 
-      if (lowered.includes('updated') || lowered.includes('inserted')) {
+      if (result.success) {
         setSuccess('Amounts updated successfully!');
-        // Refetch amounts to get updated data
         fetchAmounts(selectedAppeal);
       } else {
-        setError('Failed to update amounts: ' + text);
+        setError('Failed to update amounts: ' + (result.error || 'Unknown error'));
       }
     } catch (err) {
       console.error('Error updating amounts:', err);

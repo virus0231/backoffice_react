@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './FundAmount.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const FundAmount = () => {
   const [selectedAppeal, setSelectedAppeal] = useState('');
@@ -22,7 +21,7 @@ const FundAmount = () => {
 
   const fetchAppeals = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/filters/appeals.php`, {
+      const response = await fetch(`${BASE_URL}/filters/appeals`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -45,7 +44,7 @@ const FundAmount = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/fund-amount-associations.php?appeal_id=${selectedAppeal}`, {
+      const response = await fetch(`${BASE_URL}/fund-amount-associations?appeal_id=${selectedAppeal}`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -90,28 +89,25 @@ const FundAmount = () => {
       setUpdating(true);
       setError(null);
 
-      const formData = new FormData();
-      formData.append('action', 'update_amount_to_fund');
+      const payload = {
+        appeal_id: Number(selectedAppeal),
+        associations,
+      };
 
-      // Build fund_ids array
-      const fundIds = associations.map(assoc => `${selectedAppeal}_${assoc.amountId}_${assoc.fundId}`);
-      fundIds.forEach((id, index) => {
-        formData.append(`fund_ids[${index}]`, id);
-      });
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
+      const response = await fetch(`${BASE_URL}/fund-amount-associations`, {
         method: 'POST',
-        body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('updated')) {
+      if (result.success) {
         alert('Amount association updated successfully');
-        handleSubmit(); // Reload data
+        handleSubmit();
       } else {
-        setError(text || 'Failed to update association');
+        setError(result.error || 'Failed to update association');
       }
     } catch (err) {
       console.error('Error updating association:', err);

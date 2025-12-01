@@ -4,9 +4,9 @@ import DateRangePicker from '@/components/filters/DateRangePicker';
 import API from '../../../utils/api';
 import './Schedule.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 const CHUNK_SIZE = 500;
 
 const Schedule = () => {
@@ -78,9 +78,7 @@ const Schedule = () => {
     if (cursor) params.append('cursor', cursor.toString());
     params.append('limit', limit.toString());
 
-    const response = await fetch(`${BASE_URL}/schedules.php?${params.toString()}`, {
-      credentials: 'include'
-    });
+    const response = await fetch(`${API_BASE}/schedules?${params.toString()}`);
     const result = await response.json();
 
     if (!result?.success) {
@@ -165,9 +163,7 @@ const Schedule = () => {
       if (filters.toDate) params.append('to_date', filters.toDate);
       if (filters.search) params.append('search', filters.search);
 
-      const response = await fetch(`${BASE_URL}/schedules-export.php?${params.toString()}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/schedules/export?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error('Failed to export CSV');

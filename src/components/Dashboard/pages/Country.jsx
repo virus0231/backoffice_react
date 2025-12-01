@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './Country.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const Country = () => {
   const [countries, setCountries] = useState([]);
@@ -28,7 +27,7 @@ const Country = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/countries-list.php`, {
+      const response = await fetch(`${BASE_URL}/filters/countries`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -68,23 +67,20 @@ const Country = () => {
     setFormError('');
     try {
       setAddSubmitting(true);
-      const formData = new FormData();
-      formData.append('action', 'add_country');
-      formData.append('country_name', addForm.name.trim());
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
+      const response = await fetch(`${BASE_URL}/countries`, {
         method: 'POST',
-        body: formData,
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: addForm.name.trim() })
       });
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('inserted')) {
+      if (result.success) {
         setShowAddModal(false);
         setAddForm({ name: '' });
         fetchCountries();
       } else {
-        setFormError(text || 'Failed to add country');
+        setFormError(result.error || 'Failed to add country');
       }
     } catch (err) {
       console.error(err);
@@ -104,24 +100,20 @@ const Country = () => {
     setFormError('');
     try {
       setEditSubmitting(true);
-      const formData = new FormData();
-      formData.append('action', 'update_country');
-      formData.append('country_id', editForm.id);
-      formData.append('country_name', editForm.name.trim());
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+      const response = await fetch(`${BASE_URL}/countries/${editForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: editForm.name.trim() })
       });
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('updated')) {
+      if (result.success) {
         setShowEditModal(false);
         setEditForm({ id: null, name: '' });
         fetchCountries();
       } else {
-        setFormError(text || 'Failed to update country');
+        setFormError(result.error || 'Failed to update country');
       }
     } catch (err) {
       console.error(err);

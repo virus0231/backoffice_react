@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import './Donors.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 const Donors = () => {
   const [searchEmail, setSearchEmail] = useState('');
@@ -45,9 +45,7 @@ const Donors = () => {
       params.append('page', page);
       params.append('limit', 50);
 
-      const response = await fetch(`${BASE_URL}/donors.php?${params.toString()}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/donors?${params.toString()}`);
 
       const result = await response.json();
 
@@ -76,9 +74,7 @@ const Donors = () => {
   const fetchDonorDetails = async (donorId) => {
     try {
       setModalLoading(true);
-      const response = await fetch(`${BASE_URL}/donor-details.php?id=${donorId}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/donors/${donorId}`);
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -97,9 +93,7 @@ const Donors = () => {
   const fetchDonorDonations = async (donorId) => {
     try {
       setModalLoading(true);
-      const response = await fetch(`${BASE_URL}/donor-donations.php?id=${donorId}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/donors/${donorId}/donations`);
       const result = await response.json();
 
       if (result.success) {
@@ -118,9 +112,7 @@ const Donors = () => {
   const fetchDonorSubscriptions = async (donorId) => {
     try {
       setModalLoading(true);
-      const response = await fetch(`${BASE_URL}/donor-subscriptions.php?id=${donorId}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/donors/${donorId}/subscriptions`);
       const result = await response.json();
 
       if (result.success) {
@@ -140,24 +132,23 @@ const Donors = () => {
     try {
       setUpdateLoading(true);
 
-      const formData = new FormData();
-      formData.append('action', 'update-donor');
-      formData.append('donor_id', updatedData.id);
-      formData.append('firstName', updatedData.firstName);
-      formData.append('lastName', updatedData.lastName);
-      formData.append('email', updatedData.email);
-      formData.append('phone', updatedData.phone);
-      formData.append('organization', updatedData.organization);
-      formData.append('street', updatedData.address1);
-      formData.append('state', updatedData.address2);
-      formData.append('city', updatedData.city);
-      formData.append('country', updatedData.country);
-      formData.append('postcode', updatedData.postcode);
-
-      const response = await fetch(`${BASE_URL}/donor.php`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData
+      const response = await fetch(`${API_BASE}/donors/${updatedData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          organization: updatedData.organization,
+          street: updatedData.address1,
+          state: updatedData.address2,
+          city: updatedData.city,
+          country: updatedData.country,
+          postcode: updatedData.postcode,
+          firstName: updatedData.firstName,
+          lastName: updatedData.lastName,
+          email: updatedData.email,
+          phone: updatedData.phone
+        })
       });
 
       const result = await response.json();

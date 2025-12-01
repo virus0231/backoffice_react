@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './Appeal.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const defaultForm = () => ({
   id: null,
@@ -58,7 +57,7 @@ const Appeal = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/filters/appeals.php`, {
+      const response = await fetch(`${BASE_URL}/filters/appeals`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -107,8 +106,8 @@ const Appeal = () => {
     try {
       setMetaError('');
       const [catResp, countryResp] = await Promise.all([
-        fetch(`${BASE_URL}/categories.php`, { credentials: 'include' }),
-        fetch(`${BASE_URL}/countries-list.php`, { credentials: 'include' })
+        fetch(`${BASE_URL}/categories`, { credentials: 'include' }),
+        fetch(`${BASE_URL}/filters/countries`, { credentials: 'include' })
       ]);
       const catJson = await catResp.json();
       const countryJson = await countryResp.json();
@@ -153,51 +152,47 @@ const Appeal = () => {
   const startIndex = (page - 1) * entriesPerPage;
   const paginatedAppeals = filteredAppeals.slice(startIndex, startIndex + entriesPerPage);
 
-  const buildFormData = (action, form) => {
-    const fd = new FormData();
-    fd.append('action', action);
-    fd.append('appeal_name', form.appealName.trim());
-    fd.append('appeal_description', form.description || '');
-    fd.append('appeal_image', form.image || '');
-    fd.append('appeal_home', form.onHome ? 1 : 0);
-    fd.append('appeal_country', form.appealCountry || '');
-    fd.append('appeal_cause', form.appealCause || '');
-    fd.append('appeal_catagory', form.category || '');
-    fd.append('appeal_goal', form.appealGoal || 0);
-    fd.append('appeal_sort', form.sort || 0);
-    fd.append('appeal_footer', form.onFooter ? 1 : 0);
-    fd.append('appeal_donate', form.onDonate ? 1 : 0);
-    fd.append('appeal_isother', form.allowCustomAmount ? 1 : 0);
-    fd.append('appeal_isquantity', form.allowQuantity ? 1 : 0);
-    fd.append('appeal_isdropdown', form.allowDropdownAmount ? 1 : 0);
-    fd.append('appeal_isrecurring', form.allowRecurringType ? 1 : 0);
-    fd.append('appeal_isassociate', form.allowAssociation ? 1 : 0);
-    fd.append('appeal_type', form.appealType || 'Suggested');
-    const intervals = form.recurringIntervals && form.recurringIntervals.length
-      ? form.recurringIntervals
-      : ['0'];
-    intervals.forEach((val) => fd.append('recurring_interval[]', val));
-    fd.append('appeal_status', form.status === 'enabled' ? 0 : 1);
-    if (action === 'update_appeal' && form.id) {
-      fd.append('appeal_id', form.id);
-    }
-    return fd;
-  };
+  const submitAppealForm = async (isUpdate, form) => {
+    const payload = {
+      status: form.status,
+      appealName: form.appealName.trim(),
+      description: form.description || '',
+      image: form.image || '',
+      onHome: form.onHome,
+      appealCountry: form.appealCountry || '',
+      appealCause: form.appealCause || '',
+      category: form.category || '',
+      appealGoal: form.appealGoal || 0,
+      sort: form.sort || 0,
+      onFooter: form.onFooter,
+      onDonate: form.onDonate,
+      allowCustomAmount: form.allowCustomAmount,
+      allowQuantity: form.allowQuantity,
+      allowDropdownAmount: form.allowDropdownAmount,
+      allowRecurringType: form.allowRecurringType,
+      allowAssociation: form.allowAssociation,
+      appealType: form.appealType || 'Suggested',
+      recurringIntervals: form.recurringIntervals && form.recurringIntervals.length
+        ? form.recurringIntervals
+        : ['0']
+    };
 
-  const submitAppealForm = async (action, form) => {
-    const fd = buildFormData(action, form);
-    const response = await fetch(`${BASE_URL}/cause.php`, {
-      method: 'POST',
-      body: fd,
-      credentials: 'include'
+    const url = isUpdate && form.id
+      ? `${BASE_URL}/appeals/${form.id}`
+      : `${BASE_URL}/appeals`;
+
+    const method = isUpdate ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-    const text = await response.text();
-    const lowered = text.toLowerCase();
-    const success = action === 'add_appeal'
-      ? lowered.includes('inserted') || lowered.includes('success')
-      : lowered.includes('updated');
-    if (!success) {
-      throw new Error(text || 'Request failed');
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Request failed');
     }
   };
 
@@ -244,7 +239,7 @@ const Appeal = () => {
     setFormError('');
     try {
       setAddSubmitting(true);
-      await submitAppealForm('add_appeal', addForm);
+      await submitAppealForm(false, addForm);
       setShowAddModal(false);
       setAddForm(defaultForm());
       fetchAppeals();
@@ -265,7 +260,7 @@ const Appeal = () => {
     setFormError('');
     try {
       setEditSubmitting(true);
-      await submitAppealForm('update_appeal', editForm);
+      await submitAppealForm(true, editForm);
       setShowEditModal(false);
       setEditForm(defaultForm());
       fetchAppeals();

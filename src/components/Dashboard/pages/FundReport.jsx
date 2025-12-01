@@ -3,9 +3,9 @@ import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
 import './FundReport.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 const FundReport = () => {
   const [filters, setFilters] = useState({
@@ -32,9 +32,7 @@ const FundReport = () => {
 
   const fetchAllFunds = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/filters/funds.php`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/filters/funds`);
       const result = await response.json();
       if (result.success && result.data) {
         const normalized = result.data.map((fund) => ({
@@ -58,9 +56,7 @@ const FundReport = () => {
       if (filterParams.fromDate) params.append('from_date', filterParams.fromDate);
       if (filterParams.toDate) params.append('to_date', filterParams.toDate);
 
-      const response = await fetch(`${BASE_URL}/fund-report.php?${params.toString()}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/reports/funds?${params.toString()}`);
       const result = await response.json();
 
       if (result.success) {

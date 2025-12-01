@@ -82,7 +82,7 @@ const Donation = () => {
       };
 
       // Step 1: Get total count first
-      const countResponse = await API.post('getReportData.php', {
+      const countResponse = await API.post('reports/donations', {
         GetReport: 'getReport',
         ...baseRequestData
       });
@@ -105,7 +105,7 @@ const Donation = () => {
       const totalChunks = Math.ceil(totalCount / chunkSize);
 
       // Load first chunk
-      const firstChunkResponse = await API.post('getReportData.php', {
+      const firstChunkResponse = await API.post('reports/donations', {
         GetReport: 'getReport',
         loadData: '0',
         chunkSize: chunkSize.toString(),
@@ -154,7 +154,7 @@ const Donation = () => {
       try {
         const offset = chunk * chunkSize;
 
-        const chunkResponse = await API.post('getReportData.php', {
+        const chunkResponse = await API.post('reports/donations', {
           GetReport: 'getReport',
           loadData: offset.toString(),
           chunkSize: chunkSize.toString(),
@@ -200,7 +200,7 @@ const Donation = () => {
   const handleExportDetailCSV = async () => {
     setLoadingDetailCSV(true);
     try {
-      const blob = await API.post('export_optimized.php', {
+      const blob = await API.post('reports/donations/export', {
         btnexport: true,
         startDate: filters.fromDate || '',
         endDate: filters.toDate || '',
@@ -229,7 +229,7 @@ const Donation = () => {
   const handleExportSummaryCSV = async () => {
     setLoadingSummaryCSV(true);
     try {
-      const blob = await API.post('export_optimized.php', {
+      const blob = await API.post('reports/donations/export', {
         btnexport_summary: true,
         startDate: filters.fromDate || '',
         endDate: filters.toDate || '',

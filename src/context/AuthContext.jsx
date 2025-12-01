@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError('');
     try {
-      const resp = await API.post('auth.php', { action: 'status' });
+      const resp = await API.post('auth/status');
       if (resp?.success && resp?.user) {
         setUser(resp.user);
         persistUser(resp.user);
@@ -64,8 +64,7 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(async (username, password) => {
     setError('');
     try {
-      const resp = await API.post('auth.php', {
-        action: 'Login',
+      const resp = await API.post('auth/login', {
         username_val: username,
         password_val: password,
       });
@@ -84,7 +83,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await API.post('auth.php', { action: 'Logout' });
+      await API.post('auth/logout');
     } catch {}
     setUser(null);
     clearPersisted();

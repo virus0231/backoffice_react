@@ -1,13 +1,13 @@
-// API Utility for making POST/GET requests to PHP backoffice
-// In development, use the proxy. In production, use the full URL.
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'  // Development: Use proxy
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc'; // Production: Full URL
+// API utility for the Laravel backoffice API
+// Configure base via VITE_API_BASE_URL (e.g., http://127.0.0.1:8000/api/v1)
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 class API {
   /**
    * Make a POST request to the backoffice
-   * @param {string} endpoint - The PHP file name (e.g., 'getReportData.php')
+   * @param {string} endpoint - Relative path, e.g., 'reports/campaigns'
    * @param {Object} data - Form data to send
    * @param {Object} options - Additional options (responseType, etc.)
    * @returns {Promise} - Response data

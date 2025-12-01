@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import API from '../../../utils/api';
 import './Users.css';
+import { getPhpApiBase } from '@/lib/config/phpApi';
+
+const BASE_URL = getPhpApiBase();
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -47,12 +49,9 @@ const Users = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await API.post('user.php', { action: 'list-users' });
-      const rows = Array.isArray(response?.data)
-        ? response.data
-        : Array.isArray(response)
-          ? response
-          : [];
+      const response = await fetch(`${BASE_URL}/users`, { credentials: 'include' });
+      const result = await response.json();
+      const rows = Array.isArray(result?.data) ? result.data : [];
       const normalized = rows.map(normalizeUser).filter((u) => u.id !== undefined);
       setUsers(normalized);
     } catch (err) {
@@ -109,24 +108,26 @@ const Users = () => {
     setAddLoading(true);
     setAddError('');
     try {
-      const resp = await API.post('user.php', {
-        action: 'add-new-user',
-        username_val: addForm.username.trim(),
-        display_name_val: addForm.displayName.trim(),
-        email_val: addForm.email.trim(),
-        password_val: addForm.password,
-        userrole_val: addForm.roleId,
-      }, { responseType: 'text' });
+      const resp = await fetch(`${BASE_URL}/users`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: addForm.username.trim(),
+          display_name: addForm.displayName.trim(),
+          email: addForm.email.trim(),
+          password: addForm.password,
+          role_id: addForm.roleId,
+        })
+      });
 
-      const respText = typeof resp === 'string' ? resp : JSON.stringify(resp);
-      if (respText.toLowerCase().includes('user exist')) {
-        setAddError('User already exists with this username and email.');
-      } else if (respText.toLowerCase().includes('user created successfully')) {
+      const data = await resp.json();
+      if (data.success) {
         setShowAddModal(false);
         resetAddForm();
         fetchUsers();
       } else {
-        setAddError(respText || 'Unable to create user.');
+        setAddError(data.error || 'Unable to create user.');
       }
     } catch (err) {
       console.error('Error creating user', err);
@@ -149,10 +150,11 @@ const Users = () => {
     );
 
     try {
-      await API.post('user.php', {
-        action: 'change-user-status',
-        user_id: id,
-        status: nextStatus ? 0 : 1
+      await fetch(`${BASE_URL}/users/${id}/status`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
       });
     } catch (err) {
       console.error('Error updating status', err);
@@ -188,15 +190,18 @@ const Users = () => {
     setEditLoading(true);
     setEditError('');
     try {
-      await API.post('user.php', {
-        action: 'update-user',
-        user_id: editForm.id,
-        username_val: editForm.username.trim(),
-        display_name_val: editForm.displayName.trim(),
-        email_val: editForm.email.trim(),
-        password_val: editForm.password,
-        userrole_val: editForm.roleId,
-      }, { responseType: 'text' });
+      await fetch(`${BASE_URL}/users/${editForm.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: editForm.username.trim(),
+          display_name: editForm.displayName.trim(),
+          email: editForm.email.trim(),
+          password: editForm.password,
+          role_id: editForm.roleId,
+        })
+      });
 
       setShowEditModal(false);
       resetEditForm();

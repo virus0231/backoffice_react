@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './FundList.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const FundList = () => {
   const [selectedAppeal, setSelectedAppeal] = useState('');
@@ -21,7 +20,7 @@ const FundList = () => {
 
   const fetchAppeals = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/filters/appeals.php`, {
+      const response = await fetch(`${BASE_URL}/filters/appeals`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -42,7 +41,7 @@ const FundList = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/funds-list.php?appeal_id=${appealId}`, {
+      const response = await fetch(`${BASE_URL}/funds/list?appeal_id=${appealId}`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -116,34 +115,30 @@ const FundList = () => {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('action', 'update_fund');
-      formData.append('appeal_id', selectedAppeal);
-      formData.append('funds_count', fundRows.length);
+      const payload = {
+        appeal_id: Number(selectedAppeal),
+        funds: fundRows.map((row) => ({
+          id: row.id,
+          name: row.fundName.trim(),
+          sort: Number(row.sort) || 0,
+          status: row.status
+        }))
+      };
 
-      fundRows.forEach((row, index) => {
-        const i = index + 1;
-        if (row.id) {
-          formData.append(`fund_id_${i}`, row.id);
-        }
-        formData.append(`fund_name_${i}`, row.fundName.trim());
-        formData.append(`fund_sort_${i}`, row.sort);
-        formData.append(`fund_enable_${i}`, row.status === 'Enable' ? 0 : 1);
-      });
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
+      const response = await fetch(`${BASE_URL}/funds/bulk`, {
         method: 'POST',
-        body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('inserted') || text.toLowerCase().includes('updated')) {
+      if (result.success) {
         alert('Fundlist updated successfully');
         fetchFunds(selectedAppeal); // Reload funds
       } else {
-        setError(text || 'Failed to update fundlist');
+        setError(result.error || 'Failed to update fundlist');
       }
     } catch (err) {
       console.error('Error updating funds:', err);

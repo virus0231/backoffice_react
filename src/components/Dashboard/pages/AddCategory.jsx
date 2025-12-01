@@ -17,12 +17,9 @@ const AddCategory = () => {
     setLoading(true);
 
     try {
-      const response = await API.post('cause.php', {
-        action: 'addCategory',
-        categoryName: categoryName
-      });
+      const response = await API.post('categories', { name: categoryName }, { responseType: 'json' });
 
-      if (response.includes('success') || response.includes('added')) {
+      if (response.success) {
         alert('Category added successfully!');
         setCategoryName('');
       } else {

@@ -3,9 +3,9 @@ import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
 import './CampaignReport.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 const CampaignReport = () => {
   const [filters, setFilters] = useState({
@@ -40,7 +40,7 @@ const CampaignReport = () => {
       if (filterParams.toDate) params.append('to_date', filterParams.toDate);
       if (filterParams.donorEmail) params.append('donor_email', filterParams.donorEmail);
 
-      const response = await fetch(`${BASE_URL}/campaign-report.php?${params.toString()}`, {
+      const response = await fetch(`${API_BASE}/reports/campaigns?${params.toString()}`, {
         credentials: 'include'
       });
       const result = await response.json();

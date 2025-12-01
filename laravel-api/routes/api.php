@@ -3,22 +3,55 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AmountController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CountryAnalyticsController;
 use App\Http\Controllers\Api\DonorController;
 use App\Http\Controllers\Api\FiltersController;
+use App\Http\Controllers\Api\FundAnalyticsController;
+use App\Http\Controllers\Api\PaymentMethodsController;
+use App\Http\Controllers\Api\FrequenciesController;
+use App\Http\Controllers\Api\DayTimeController;
+use App\Http\Controllers\Api\RecurringPlansController;
+use App\Http\Controllers\Api\RecurringRevenueController;
+use App\Http\Controllers\Api\RetentionController;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\ScheduleController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\AppealController;
+use App\Http\Controllers\Api\FundController;
+use App\Http\Controllers\Api\FundAmountAssociationController;
+use App\Http\Controllers\Api\FeaturedAmountController;
+use App\Http\Controllers\Api\DonorSegmentationController;
+use App\Http\Controllers\Api\DonationExportController;
+use App\Http\Controllers\Api\UserManagementController;
+use App\Http\Controllers\Api\PermissionController;
 
 Route::prefix('v1')->group(function () {
     Route::get('health', fn () => ['ok' => true]);
+
+    Route::prefix('auth')->group(function () {
+        Route::post('login', [AuthController::class, 'login']);
+        Route::post('status', [AuthController::class, 'status']);
+        Route::post('logout', [AuthController::class, 'logout']);
+    });
 
     // Reference data
     Route::get('filters/appeals', [FiltersController::class, 'appeals']);
     Route::get('filters/funds', [FiltersController::class, 'funds']);
     Route::get('filters/categories', [FiltersController::class, 'categories']);
     Route::get('filters/countries', [FiltersController::class, 'countries']);
+    Route::get('categories', [CategoryController::class, 'index']);
+    Route::post('categories', [CategoryController::class, 'store']);
+    Route::put('categories/{id}', [CategoryController::class, 'update']);
+    Route::post('countries', [CountryController::class, 'store']);
+    Route::put('countries/{id}', [CountryController::class, 'update']);
+    Route::post('appeals', [AppealController::class, 'store']);
+    Route::put('appeals/{id}', [AppealController::class, 'update']);
 
     // Amounts
     Route::get('amounts', [AmountController::class, 'index']);
+    Route::post('amounts/bulk', [AmountController::class, 'bulkUpdate']);
     Route::post('amounts/{amount}/toggle', [AmountController::class, 'toggle']);
 
     // Donors
@@ -30,11 +63,41 @@ Route::prefix('v1')->group(function () {
 
     // Analytics & reports
     Route::get('analytics', [AnalyticsController::class, 'index']);
+    Route::get('funds', [FundAnalyticsController::class, 'index']);
+    Route::get('countries', [CountryAnalyticsController::class, 'index']);
+    Route::get('payment-methods', [PaymentMethodsController::class, 'index']);
+    Route::get('frequencies', [FrequenciesController::class, 'index']);
+    Route::get('day-time', [DayTimeController::class, 'index']);
+    Route::get('recurring-plans', [RecurringPlansController::class, 'index']);
+    Route::get('recurring-revenue', [RecurringRevenueController::class, 'index']);
+    Route::get('retention', [RetentionController::class, 'index']);
     Route::get('reports/campaigns', [ReportsController::class, 'campaigns']);
     Route::get('reports/causes', [ReportsController::class, 'causes']);
     Route::get('reports/funds', [ReportsController::class, 'funds']);
+    Route::get('reports/monthly', [ReportsController::class, 'monthly']);
+    Route::get('reports/donations', [DonationExportController::class, 'data']);
+    Route::post('reports/donations', [DonationExportController::class, 'data']);
+    Route::post('reports/donations/export', [DonationExportController::class, 'export']);
+    Route::get('donor-segmentation', [DonorSegmentationController::class, 'index']);
+    Route::get('users', [UserManagementController::class, 'index']);
+    Route::post('users', [UserManagementController::class, 'store']);
+    Route::put('users/{id}', [UserManagementController::class, 'update']);
+    Route::post('users/{id}/status', [UserManagementController::class, 'status']);
+    Route::post('permissions/roles', [PermissionController::class, 'roles']);
+    Route::post('permissions/list', [PermissionController::class, 'list']);
+    Route::post('permissions/update', [PermissionController::class, 'update']);
 
     // Recurring schedules
     Route::get('schedules', [ScheduleController::class, 'index']);
     Route::get('schedules/export', [ScheduleController::class, 'export']);
+
+    // Funds & associations
+    Route::get('funds/list', [FundController::class, 'list']);
+    Route::post('funds/bulk', [FundController::class, 'bulkUpdate']);
+    Route::get('fund-amount-associations', [FundAmountAssociationController::class, 'index']);
+    Route::post('fund-amount-associations', [FundAmountAssociationController::class, 'update']);
+
+    // Featured amounts
+    Route::get('featured-amounts', [FeaturedAmountController::class, 'index']);
+    Route::post('amounts/{id}/status', [FeaturedAmountController::class, 'toggle']);
 });

@@ -218,4 +218,21 @@ class ReportsController extends Controller
             'message' => 'Retrieved fund report',
         ]);
     }
+
+    public function monthly(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'stats' => [
+                    'thisMonth' => 0,
+                    'allTime' => 0,
+                    'failedDonors' => 0,
+                    'lastFailedDate' => 'N/A',
+                ],
+                'monthlyGrowth' => [],
+                'activeDonors' => [],
+            ],
+        ]);
+    }
 }

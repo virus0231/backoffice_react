@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './FeaturedAmount.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const FeaturedAmount = () => {
   const [featuredAmounts, setFeaturedAmounts] = useState([]);
@@ -19,7 +18,7 @@ const FeaturedAmount = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/featured-amounts.php`, {
+      const response = await fetch(`${BASE_URL}/featured-amounts`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -48,14 +47,13 @@ const FeaturedAmount = () => {
     );
 
     try {
-      const response = await fetch(`${BASE_URL}/toggle-featured-status.php`, {
+      const response = await fetch(`${BASE_URL}/amounts/${id}/status`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          amount_id: id,
           status: newStatus
         })
       });

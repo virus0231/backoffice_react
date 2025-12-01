@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './MonthlyReport.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const MonthlyReport = () => {
   const [stats, setStats] = useState({
@@ -26,7 +25,7 @@ const MonthlyReport = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/monthly-report.php`, {
+      const response = await fetch(`${BASE_URL}/reports/monthly`, {
         credentials: 'include'
       });
       const result = await response.json();

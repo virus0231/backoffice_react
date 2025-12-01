@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import './Causes.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 const Causes = () => {
   const [filters, setFilters] = useState({
@@ -30,9 +30,9 @@ const Causes = () => {
   const fetchDropdownData = async () => {
     try {
       const [appealsRes, categoriesRes, countriesRes] = await Promise.all([
-        fetch(`${BASE_URL}/filters/appeals.php`, { credentials: 'include' }),
-        fetch(`${BASE_URL}/categories.php`, { credentials: 'include' }),
-        fetch(`${BASE_URL}/countries-list.php`, { credentials: 'include' })
+        fetch(`${API_BASE}/filters/appeals`),
+        fetch(`${API_BASE}/filters/categories`),
+        fetch(`${API_BASE}/filters/countries`)
       ]);
 
       const [appealsData, categoriesData, countriesData] = await Promise.all([
@@ -61,9 +61,7 @@ const Causes = () => {
       if (filterParams.minAmount) params.append('min_amount', filterParams.minAmount);
       if (filterParams.maxAmount) params.append('max_amount', filterParams.maxAmount);
 
-      const response = await fetch(`${BASE_URL}/causes-report.php?${params.toString()}`, {
-        credentials: 'include'
-      });
+      const response = await fetch(`${API_BASE}/reports/causes?${params.toString()}`);
       const result = await response.json();
 
       if (result.success) {

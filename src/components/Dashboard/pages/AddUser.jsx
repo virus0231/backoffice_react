@@ -31,16 +31,15 @@ const AddUser = () => {
     setLoading(true);
 
     try {
-      const response = await API.post('user.php', {
-        action: 'addUser',
-        userName: formData.userName,
-        userPassword: formData.userPassword,
-        displayName: formData.displayName,
-        userEmail: formData.userEmail,
-        userRole: formData.userRole
+      const response = await API.post('users', {
+        username: formData.userName,
+        password: formData.userPassword,
+        display_name: formData.displayName,
+        email: formData.userEmail,
+        role_id: formData.userRole
       });
 
-      if (response.includes('success') || response.includes('added')) {
+      if (response?.success) {
         alert('User added successfully!');
         // Reset form
         setFormData({

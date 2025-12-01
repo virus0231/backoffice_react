@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './DonorReport.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const DonorReport = () => {
   const [lybuntDonors, setLybuntDonors] = useState([]);
@@ -23,7 +22,7 @@ const DonorReport = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/donor-segmentation.php`, {
+      const response = await fetch(`${BASE_URL}/donor-segmentation`, {
         credentials: 'include'
       });
       const result = await response.json();

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import API from '../../../utils/api';
+import { getPhpApiBase } from '@/lib/config/phpApi';
 import './Category.css';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/backoffice/yoc'
-  : 'https://forgottenwomen.youronlineconversation.com/backoffice/yoc';
+const BASE_URL = getPhpApiBase();
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -29,7 +28,7 @@ const Category = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/categories.php`, {
+      const response = await fetch(`${BASE_URL}/categories`, {
         credentials: 'include'
       });
       const result = await response.json();
@@ -69,23 +68,20 @@ const Category = () => {
     setFormError('');
     try {
       setAddSubmitting(true);
-      const formData = new FormData();
-      formData.append('action', 'add_catagory');
-      formData.append('catagory_name', addForm.name.trim());
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
+      const response = await fetch(`${BASE_URL}/categories`, {
         method: 'POST',
-        body: formData,
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: addForm.name.trim() })
       });
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('inserted')) {
+      if (result.success) {
         setShowAddModal(false);
         setAddForm({ name: '' });
         fetchCategories();
       } else {
-        setFormError(text || 'Failed to add category');
+        setFormError(result.error || 'Failed to add category');
       }
     } catch (err) {
       console.error(err);
@@ -105,24 +101,20 @@ const Category = () => {
     setFormError('');
     try {
       setEditSubmitting(true);
-      const formData = new FormData();
-      formData.append('action', 'update_catagory');
-      formData.append('catagory_id', editForm.id);
-      formData.append('catagory_name', editForm.name.trim());
-
-      const response = await fetch(`${BASE_URL}/cause.php`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
+      const response = await fetch(`${BASE_URL}/categories/${editForm.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: editForm.name.trim() })
       });
-      const text = await response.text();
+      const result = await response.json();
 
-      if (text.toLowerCase().includes('updated')) {
+      if (result.success) {
         setShowEditModal(false);
         setEditForm({ id: null, name: '' });
         fetchCategories();
       } else {
-        setFormError(text || 'Failed to update category');
+        setFormError(result.error || 'Failed to update category');
       }
     } catch (err) {
       console.error(err);
