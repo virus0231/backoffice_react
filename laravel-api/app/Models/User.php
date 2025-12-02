@@ -2,15 +2,25 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\Authenticatable as AuthenticatableTrait;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends BasePrefixedModel implements Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, AuthenticatableTrait, HasFactory, Notifiable;
+
+    protected static string $baseTable = 'users';
+
+    /**
+     * Legacy table has no timestamps.
+     *
+     * @var bool
+     */
+    public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
@@ -18,9 +28,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'user_login',
+        'user_email',
+        'display_name',
+        'user_role',
+        'user_status',
     ];
 
     /**
@@ -29,8 +41,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'user_pass',
     ];
 
     /**
@@ -41,8 +52,23 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'user_status' => 'integer',
         ];
+    }
+
+    /**
+     * Use user_login as the unique auth identifier.
+     */
+    public function getAuthIdentifierName(): string
+    {
+        return 'user_login';
+    }
+
+    /**
+     * Return the legacy hashed password column.
+     */
+    public function getAuthPassword()
+    {
+        return $this->user_pass;
     }
 }

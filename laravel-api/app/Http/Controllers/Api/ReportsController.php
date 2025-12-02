@@ -13,6 +13,8 @@ class ReportsController extends Controller
     public function campaigns(Request $request): JsonResponse
     {
         $transactionsTable = TableResolver::prefixed('transactions');
+        $detailsTable = TableResolver::prefixed('transaction_details');
+        $appealTable = TableResolver::prefixed('appeal');
 
         $campaigns = $request->query('campaigns');
         $fromDate = $request->query('from_date');
@@ -21,6 +23,8 @@ class ReportsController extends Controller
 
         $conditions = ["t.status IN ('Completed', 'pending')"];
         $params = [];
+        $page = max(1, (int)$request->query('page', 1));
+        $perPage = max(1, min(100, (int)$request->query('per_page', 25)));
 
         if ($fromDate) {
             $conditions[] = 't.date >= ?';
@@ -31,7 +35,7 @@ class ReportsController extends Controller
             $params[] = $toDate;
         }
         if ($campaigns) {
-            $conditions[] = 't.campaigns LIKE ?';
+            $conditions[] = 'a.name LIKE ?';
             $params[] = '%' . $campaigns . '%';
         }
         if ($donorEmail) {
@@ -41,18 +45,27 @@ class ReportsController extends Controller
 
         $whereClause = implode(' AND ', $conditions);
 
-        $sql = "
+        $baseSql = "
             SELECT
-              t.campaigns as campaign_name,
-              COUNT(t.id) as donation_count,
+              COALESCE(a.name, 'Unknown') as campaign_name,
+              COUNT(DISTINCT t.id) as donation_count,
               SUM(t.totalamount) as total_amount
             FROM `{$transactionsTable}` t
+            LEFT JOIN `{$detailsTable}` td ON t.id = td.TID
+            LEFT JOIN `{$appealTable}` a ON a.id = td.appeal_id
             WHERE {$whereClause}
-            GROUP BY t.campaigns
-            ORDER BY total_amount DESC
+            GROUP BY a.name
         ";
 
-        $rows = DB::select($sql, $params);
+        // Count total grouped rows for pagination
+        $countSql = "SELECT COUNT(*) as total FROM ({$baseSql}) grouped";
+        $totalRows = DB::select($countSql, $params);
+        $total = $totalRows[0]->total ?? 0;
+
+        // Fetch page
+        $offset = ($page - 1) * $perPage;
+        $pagedSql = $baseSql . " ORDER BY total_amount DESC LIMIT {$perPage} OFFSET {$offset}";
+        $rows = DB::select($pagedSql, $params);
 
         $data = collect($rows)->map(function ($r) {
             return [
@@ -66,6 +79,9 @@ class ReportsController extends Controller
             'success' => true,
             'data' => $data,
             'count' => $data->count(),
+            'total' => (int)$total,
+            'page' => $page,
+            'per_page' => $perPage,
             'total_amount' => array_sum(array_column($rows, 'total_amount')),
             'message' => 'Retrieved campaign report',
         ]);

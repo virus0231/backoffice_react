@@ -4,7 +4,11 @@
       "Read(//c/Users/YOC/Pictures/Screenshots/**)",
       "Bash(npx tailwindcss:*)",
       "Bash(tasklist:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -30 \"\"{}\"\"')",
+      "Bash(xargs:*)",
+      "Bash(php -v:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []
