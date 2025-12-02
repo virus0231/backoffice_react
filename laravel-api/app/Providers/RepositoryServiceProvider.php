@@ -9,6 +9,7 @@ use App\Repositories\Contracts\ScheduleRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
+use App\Repositories\ScheduleRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -19,7 +20,7 @@ class RepositoryServiceProvider extends ServiceProvider
             DonorRepositoryInterface::class => DonorRepository::class,
             AnalyticsRepositoryInterface::class => AnalyticsRepository::class,
             TransactionRepositoryInterface::class => 'App\Repositories\TransactionRepository',
-            ScheduleRepositoryInterface::class => 'App\Repositories\ScheduleRepository',
+            ScheduleRepositoryInterface::class => ScheduleRepository::class,
             AppealRepositoryInterface::class => 'App\Repositories\AppealRepository',
         ];
 
