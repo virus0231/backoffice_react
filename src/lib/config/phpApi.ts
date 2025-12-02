@@ -1,5 +1,6 @@
 // Utilities to build API URLs for the frontend
 // Uses VITE_API_BASE_URL or defaults to /api/v1 (proxied in dev)
+import { safeFetch } from '../utils/errorHandling';
 
 /**
  * Get API base URL
@@ -10,6 +11,22 @@ export function getPhpApiBase(): string {
     import.meta.env.VITE_API_BASE_URL ||
     (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1')
   );
+}
+
+export function getAuthHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('sanctum_token') : null;
+  return {
+    'Authorization': token ? `Bearer ${token}` : '',
+    'Content-Type': 'application/json',
+  };
+}
+
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {}),
+  };
+  return safeFetch(url, { ...options, headers });
 }
 
 export function buildAppealsUrl(): string {
@@ -99,7 +116,19 @@ export function buildRetentionUrl(searchParams: URLSearchParams): string {
 // Auth endpoints
 export function buildLoginUrl(): string {
   const base = getPhpApiBase();
-  const url = new URL(`${base}/login`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  const url = new URL(`${base}/auth/login`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  return url.toString();
+}
+
+export function buildAuthStatusUrl(): string {
+  const base = getPhpApiBase();
+  const url = new URL(`${base}/auth/status`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+  return url.toString();
+}
+
+export function buildLogoutUrl(): string {
+  const base = getPhpApiBase();
+  const url = new URL(`${base}/auth/logout`, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
   return url.toString();
 }
 
