@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Schedule;
+use App\Models\Transaction;
+
 class Donor extends BasePrefixedModel
 {
     protected static string $baseTable = 'donors';
@@ -20,4 +23,14 @@ class Donor extends BasePrefixedModel
         'organization',
         'Date_Added',
     ];
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'DID', 'id');
+    }
+
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'did', 'id');
+    }
 }

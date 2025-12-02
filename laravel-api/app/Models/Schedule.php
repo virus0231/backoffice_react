@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Donor;
+
 class Schedule extends BasePrefixedModel
 {
     protected static string $baseTable = 'schedule';
@@ -19,4 +21,9 @@ class Schedule extends BasePrefixedModel
         'remainingcount',
         'totalcount',
     ];
+
+    public function donor()
+    {
+        return $this->belongsTo(Donor::class, 'did', 'id');
+    }
 }

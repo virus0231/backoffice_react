@@ -2,6 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Amount;
+use App\Models\Category;
+use App\Models\Fund;
+use App\Models\TransactionDetail;
+
 class Appeal extends BasePrefixedModel
 {
     protected static string $baseTable = 'appeal';
@@ -26,4 +31,24 @@ class Appeal extends BasePrefixedModel
         'type',
         'disable',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category', 'id');
+    }
+
+    public function amounts()
+    {
+        return $this->hasMany(Amount::class, 'appeal_id', 'id');
+    }
+
+    public function funds()
+    {
+        return $this->hasMany(Fund::class, 'appeal_id', 'id');
+    }
+
+    public function transactionDetails()
+    {
+        return $this->hasMany(TransactionDetail::class, 'appeal_id', 'id');
+    }
 }
