@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Repositories\Contracts\FundRepositoryInterface;
+use App\Support\TableResolver;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator as Paginator;
+
+class FundRepository implements FundRepositoryInterface
+{
+    public function getFundsByAppealId(int $appealId): Collection
+    {
+        $table = TableResolver::prefixed('fundlist');
+
+        return DB::table($table)
+            ->where('appeal_id', $appealId)
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function updateFund(int $id, array $data): bool
+    {
+        $table = TableResolver::prefixed('fundlist');
+        return (bool) DB::table($table)->where('id', $id)->update($data);
+    }
+
+    public function createFund(array $data): int
+    {
+        $table = TableResolver::prefixed('fundlist');
+        return (int) DB::table($table)->insertGetId($data);
+    }
+
+    /* --- RepositoryInterface compatibility (not used here) --- */
+    public function findById(int|string $id): ?Model
+    {
+        return null;
+    }
+
+    public function create(array $data): Model
+    {
+        return new Model();
+    }
+
+    public function update(Model|int|string $modelOrId, array $data): Model
+    {
+        return $modelOrId instanceof Model ? $modelOrId : new Model();
+    }
+
+    public function delete(Model|int|string $modelOrId): bool
+    {
+        return false;
+    }
+
+    public function paginate(int $perPage = 15, array $columns = ['*']): LengthAwarePaginator
+    {
+        return new Paginator([], 0, $perPage);
+    }
+}
