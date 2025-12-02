@@ -16,6 +16,13 @@ class User extends BasePrefixedModel implements Authenticatable
     protected static string $baseTable = 'users';
 
     /**
+     * Legacy table uses 'ID' as primary key (uppercase).
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ID';
+
+    /**
      * Legacy table has no timestamps.
      *
      * @var bool
