@@ -29,7 +29,8 @@ use App\Http\Controllers\Api\PermissionController;
 
 Route::prefix('v1')->group(function () {
     // Public routes
-    Route::post('auth/login', [AuthController::class, 'login']);
+    Route::post('auth/login', [AuthController::class, 'login'])
+        ->middleware('throttle:5,1'); // 5 attempts per minute
 
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {

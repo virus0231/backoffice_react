@@ -11,6 +11,11 @@ class TableResolver
 {
     public static function firstExisting(array $candidates): ?string
     {
+        // SQLite (used in tests) doesn't expose information_schema; just return the first candidate.
+        if (DB::getDriverName() === 'sqlite') {
+            return $candidates[0] ?? null;
+        }
+
         foreach ($candidates as $table) {
             $exists = DB::table('information_schema.tables')
                 ->where('table_schema', DB::getDatabaseName())
