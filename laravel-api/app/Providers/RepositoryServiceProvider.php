@@ -10,9 +10,11 @@ use App\Repositories\Contracts\FiltersRepositoryInterface;
 use App\Repositories\Contracts\ScheduleRepositoryInterface;
 use App\Repositories\Contracts\UserManagementRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
+use App\Repositories\Contracts\DonationExportRepositoryInterface;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
 use App\Repositories\FiltersRepository;
+use App\Repositories\DonationExportRepository;
 use App\Repositories\ReportsRepository;
 use App\Repositories\ScheduleRepository;
 use App\Repositories\UserManagementRepository;
@@ -30,6 +32,7 @@ class RepositoryServiceProvider extends ServiceProvider
             ReportsRepositoryInterface::class => ReportsRepository::class,
             FiltersRepositoryInterface::class => FiltersRepository::class,
             UserManagementRepositoryInterface::class => UserManagementRepository::class,
+            DonationExportRepositoryInterface::class => DonationExportRepository::class,
             AppealRepositoryInterface::class => 'App\Repositories\AppealRepository',
         ];
 
