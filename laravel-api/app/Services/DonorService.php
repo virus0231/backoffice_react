@@ -18,25 +18,32 @@ class DonorService
 
     public function getPaginatedDonors(array $filters = [], int $perPage = 50): LengthAwarePaginator
     {
-        return $this->donors->paginate($filters, $perPage);
+        return $this->donors->paginateWithFilters($filters, $perPage);
     }
 
     public function getDonorById(int $id): ?Donor
     {
-        return $this->donors->findById($id);
+        $result = $this->donors->findById($id);
+        return $result instanceof Donor ? $result : null;
     }
 
     public function createDonor(array $data): Donor
     {
         return DB::transaction(function () use ($data) {
-            return $this->donors->create($this->mapInputToAttributes($data));
+            $result = $this->donors->create($this->mapInputToAttributes($data));
+            return $result instanceof Donor ? $result : throw new \RuntimeException("Failed to create donor");
         });
     }
 
     public function updateDonor(int $id, array $data): ?Donor
     {
         return DB::transaction(function () use ($id, $data) {
-            return $this->donors->update($id, $this->mapInputToAttributes($data));
+            try {
+                $result = $this->donors->update($id, $this->mapInputToAttributes($data));
+                return $result instanceof Donor ? $result : null;
+            } catch (\InvalidArgumentException $e) {
+                return null;
+            }
         });
     }
 

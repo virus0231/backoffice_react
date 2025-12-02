@@ -9,15 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface DonorRepositoryInterface extends RepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 50): LengthAwarePaginator;
-
-    public function findById(int $id): ?Donor;
-
-    public function create(array $data): Donor;
-
-    public function update(int $id, array $data): ?Donor;
-
-    public function delete(int $id): bool;
+    public function paginateWithFilters(array $filters = [], int $perPage = 50): LengthAwarePaginator;
 
     public function search(string $term, int $limit = 25): Collection;
 

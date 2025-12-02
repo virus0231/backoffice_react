@@ -6,10 +6,18 @@ use App\Models\Donor;
 use App\Repositories\Contracts\DonorRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class DonorRepository implements DonorRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 50): LengthAwarePaginator
+    public function paginate(int $perPage = 15, array $columns = ['*']): LengthAwarePaginator
+    {
+        return Donor::query()->with(['transactions', 'schedules'])
+            ->orderByDesc('id')
+            ->paginate($perPage, $columns);
+    }
+
+    public function paginateWithFilters(array $filters = [], int $perPage = 50): LengthAwarePaginator
     {
         $query = Donor::query()->with(['transactions', 'schedules']);
 
@@ -33,21 +41,22 @@ class DonorRepository implements DonorRepositoryInterface
         return $query->orderByDesc('id')->paginate($perPage);
     }
 
-    public function findById(int $id): ?Donor
+    public function findById(int|string $id): ?Model
     {
         return Donor::with(['transactions', 'schedules'])->find($id);
     }
 
-    public function create(array $data): Donor
+    public function create(array $data): Model
     {
         return Donor::create($data);
     }
 
-    public function update(int $id, array $data): ?Donor
+    public function update(Model|int|string $modelOrId, array $data): Model
     {
-        $donor = Donor::find($id);
+        $donor = $modelOrId instanceof Donor ? $modelOrId : Donor::find($modelOrId);
+
         if (! $donor) {
-            return null;
+            throw new \InvalidArgumentException("Donor not found");
         }
 
         $donor->fill($data);
@@ -56,9 +65,9 @@ class DonorRepository implements DonorRepositoryInterface
         return $donor->fresh(['transactions', 'schedules']);
     }
 
-    public function delete(int $id): bool
+    public function delete(Model|int|string $modelOrId): bool
     {
-        $donor = Donor::find($id);
+        $donor = $modelOrId instanceof Donor ? $modelOrId : Donor::find($modelOrId);
         return $donor ? (bool) $donor->delete() : false;
     }
 
