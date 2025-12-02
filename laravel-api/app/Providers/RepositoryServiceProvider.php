@@ -6,12 +6,16 @@ use App\Repositories\Contracts\AppealRepositoryInterface;
 use App\Repositories\Contracts\AnalyticsRepositoryInterface;
 use App\Repositories\Contracts\DonorRepositoryInterface;
 use App\Repositories\Contracts\ReportsRepositoryInterface;
+use App\Repositories\Contracts\FiltersRepositoryInterface;
 use App\Repositories\Contracts\ScheduleRepositoryInterface;
+use App\Repositories\Contracts\UserManagementRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
+use App\Repositories\FiltersRepository;
 use App\Repositories\ReportsRepository;
 use App\Repositories\ScheduleRepository;
+use App\Repositories\UserManagementRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -24,6 +28,8 @@ class RepositoryServiceProvider extends ServiceProvider
             TransactionRepositoryInterface::class => 'App\Repositories\TransactionRepository',
             ScheduleRepositoryInterface::class => ScheduleRepository::class,
             ReportsRepositoryInterface::class => ReportsRepository::class,
+            FiltersRepositoryInterface::class => FiltersRepository::class,
+            UserManagementRepositoryInterface::class => UserManagementRepository::class,
             AppealRepositoryInterface::class => 'App\Repositories\AppealRepository',
         ];
 
