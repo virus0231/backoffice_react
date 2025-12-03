@@ -22,11 +22,19 @@ use App\Repositories\Contracts\FrequenciesRepositoryInterface;
 use App\Repositories\Contracts\DonorSegmentationRepositoryInterface;
 use App\Repositories\Contracts\FundAmountAssociationRepositoryInterface;
 use App\Repositories\Contracts\FundAnalyticsRepositoryInterface;
-use App\Repositories\Contracts\PaymentMethodsRepositoryInterface;
-use App\Repositories\Contracts\PermissionRepositoryInterface;
-use App\Repositories\Contracts\RecurringPlansRepositoryInterface;
-use App\Repositories\Contracts\RecurringRevenueRepositoryInterface;
-use App\Repositories\Contracts\RetentionRepositoryInterface;
+    use App\Repositories\Contracts\PaymentMethodsRepositoryInterface;
+    use App\Repositories\Contracts\PermissionRepositoryInterface;
+    use App\Repositories\Contracts\RecurringPlansRepositoryInterface;
+    use App\Repositories\Contracts\RecurringRevenueRepositoryInterface;
+    use App\Repositories\Contracts\RetentionRepositoryInterface;
+    use App\Repositories\Contracts\ComponentRepositoryInterface;
+    use App\Repositories\Contracts\ConfigurationRepositoryInterface;
+    use App\Repositories\Contracts\VerificationRepositoryInterface;
+    use App\Repositories\Contracts\CrmIntegrationRepositoryInterface;
+    use App\Repositories\Contracts\DigitalMarketingRepositoryInterface;
+    use App\Repositories\Contracts\SeasonRepositoryInterface;
+    use App\Repositories\Contracts\ExportOptimizedRepositoryInterface;
+use App\Repositories\Contracts\TransactionDetailRepositoryInterface;
 use App\Repositories\AppealRepository;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
@@ -45,12 +53,21 @@ use App\Repositories\FrequenciesRepository;
 use App\Repositories\DonorSegmentationRepository;
 use App\Repositories\FundAmountAssociationRepository;
 use App\Repositories\FundAnalyticsRepository;
-use App\Repositories\PaymentMethodsRepository;
-use App\Repositories\PermissionRepository;
-use App\Repositories\RecurringPlansRepository;
-use App\Repositories\RecurringRevenueRepository;
-use App\Repositories\RetentionRepository;
+    use App\Repositories\PaymentMethodsRepository;
+    use App\Repositories\PermissionRepository;
+    use App\Repositories\RecurringPlansRepository;
+    use App\Repositories\RecurringRevenueRepository;
+    use App\Repositories\RetentionRepository;
+    use App\Repositories\ComponentRepository;
+    use App\Repositories\ConfigurationRepository;
+    use App\Repositories\VerificationRepository;
+    use App\Repositories\CrmIntegrationRepository;
+    use App\Repositories\DigitalMarketingRepository;
+    use App\Repositories\SeasonRepository;
+    use App\Repositories\ExportOptimizedRepository;
 use App\Repositories\CountryAnalyticsRepository;
+use App\Repositories\TransactionRepository;
+use App\Repositories\TransactionDetailRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -60,7 +77,8 @@ class RepositoryServiceProvider extends ServiceProvider
         $bindings = [
             DonorRepositoryInterface::class => DonorRepository::class,
             AnalyticsRepositoryInterface::class => AnalyticsRepository::class,
-            TransactionRepositoryInterface::class => 'App\Repositories\TransactionRepository',
+            TransactionRepositoryInterface::class => TransactionRepository::class,
+            TransactionDetailRepositoryInterface::class => TransactionDetailRepository::class,
             ScheduleRepositoryInterface::class => ScheduleRepository::class,
             ReportsRepositoryInterface::class => ReportsRepository::class,
             FiltersRepositoryInterface::class => FiltersRepository::class,
@@ -83,6 +101,13 @@ class RepositoryServiceProvider extends ServiceProvider
             RecurringPlansRepositoryInterface::class => RecurringPlansRepository::class,
             RecurringRevenueRepositoryInterface::class => RecurringRevenueRepository::class,
             RetentionRepositoryInterface::class => RetentionRepository::class,
+            ComponentRepositoryInterface::class => ComponentRepository::class,
+            ConfigurationRepositoryInterface::class => ConfigurationRepository::class,
+            VerificationRepositoryInterface::class => VerificationRepository::class,
+            CrmIntegrationRepositoryInterface::class => CrmIntegrationRepository::class,
+            DigitalMarketingRepositoryInterface::class => DigitalMarketingRepository::class,
+            SeasonRepositoryInterface::class => SeasonRepository::class,
+            ExportOptimizedRepositoryInterface::class => ExportOptimizedRepository::class,
         ];
 
         foreach ($bindings as $abstract => $concrete) {
@@ -90,6 +115,15 @@ class RepositoryServiceProvider extends ServiceProvider
                 $this->app->bind($abstract, $concrete);
             }
         }
+
+        $this->app->singleton(\App\Services\ManualTransactionService::class, function ($app) {
+            return new \App\Services\ManualTransactionService(
+                $app->make(\App\Repositories\Contracts\DonorRepositoryInterface::class),
+                $app->make(\App\Repositories\Contracts\TransactionRepositoryInterface::class),
+                $app->make(\App\Repositories\Contracts\TransactionDetailRepositoryInterface::class),
+                $app->make(\App\Repositories\Contracts\ScheduleRepositoryInterface::class),
+            );
+        });
     }
 
     public function boot(): void

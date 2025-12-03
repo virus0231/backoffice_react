@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\DonorService;
+use App\Http\Requests\Donor\StoreDonorRequest;
+use App\Http\Requests\Donor\UpdateDonorRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,9 +24,9 @@ class DonorController extends Controller
         return response()->json($result, $status);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreDonorRequest $request): JsonResponse
     {
-        $result = $this->donorService->createDonor($request->all());
+        $result = $this->donorService->createDonor($request->validated());
         $status = $result['error'] === 'validation' ? 400 : 201;
 
         return response()->json($result, $status);
@@ -38,9 +40,9 @@ class DonorController extends Controller
         return response()->json($result, $status);
     }
 
-    public function update(Request $request, int $donor): JsonResponse
+    public function update(UpdateDonorRequest $request, int $donor): JsonResponse
     {
-        $result = $this->donorService->updateDonor($donor, $request->all());
+        $result = $this->donorService->updateDonor($donor, $request->validated());
         $status = match ($result['error'] ?? null) {
             'validation' => 400,
             'not_found' => 404,

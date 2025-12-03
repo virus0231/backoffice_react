@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
+use App\Http\Requests\User\UpdateUserStatusRequest;
 use App\Services\UserManagementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class UserManagementController extends Controller
 {
@@ -23,9 +25,9 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $result = $this->userService->createUser($request->all());
+        $result = $this->userService->createUser($request->validated());
 
         $status = 200;
         if ($result['error'] === 'validation') {
@@ -37,9 +39,9 @@ class UserManagementController extends Controller
         return response()->json($result, $status);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
-        $result = $this->userService->updateUser($id, $request->all());
+        $result = $this->userService->updateUser($id, $request->validated());
 
         $status = 200;
         if ($result['error'] === 'validation') {
@@ -53,7 +55,7 @@ class UserManagementController extends Controller
         return response()->json($result, $status);
     }
 
-    public function status(Request $request, int $id): JsonResponse
+    public function status(UpdateUserStatusRequest $request, int $id): JsonResponse
     {
         $statusFlag = $request->boolean('status', true);
         $result = $this->userService->toggleUserStatus($id, $statusFlag);

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Country\BulkUpdateCountryRequest;
+use App\Http\Requests\Country\StoreCountryRequest;
+use App\Http\Requests\Country\UpdateCountryRequest;
 use App\Services\CountryService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
@@ -23,20 +26,18 @@ class CountryController extends Controller
         return response()->json($result, $status);
     }
 
-    public function bulkUpdate(Request $request): JsonResponse
+    public function bulkUpdate(BulkUpdateCountryRequest $request): JsonResponse
     {
-        $result = $this->countryService->bulkUpdateCountries($request->all());
+        $result = $this->countryService->bulkUpdateCountries($request->validated());
         $status = $result['error'] === 'validation' ? 400 : 200;
 
         return response()->json($result, $status);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCountryRequest $request): JsonResponse
     {
-        $name = trim((string)$request->input('name', ''));
-        if ($name === '') {
-            return response()->json(['success' => false, 'error' => 'name is required'], 400);
-        }
+        $validated = $request->validated();
+        $name = trim((string) ($validated['name'] ?? ''));
 
         $table = TableResolver::prefixed('country');
         $id = DB::table($table)->insertGetId(['name' => $name]);
@@ -48,12 +49,10 @@ class CountryController extends Controller
         ]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateCountryRequest $request, int $id): JsonResponse
     {
-        $name = trim((string)$request->input('name', ''));
-        if ($name === '') {
-            return response()->json(['success' => false, 'error' => 'name is required'], 400);
-        }
+        $validated = $request->validated();
+        $name = trim((string) ($validated['name'] ?? ''));
 
         $table = TableResolver::prefixed('country');
         DB::table($table)->where('id', $id)->update(['name' => $name]);

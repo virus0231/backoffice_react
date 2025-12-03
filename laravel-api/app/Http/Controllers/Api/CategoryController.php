@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\BulkUpdateCategoryRequest;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Services\CategoryService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
@@ -23,20 +26,18 @@ class CategoryController extends Controller
         return response()->json($result, $status);
     }
 
-    public function bulkUpdate(Request $request): JsonResponse
+    public function bulkUpdate(BulkUpdateCategoryRequest $request): JsonResponse
     {
-        $result = $this->categoryService->bulkUpdateCategories($request->all());
+        $result = $this->categoryService->bulkUpdateCategories($request->validated());
         $status = $result['error'] === 'validation' ? 400 : 200;
 
         return response()->json($result, $status);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $name = trim((string)$request->input('name', ''));
-        if ($name === '') {
-            return response()->json(['success' => false, 'error' => 'name is required'], 400);
-        }
+        $validated = $request->validated();
+        $name = trim((string) ($validated['name'] ?? ''));
 
         $table = TableResolver::prefixed('category');
         $id = DB::table($table)->insertGetId(['name' => $name]);
@@ -48,12 +49,10 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateCategoryRequest $request, int $id): JsonResponse
     {
-        $name = trim((string)$request->input('name', ''));
-        if ($name === '') {
-            return response()->json(['success' => false, 'error' => 'name is required'], 400);
-        }
+        $validated = $request->validated();
+        $name = trim((string) ($validated['name'] ?? ''));
 
         $table = TableResolver::prefixed('category');
         DB::table($table)->where('id', $id)->update(['name' => $name]);

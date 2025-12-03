@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Fund\BulkUpdateFundRequest;
 use App\Services\FundService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,10 +24,10 @@ class FundController extends Controller
         return response()->json($result, $status);
     }
 
-    public function bulkUpdate(Request $request): JsonResponse
+    public function bulkUpdate(BulkUpdateFundRequest $request): JsonResponse
     {
         $appealId = (int) $request->input('appeal_id', 0);
-        $result = $this->fundService->bulkUpdateFunds($appealId, $request->all());
+        $result = $this->fundService->bulkUpdateFunds($appealId, $request->validated());
 
         $status = $result['error'] === 'validation' ? 400 : 200;
 

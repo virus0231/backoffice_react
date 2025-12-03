@@ -21,4 +21,6 @@ interface ScheduleRepositoryInterface extends RepositoryInterface
      * @return Collection
      */
     public function getAllSchedulesForExport(array $filters): Collection;
+
+    public function createSchedule(array $data): int;
 }

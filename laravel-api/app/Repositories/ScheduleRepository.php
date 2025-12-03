@@ -98,6 +98,12 @@ class ScheduleRepository implements ScheduleRepositoryInterface
         return collect(DB::select($sql, $params));
     }
 
+    public function createSchedule(array $data): int
+    {
+        $scheduleTable = TableResolver::prefixed('schedule');
+        return (int) DB::table($scheduleTable)->insertGetId($data);
+    }
+
     protected function buildWhereClause(array $filters): array
     {
         $conditions = ['td.freq IN (1, 2, 3)'];

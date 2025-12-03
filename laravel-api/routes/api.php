@@ -14,6 +14,12 @@ use App\Http\Controllers\Api\DayTimeController;
 use App\Http\Controllers\Api\RecurringPlansController;
 use App\Http\Controllers\Api\RecurringRevenueController;
 use App\Http\Controllers\Api\RetentionController;
+use App\Http\Controllers\Api\ManualTransactionController;
+use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\CrmIntegrationController;
+use App\Http\Controllers\Api\DigitalMarketingController;
+use App\Http\Controllers\Api\SeasonController;
+use App\Http\Controllers\Api\ExportOptimizedController;
 use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\ScheduleController;
 use App\Http\Controllers\Api\CategoryController;
@@ -26,6 +32,8 @@ use App\Http\Controllers\Api\DonorSegmentationController;
 use App\Http\Controllers\Api\DonationExportController;
 use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\ComponentController;
+use App\Http\Controllers\Api\ConfigurationController;
 
 Route::prefix('v1')->group(function () {
     // Public routes
@@ -90,6 +98,23 @@ Route::prefix('v1')->group(function () {
         Route::post('reports/donations', [DonationExportController::class, 'data']);
         Route::post('reports/donations/export', [DonationExportController::class, 'export']);
         Route::get('donor-segmentation', [DonorSegmentationController::class, 'index']);
+        Route::post('transactions/manual', [ManualTransactionController::class, 'store']);
+        Route::post('verification', [VerificationController::class, 'store']);
+        Route::post('crm', [CrmIntegrationController::class, 'store']);
+        Route::post('dm', [DigitalMarketingController::class, 'store']);
+        Route::get('season-dates', [SeasonController::class, 'index']);
+        Route::post('reports/donations/export-optimized', [ExportOptimizedController::class, 'store']);
+        Route::get('components', [ComponentController::class, 'index']);
+        Route::post('components', [ComponentController::class, 'store']);
+        Route::get('components/{id}', [ComponentController::class, 'show']);
+        Route::put('components/{id}', [ComponentController::class, 'update']);
+        Route::delete('components/{id}', [ComponentController::class, 'destroy']);
+        Route::post('components/bulk', [ComponentController::class, 'bulkUpdate']);
+        Route::get('configurations', [ConfigurationController::class, 'index']);
+        Route::post('configurations', [ConfigurationController::class, 'store']);
+        Route::get('configurations/{id}', [ConfigurationController::class, 'show']);
+        Route::put('configurations/{id}', [ConfigurationController::class, 'update']);
+        Route::delete('configurations/{id}', [ConfigurationController::class, 'destroy']);
 
         // Users & permissions
         Route::get('users', [UserManagementController::class, 'index']);

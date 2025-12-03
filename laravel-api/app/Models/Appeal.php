@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Amount;
 use App\Models\Category;
+use App\Models\Country;
 use App\Models\Fund;
 use App\Models\TransactionDetail;
 
@@ -35,6 +36,11 @@ class Appeal extends BasePrefixedModel
     public function category()
     {
         return $this->belongsTo(Category::class, 'category', 'id');
+    }
+
+    public function country()
+    {
+        return $this->belongsTo(Country::class, 'country', 'id');
     }
 
     public function amounts()

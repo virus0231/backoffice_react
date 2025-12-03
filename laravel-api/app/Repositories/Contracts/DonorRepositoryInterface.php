@@ -13,4 +13,6 @@ interface DonorRepositoryInterface extends RepositoryInterface
     public function createDonor(array $data): int;
 
     public function updateDonor(int $id, array $data): bool;
+
+    public function findByEmailAndLastname(string $email, string $lastname): ?array;
 }

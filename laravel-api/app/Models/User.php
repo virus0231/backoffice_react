@@ -78,4 +78,9 @@ class User extends BasePrefixedModel implements Authenticatable
     {
         return $this->user_pass;
     }
+
+    public function role()
+    {
+        return $this->belongsTo(UserRole::class, 'user_role', 'id');
+    }
 }

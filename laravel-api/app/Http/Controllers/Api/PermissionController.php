@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Permission\UpdatePermissionRequest;
 use App\Services\PermissionService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
@@ -28,10 +28,11 @@ class PermissionController extends Controller
         return response()->json($result, $status);
     }
 
-    public function update(Request $request): JsonResponse
+    public function update(UpdatePermissionRequest $request): JsonResponse
     {
-        $roleId = (int) $request->input('role_id', 0);
-        $permissions = $request->input('permissions', []);
+        $validated = $request->validated();
+        $roleId = (int) ($validated['role_id'] ?? 0);
+        $permissions = $validated['permissions'] ?? [];
 
         $result = $this->permissionService->updatePermissions($roleId, is_array($permissions) ? $permissions : []);
         $status = $result['error'] === 'validation' ? 400 : 200;

@@ -59,6 +59,17 @@ class DonorRepository implements DonorRepositoryInterface
         return (bool) DB::table($table)->where('id', $id)->update($data);
     }
 
+    public function findByEmailAndLastname(string $email, string $lastname): ?array
+    {
+        $table = TableResolver::prefixed('donors');
+        $row = DB::table($table)
+            ->where('email', $email)
+            ->where('lastname', $lastname)
+            ->first();
+
+        return $row ? (array) $row : null;
+    }
+
     /* --- RepositoryInterface compatibility (not used here) --- */
     public function findById(int|string $id): ?Model
     {
