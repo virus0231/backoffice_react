@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\CategoryService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,17 +11,24 @@ use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
+    public function __construct(private readonly CategoryService $categoryService)
+    {
+    }
+
     public function index(): JsonResponse
     {
-        $table = TableResolver::prefixed('category');
-        $rows = DB::table($table)->orderBy('name')->get(['id', 'name']);
+        $result = $this->categoryService->getAllCategories();
+        $status = $result['success'] ? 200 : 400;
 
-        return response()->json([
-            'success' => true,
-            'data' => $rows->map(fn ($r) => ['id' => (int)$r->id, 'name' => $r->name]),
-            'count' => $rows->count(),
-            'message' => 'Retrieved categories',
-        ]);
+        return response()->json($result, $status);
+    }
+
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $result = $this->categoryService->bulkUpdateCategories($request->all());
+        $status = $result['error'] === 'validation' ? 400 : 200;
+
+        return response()->json($result, $status);
     }
 
     public function store(Request $request): JsonResponse

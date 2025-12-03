@@ -47,6 +47,7 @@ Route::prefix('v1')->group(function () {
         Route::get('filters/countries', [FiltersController::class, 'countries']);
         Route::get('categories', [CategoryController::class, 'index']);
         Route::post('categories', [CategoryController::class, 'store']);
+        Route::post('categories/bulk', [CategoryController::class, 'bulkUpdate']);
         Route::put('categories/{id}', [CategoryController::class, 'update']);
         Route::post('countries', [CountryController::class, 'store']);
         Route::put('countries/{id}', [CountryController::class, 'update']);
