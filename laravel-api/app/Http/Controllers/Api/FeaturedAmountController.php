@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\FeaturedAmountService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 
 class FeaturedAmountController extends Controller
 {
+    public function __construct(private readonly FeaturedAmountService $featuredAmountService)
+    {
+    }
+
     public function index(): JsonResponse
     {
         $amountTable = TableResolver::prefixed('amount');
@@ -45,16 +50,19 @@ class FeaturedAmountController extends Controller
     public function toggle(Request $request, int $id): JsonResponse
     {
         $status = $request->boolean('status', null);
-        if ($status === null) {
+        if ($status === null && ! $request->has('status')) {
             return response()->json(['success' => false, 'error' => 'status is required'], 400);
         }
 
-        $amountTable = TableResolver::prefixed('amount');
-        DB::table($amountTable)->where('id', $id)->update(['disable' => $status ? 0 : 1]);
+        $result = $this->featuredAmountService->toggleFeaturedStatus($id, (bool) $status);
+        $statusCode = 200;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Status updated',
-        ]);
+        if ($result['error'] === 'validation') {
+            $statusCode = 400;
+        } elseif ($result['error'] === 'not_found') {
+            $statusCode = 404;
+        }
+
+        return response()->json($result, $statusCode);
     }
 }
