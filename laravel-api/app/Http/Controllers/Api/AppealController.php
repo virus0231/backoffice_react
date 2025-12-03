@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\AppealService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,26 @@ use Illuminate\Support\Facades\DB;
 
 class AppealController extends Controller
 {
+    public function __construct(private readonly AppealService $appealService)
+    {
+    }
+
+    public function index(): JsonResponse
+    {
+        $result = $this->appealService->getAllAppeals();
+        $status = $result['success'] ? 200 : 400;
+
+        return response()->json($result, $status);
+    }
+
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $result = $this->appealService->bulkUpdateAppeals($request->all());
+        $status = $result['error'] === 'validation' ? 400 : 200;
+
+        return response()->json($result, $status);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $payload = $this->normalizePayload($request);

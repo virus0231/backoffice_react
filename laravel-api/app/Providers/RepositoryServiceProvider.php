@@ -15,6 +15,7 @@ use App\Repositories\Contracts\AmountRepositoryInterface;
 use App\Repositories\Contracts\FundRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\CountryRepositoryInterface;
+use App\Repositories\AppealRepository;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
 use App\Repositories\FiltersRepository;
@@ -45,7 +46,7 @@ class RepositoryServiceProvider extends ServiceProvider
             AmountRepositoryInterface::class => AmountRepository::class,
             CategoryRepositoryInterface::class => CategoryRepository::class,
             CountryRepositoryInterface::class => CountryRepository::class,
-            AppealRepositoryInterface::class => 'App\Repositories\AppealRepository',
+            AppealRepositoryInterface::class => AppealRepository::class,
         ];
 
         foreach ($bindings as $abstract => $concrete) {

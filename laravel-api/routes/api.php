@@ -49,10 +49,12 @@ Route::prefix('v1')->group(function () {
         Route::post('categories', [CategoryController::class, 'store']);
         Route::post('categories/bulk', [CategoryController::class, 'bulkUpdate']);
         Route::put('categories/{id}', [CategoryController::class, 'update']);
+        Route::get('appeals', [AppealController::class, 'index']);
         Route::get('countries/list', [CountryController::class, 'index']);
         Route::post('countries', [CountryController::class, 'store']);
         Route::post('countries/bulk', [CountryController::class, 'bulkUpdate']);
         Route::put('countries/{id}', [CountryController::class, 'update']);
+        Route::post('appeals/bulk', [AppealController::class, 'bulkUpdate']);
         Route::post('appeals', [AppealController::class, 'store']);
         Route::put('appeals/{id}', [AppealController::class, 'update']);
 
