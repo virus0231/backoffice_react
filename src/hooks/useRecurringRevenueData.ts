@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildRecurringRevenueUrl } from '@/lib/config/phpApi';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
-import { cachedFetch } from '@/lib/cache/apiCache';
 
 interface DateRange {
   startDate: Date;
@@ -101,49 +100,41 @@ async function fetchMRRData(
   appealIds: string | null,
   fundIds: string | null
 ): Promise<MetricData> {
-  const searchParams = new URLSearchParams({
+  const baseParams: Record<string, string> = {
     startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
     endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
-    granularity: 'daily'
-  });
+    granularity: 'daily',
+    metric: 'mrr'
+  };
 
-  if (appealIds) searchParams.set('appealId', appealIds);
-  if (fundIds) searchParams.set('fundId', fundIds);
+  if (appealIds) baseParams.appealId = appealIds;
+  if (fundIds) baseParams.fundId = fundIds;
 
-  const mainUrl = buildRecurringRevenueUrl('mrr', searchParams);
+  const mainResponse = await apiClient.get('recurring-revenue', baseParams);
 
-  // Fetch main period data
-  const mainResponse = await cachedFetch<RecurringRevenueResponse>(mainUrl, undefined, {
-    ttl: 5 * 60 * 1000 // 5 minutes
-  });
-
-  const mainData: RevenueDataPoint[] = mainResponse.data.trendData.map(point => ({
+  const mainData: RevenueDataPoint[] = (mainResponse?.data?.trendData || []).map((point: any) => ({
     date: point.date,
-    value: Number(point.value) || 0
+    value: Number(point.value ?? point.mrr ?? 0) || 0
   }));
 
-  // Fetch comparison period data if requested
   let comparisonData: RevenueDataPoint[] = [];
   if (comparisonRange) {
-    const compSearchParams = new URLSearchParams({
+    const compParams: Record<string, string> = {
       startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
       endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
-      granularity: 'daily'
-    });
+      granularity: 'daily',
+      metric: 'mrr'
+    };
 
-    if (appealIds) compSearchParams.set('appealId', appealIds);
-    if (fundIds) compSearchParams.set('fundId', fundIds);
-
-    const compUrl = buildRecurringRevenueUrl('mrr', compSearchParams);
+    if (appealIds) compParams.appealId = appealIds;
+    if (fundIds) compParams.fundId = fundIds;
 
     try {
-      const compResponse = await cachedFetch<RecurringRevenueResponse>(compUrl, undefined, {
-        ttl: 5 * 60 * 1000
-      });
+      const compResponse = await apiClient.get('recurring-revenue', compParams);
 
-      comparisonData = compResponse.data.trendData.map(point => ({
+      comparisonData = (compResponse?.data?.trendData || []).map((point: any) => ({
         date: point.date,
-        value: Number(point.value) || 0
+        value: Number(point.value ?? point.mrr ?? 0) || 0
       }));
     } catch (error) {
       logError(error, 'useRecurringRevenueData.fetchMRRComparison');
@@ -175,47 +166,39 @@ async function fetchShareOfRevenueData(
   appealIds: string | null,
   fundIds: string | null
 ): Promise<MetricData> {
-  const searchParams = new URLSearchParams({
+  const baseParams: Record<string, string> = {
     startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
     endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
-    granularity: 'daily'
-  });
+    granularity: 'daily',
+    metric: 'share-of-revenue'
+  };
 
-  if (appealIds) searchParams.set('appealId', appealIds);
-  if (fundIds) searchParams.set('fundId', fundIds);
+  if (appealIds) baseParams.appealId = appealIds;
+  if (fundIds) baseParams.fundId = fundIds;
 
-  const mainUrl = buildRecurringRevenueUrl('share-of-revenue', searchParams);
+  const mainResponse = await apiClient.get('recurring-revenue', baseParams);
 
-  // Fetch main period data
-  const mainResponse = await cachedFetch<RecurringRevenueResponse>(mainUrl, undefined, {
-    ttl: 5 * 60 * 1000
-  });
-
-  const mainData: RevenueDataPoint[] = mainResponse.data.trendData.map(point => ({
+  const mainData: RevenueDataPoint[] = (mainResponse?.data?.trendData || []).map((point: any) => ({
     date: point.date,
     value: Number(point.value) || 0
   }));
 
-  // Fetch comparison period data if requested
   let comparisonData: RevenueDataPoint[] = [];
   if (comparisonRange) {
-    const compSearchParams = new URLSearchParams({
+    const compParams: Record<string, string> = {
       startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
       endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
-      granularity: 'daily'
-    });
+      granularity: 'daily',
+      metric: 'share-of-revenue'
+    };
 
-    if (appealIds) compSearchParams.set('appealId', appealIds);
-    if (fundIds) compSearchParams.set('fundId', fundIds);
-
-    const compUrl = buildRecurringRevenueUrl('share-of-revenue', compSearchParams);
+    if (appealIds) compParams.appealId = appealIds;
+    if (fundIds) compParams.fundId = fundIds;
 
     try {
-      const compResponse = await cachedFetch<RecurringRevenueResponse>(compUrl, undefined, {
-        ttl: 5 * 60 * 1000
-      });
+      const compResponse = await apiClient.get('recurring-revenue', compParams);
 
-      comparisonData = compResponse.data.trendData.map(point => ({
+      comparisonData = (compResponse?.data?.trendData || []).map((point: any) => ({
         date: point.date,
         value: Number(point.value) || 0
       }));
@@ -248,22 +231,19 @@ async function fetchDonationAmounts(
   appealIds: string | null,
   fundIds: string | null
 ): Promise<DonationAmountRange[]> {
-  const searchParams = new URLSearchParams({
-    startDate: format(endDate, 'yyyy-MM-dd'), // Not used by API, but required
+  const params: Record<string, string> = {
+    startDate: format(endDate, 'yyyy-MM-dd'),
     endDate: format(endDate, 'yyyy-MM-dd'),
-    granularity: 'daily'
-  });
+    granularity: 'daily',
+    metric: 'donation-amounts'
+  };
 
-  if (appealIds) searchParams.set('appealId', appealIds);
-  if (fundIds) searchParams.set('fundId', fundIds);
+  if (appealIds) params.appealId = appealIds;
+  if (fundIds) params.fundId = fundIds;
 
-  const url = buildRecurringRevenueUrl('donation-amounts', searchParams);
+  const response = await apiClient.get('recurring-revenue', params);
 
-  const response = await cachedFetch<RecurringRevenueResponse>(url, undefined, {
-    ttl: 5 * 60 * 1000
-  });
-
-  return response.data.trendData.map(item => ({
+  return (response?.data?.trendData || []).map((item: any) => ({
     amount_range: item.amount_range || '',
     plan_count: Number(item.plan_count) || 0,
     percentage: Number(item.percentage) || 0

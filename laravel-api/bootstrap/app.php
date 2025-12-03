@@ -15,10 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->statefulApi();
+        // Removed statefulApi() to use Bearer token authentication only
         $middleware->append(HandleCors::class);
-        $middleware->append(AddQueuedCookiesToResponse::class);
-        $middleware->append(StartSession::class);
 
         // Disable auth redirect for API routes
         $middleware->redirectGuestsTo(function ($request) {

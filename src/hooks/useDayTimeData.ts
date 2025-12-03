@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildDayTimeUrl } from '@/lib/config/phpApi';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
 
 interface DayTimeRawData {
@@ -91,21 +90,15 @@ export function useDayTimeData(
         const startDate = format(dateRange.startDate, 'yyyy-MM-dd');
         const endDate = format(dateRange.endDate, 'yyyy-MM-dd');
 
-        const searchParams = new URLSearchParams({
+        const params: Record<string, string> = {
           startDate,
           endDate
-        });
+        };
 
-        if (appealIds) searchParams.set('appealId', appealIds);
-        if (fundIds) searchParams.set('fundId', fundIds);
+        if (appealIds) params.appealId = appealIds;
+        if (fundIds) params.fundId = fundIds;
 
-        const url = buildDayTimeUrl(searchParams);
-
-        const response = await cachedFetch<{ success: boolean; data: { heatmapData: DayTimeRawData[] } }>(
-          url,
-          undefined,
-          { ttl: 5 * 60 * 1000 } // 5 minutes
-        );
+        const response = await apiClient.get('day-time', params);
 
         if (!isMounted) return;
 
@@ -121,7 +114,7 @@ export function useDayTimeData(
           return Number.isFinite(n) ? n : fallback;
         };
 
-        const normalizedData = (response.data.heatmapData || []).map((d: any) => ({
+        const normalizedData = (response.data?.heatmapData || []).map((d: any) => ({
           day_of_week: toNum(d.day_of_week, 0),
           hour_of_day: toNum(d.hour_of_day, 0),
           donation_count: toNum(d.donation_count, 0),

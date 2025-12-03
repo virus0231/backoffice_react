@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildFrequenciesUrl } from '@/lib/config/phpApi';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
-import { cachedFetch } from '@/lib/cache/apiCache';
 
 interface DateRange {
   startDate: Date;
@@ -60,39 +59,30 @@ export function useFrequenciesData(
         const startDate = format(dateRange.startDate, 'yyyy-MM-dd');
         const endDate = format(dateRange.endDate, 'yyyy-MM-dd');
 
-        // Build search params for chart data
-        const chartParams = new URLSearchParams({
+        const chartParams: Record<string, string> = {
           startDate,
-          endDate
-        });
+          endDate,
+          metric: 'chart'
+        };
 
-        if (appealIds) chartParams.set('appealId', appealIds);
-        if (fundIds) chartParams.set('fundId', fundIds);
-
-        // Build search params for table data
-        const tableParams = new URLSearchParams({
+        const tableParams: Record<string, string> = {
           startDate,
-          endDate
-        });
+          endDate,
+          metric: 'table'
+        };
 
-        if (appealIds) tableParams.set('appealId', appealIds);
-        if (fundIds) tableParams.set('fundId', fundIds);
+        if (appealIds) {
+          chartParams.appealId = appealIds;
+          tableParams.appealId = appealIds;
+        }
+        if (fundIds) {
+          chartParams.fundId = fundIds;
+          tableParams.fundId = fundIds;
+        }
 
-        // Use the URL builder
-        const chartUrl = buildFrequenciesUrl('chart', chartParams);
-        const tableUrl = buildFrequenciesUrl('table', tableParams);
-
-        // Debug URLs can be useful during development
-        // console.warn('Frequencies API URLs:', { chartUrl, tableUrl });
-
-        // Fetch both chart and table data in parallel
         const [chartResponse, tableResponse] = await Promise.all([
-          cachedFetch<{ success: boolean; data: { chartData: ChartDataPoint[] } }>(chartUrl, undefined, {
-            ttl: 5 * 60 * 1000 // 5 minutes
-          }),
-          cachedFetch<{ success: boolean; data: { tableData: TableDataRow[] } }>(tableUrl, undefined, {
-            ttl: 5 * 60 * 1000
-          })
+          apiClient.get('frequencies', chartParams),
+          apiClient.get('frequencies', tableParams)
         ]);
 
         if (isMounted) {
@@ -117,7 +107,7 @@ export function useFrequenciesData(
             return Number.isFinite(n) ? n : fallback;
           };
 
-          const normalizedChart = (chartResponse.data.chartData || []).map((d: any) => ({
+          const normalizedChart = (chartResponse.data?.chartData || []).map((d: any) => ({
             date: String(d.date || ''),
             monthly: toNum(d.monthly, 0),
             one_time: toNum(d.one_time, 0),
@@ -126,7 +116,7 @@ export function useFrequenciesData(
             daily: toNum(d.daily, 0),
           }));
 
-          const normalizedTable = (tableResponse.data.tableData || []).map((r: any) => ({
+          const normalizedTable = (tableResponse.data?.tableData || []).map((r: any) => ({
             frequency: String(r.frequency || ''),
             donations: Math.round(toNum(r.donations, 0)),
             totalRaised: toNum(r.totalRaised, 0),

@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { format } from 'date-fns';
-import { buildAnalyticsUrl } from '@/lib/config/phpApi';
-import { safeFetch, parseAPIResponse, logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
+import { logError, formatErrorForDisplay } from '@/lib/utils/errorHandling';
 
 interface DateRange {
   startDate: Date;
@@ -32,6 +31,7 @@ interface RevenueData {
 }
 
 interface RevenueResponse {
+  success: boolean;
   data: {
     totalAmount: number;
     totalCount: number;
@@ -134,141 +134,123 @@ export function useRevenueData(
     error: null
   });
 
-  const fetchData = useCallback(async (endpoint: string, setData: Dispatch<SetStateAction<RevenueData>>, endpointFrequency?: string) => {
-    try {
-      setData(prev => ({ ...prev, isLoading: true, error: null, isRetriable: false }));
+  const fetchData = useCallback(
+    async (
+      kind: string,
+      setData: Dispatch<SetStateAction<RevenueData>>,
+      endpointFrequency?: string
+    ) => {
+      try {
+        setData((prev) => ({ ...prev, isLoading: true, error: null, isRetriable: false }));
 
-      // Fetch main data (always daily)
-      const params = new URLSearchParams({
-        startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
-        endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
-        granularity: 'daily'
-      });
+        const baseParams: Record<string, string> = {
+          startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
+          endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
+          granularity: 'daily',
+          kind,
+        };
 
-      // Add filter parameters if provided
-      if (appealId) {
-        params.append('appealId', appealId);
-      }
-      if (fundId) {
-        params.append('fundId', fundId);
-      }
-
-      // Use endpoint-specific frequency if provided, otherwise use global frequency
-      const effectiveFrequency = endpointFrequency || frequency;
-      if (effectiveFrequency && effectiveFrequency !== 'all') {
-        params.append('frequency', effectiveFrequency);
-      }
-
-      const mainUrl = buildAnalyticsUrl(endpoint, params);
-
-      // Use cached fetch with 5-minute TTL
-      const mainResult: RevenueResponse = await cachedFetch(mainUrl, {}, {
-        ttl: 5 * 60 * 1000, // 5 minutes
-        useLocalStorage: true,
-        dedupe: true
-      });
-
-      // Fetch comparison data if comparison range is provided (always daily)
-      let comparisonResult: RevenueResponse | null = null;
-      if (comparisonRange) {
-        const comparisonParams = new URLSearchParams({
-          startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
-          endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
-          granularity: 'daily'
-        });
-
-        // Add same filter parameters for comparison
         if (appealId) {
-          comparisonParams.append('appealId', appealId);
+          baseParams.appealId = appealId;
         }
         if (fundId) {
-          comparisonParams.append('fundId', fundId);
+          baseParams.fundId = fundId;
         }
 
-        // Use endpoint-specific frequency if provided, otherwise use global frequency
         const effectiveFrequency = endpointFrequency || frequency;
         if (effectiveFrequency && effectiveFrequency !== 'all') {
-          comparisonParams.append('frequency', effectiveFrequency);
+          baseParams.frequency = effectiveFrequency;
         }
 
-        try {
-          const comparisonUrl = buildAnalyticsUrl(endpoint, comparisonParams);
-
-          // Use cached fetch for comparison data too
-          comparisonResult = await cachedFetch(comparisonUrl, {}, {
-            ttl: 5 * 60 * 1000, // 5 minutes
-            useLocalStorage: true,
-            dedupe: true
-          });
-        } catch (comparisonError) {
-          // Log comparison error but don't fail main request
-          logError(comparisonError, `Comparison data fetch failed for ${endpoint}`);
+        const mainResult: RevenueResponse = await apiClient.get('analytics', baseParams);
+        if (!mainResult?.success) {
+          throw new Error(mainResult?.['message'] || 'Failed to fetch analytics data');
         }
+
+        let comparisonResult: RevenueResponse | null = null;
+        if (comparisonRange) {
+          const comparisonParams: Record<string, string> = {
+            startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
+            endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
+            granularity: 'daily',
+            kind,
+          };
+
+          if (appealId) comparisonParams.appealId = appealId;
+          if (fundId) comparisonParams.fundId = fundId;
+          if (effectiveFrequency && effectiveFrequency !== 'all') {
+            comparisonParams.frequency = effectiveFrequency;
+          }
+
+          try {
+            comparisonResult = await apiClient.get('analytics', comparisonParams);
+          } catch (comparisonError) {
+            logError(comparisonError, `Comparison data fetch failed for ${kind}`);
+          }
+        }
+
+        const mainTrendData = mainResult?.data?.trendData || [];
+        const comparisonTrendData = comparisonResult?.data?.trendData || [];
+
+        const chartData = mainTrendData.map((point: any, index: number) => {
+          const comparisonPoint = comparisonTrendData[index];
+          return {
+            date: point.period || point.date,
+            amount: Number(point.amount || 0),
+            count: Number(point.count || 0),
+            comparisonAmount: Number(comparisonPoint?.amount || 0),
+            comparisonCount: Number(comparisonPoint?.count || 0),
+            comparisonDate: comparisonPoint?.period || comparisonPoint?.date,
+          };
+        });
+
+        setData({
+          totalAmount: Number(mainResult?.data?.totalAmount || 0),
+          totalCount: Number(mainResult?.data?.totalCount || 0),
+          comparisonTotalAmount: comparisonResult ? Number(comparisonResult?.data?.totalAmount || 0) : undefined,
+          comparisonTotalCount: comparisonResult ? Number(comparisonResult?.data?.totalCount || 0) : undefined,
+          chartData,
+          isLoading: false,
+          error: null,
+          isRetriable: false,
+        });
+      } catch (error) {
+        logError(error, `Error fetching ${kind} data`);
+        const { message, isRetriable } = formatErrorForDisplay(error);
+
+        setData((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: message,
+          isRetriable,
+        }));
       }
-
-      // Merge main and comparison data
-      const mainTrendData = mainResult.data.trendData || [];
-      const comparisonTrendData = comparisonResult?.data.trendData || [];
-
-      // Create a map of comparison data by date for easy lookup
-      const comparisonMap = new Map();
-      comparisonTrendData.forEach((point: any, index: number) => {
-        // Map comparison data by index since dates might be different
-        comparisonMap.set(index, point);
-      });
-
-      const chartData = mainTrendData.map((point: any, index: number) => {
-        const comparisonPoint = comparisonMap.get(index);
-        return {
-          date: point.period,
-          amount: Number(point.amount || 0),
-          count: Number(point.count || 0),
-          comparisonAmount: Number(comparisonPoint?.amount || 0),
-          comparisonCount: Number(comparisonPoint?.count || 0),
-          comparisonDate: comparisonPoint?.period
-        };
-      });
-
-      setData({
-        totalAmount: Number(mainResult.data.totalAmount || 0),
-        totalCount: Number(mainResult.data.totalCount || 0),
-        comparisonTotalAmount: comparisonResult ? Number(comparisonResult.data.totalAmount || 0) : undefined,
-        comparisonTotalCount: comparisonResult ? Number(comparisonResult.data.totalCount || 0) : undefined,
-        chartData,
-        isLoading: false,
-        error: null,
-        isRetriable: false
-      });
-
-    } catch (error) {
-      logError(error, `Error fetching ${endpoint} data`);
-      const { message, isRetriable } = formatErrorForDisplay(error);
-
-      setData(prev => ({
-        ...prev,
-        isLoading: false,
-        error: message,
-        isRetriable
-      }));
-    }
-  }, [dateRange.startDate, dateRange.endDate, appealId, fundId, frequency, comparisonRange]);
+    },
+    [dateRange.startDate, dateRange.endDate, appealId, fundId, frequency, comparisonRange]
+  );
 
   useEffect(() => {
-    // Fetch all three data sources in parallel (always daily data)
-    // Total raised uses global frequency filter
-    // First installments and one-time donations use their specific frequency types
     Promise.all([
-      fetchData('total-raised', setTotalRaisedData), // Uses global frequency
-      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'), // Always recurring-first
-      fetchData('one-time-donations', setOneTimeData, 'one-time') // Always one-time
+      fetchData('total-raised', setTotalRaisedData),
+      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'),
+      fetchData('one-time-donations', setOneTimeData, 'one-time'),
     ]);
-  }, [dateRange.startDate, dateRange.endDate, comparisonRange?.startDate, comparisonRange?.endDate, appealId, fundId, frequency, fetchData]);
+  }, [
+    dateRange.startDate,
+    dateRange.endDate,
+    comparisonRange?.startDate,
+    comparisonRange?.endDate,
+    appealId,
+    fundId,
+    frequency,
+    fetchData,
+  ]);
 
   const retry = useCallback(() => {
     Promise.all([
-      fetchData('total-raised', setTotalRaisedData), // Uses global frequency
-      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'), // Always recurring-first
-      fetchData('one-time-donations', setOneTimeData, 'one-time') // Always one-time
+      fetchData('total-raised', setTotalRaisedData),
+      fetchData('first-installments', setFirstInstallmentsData, 'recurring-first'),
+      fetchData('one-time-donations', setOneTimeData, 'one-time'),
     ]);
   }, [fetchData]);
 

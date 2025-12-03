@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPhpApiBase } from '@/lib/config/phpApi';
+import apiClient from '@/lib/api/client';
 import './Amount.css';
-
-const BASE_URL = getPhpApiBase();
 
 const Amount = () => {
   const [appeals, setAppeals] = useState([]);
@@ -31,10 +29,7 @@ const Amount = () => {
   const fetchAppeals = async () => {
     try {
       setAppealsLoading(true);
-      const response = await fetch(`${BASE_URL}/filters/appeals`, {
-        credentials: 'include'
-      });
-      const result = await response.json();
+      const result = await apiClient.get('filters/appeals');
 
       if (result.success && result.data) {
         setAppeals(result.data);
@@ -51,10 +46,7 @@ const Amount = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${BASE_URL}/amounts?appeal_id=${appealId}`, {
-        credentials: 'include'
-      });
-      const result = await response.json();
+      const result = await apiClient.get('amounts', { appeal_id: appealId });
 
       if (result.success && result.data) {
         if (result.data.length === 0) {
@@ -136,14 +128,7 @@ const Amount = () => {
         }))
       };
 
-      const response = await fetch(`${BASE_URL}/amounts/bulk`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
+      const result = await apiClient.post('amounts/bulk', payload);
 
       if (result.success) {
         setSuccess('Amounts updated successfully!');

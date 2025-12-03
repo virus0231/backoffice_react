@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildRecurringPlansUrl } from '@/lib/config/phpApi';
-import { safeFetch, parseAPIResponse, logError } from '@/lib/utils/errorHandling';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
+import { logError } from '@/lib/utils/errorHandling';
 
 interface DateRange {
   startDate: Date;
@@ -127,47 +126,37 @@ async function fetchMetricData(
   appealIds: string | null,
   fundIds: string | null
 ): Promise<MetricData> {
-  const searchParams = new URLSearchParams({
+  const baseParams: Record<string, string> = {
     startDate: format(dateRange.startDate, 'yyyy-MM-dd'),
     endDate: format(dateRange.endDate, 'yyyy-MM-dd'),
-    granularity: 'daily'
-  });
+    granularity: 'daily',
+    metric
+  };
 
-  if (appealIds) searchParams.set('appealId', appealIds);
-  if (fundIds) searchParams.set('fundId', fundIds);
+  if (appealIds) baseParams.appealId = appealIds;
+  if (fundIds) baseParams.fundId = fundIds;
 
-  const mainUrl = buildRecurringPlansUrl(metric, searchParams);
-
-  // Fetch main period data
-  const mainResponse = await cachedFetch<RecurringPlansResponse>(mainUrl, undefined, {
-    ttl: 5 * 60 * 1000 // 5 minutes
-  });
-
-  const mainData: PlanDataPoint[] = mainResponse.data.trendData.map(point => ({
+  const mainResponse = await apiClient.get('recurring-plans', baseParams);
+  const mainData: PlanDataPoint[] = (mainResponse?.data?.trendData || []).map((point: any) => ({
     date: point.date,
     value: Number(point.value) || 0
   }));
 
-  // Fetch comparison period data if requested
   let comparisonData: PlanDataPoint[] = [];
   if (comparisonRange) {
-    const compSearchParams = new URLSearchParams({
+    const comparisonParams: Record<string, string> = {
       startDate: format(comparisonRange.startDate, 'yyyy-MM-dd'),
       endDate: format(comparisonRange.endDate, 'yyyy-MM-dd'),
-      granularity: 'daily'
-    });
+      granularity: 'daily',
+      metric
+    };
 
-    if (appealIds) compSearchParams.set('appealId', appealIds);
-    if (fundIds) compSearchParams.set('fundId', fundIds);
-
-    const compUrl = buildRecurringPlansUrl(metric, compSearchParams);
+    if (appealIds) comparisonParams.appealId = appealIds;
+    if (fundIds) comparisonParams.fundId = fundIds;
 
     try {
-      const compResponse = await cachedFetch<RecurringPlansResponse>(compUrl, undefined, {
-        ttl: 5 * 60 * 1000
-      });
-
-      comparisonData = compResponse.data.trendData.map(point => ({
+      const compResponse = await apiClient.get('recurring-plans', comparisonParams);
+      comparisonData = (compResponse?.data?.trendData || []).map((point: any) => ({
         date: point.date,
         value: Number(point.value) || 0
       }));
@@ -176,16 +165,12 @@ async function fetchMetricData(
     }
   }
 
-  // Merge comparison data into main data
   const dailyData = mainData.map((point, index) => ({
     ...point,
     comparisonValue: comparisonData[index]?.value,
     comparisonDate: comparisonData[index]?.date
   }));
 
-  // Generate weekly aggregation based on metric type
-  // Active plans: use last value (it's a snapshot count)
-  // New/Canceled plans: sum values (they're event counts)
   const weeklyData = metric === 'active-plans'
     ? aggregateToWeeklyLast(dailyData)
     : aggregateToWeeklySum(dailyData);

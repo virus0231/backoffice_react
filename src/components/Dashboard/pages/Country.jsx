@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getPhpApiBase } from '@/lib/config/phpApi';
+import apiClient from '@/lib/api/client';
 import './Country.css';
-
-const BASE_URL = getPhpApiBase();
 
 const Country = () => {
   const [countries, setCountries] = useState([]);
@@ -27,15 +25,12 @@ const Country = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/filters/countries`, {
-        credentials: 'include'
-      });
-      const result = await response.json();
+      const result = await apiClient.get('filters/countries');
 
       if (result.success && result.data) {
         setCountries(result.data);
       } else {
-        setError('Failed to load countries');
+        setError(result.message || 'Failed to load countries');
       }
     } catch (err) {
       console.error('Error fetching countries:', err);
@@ -67,20 +62,14 @@ const Country = () => {
     setFormError('');
     try {
       setAddSubmitting(true);
-      const response = await fetch(`${BASE_URL}/countries`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: addForm.name.trim() })
-      });
-      const result = await response.json();
+      const result = await apiClient.post('countries', { name: addForm.name.trim() });
 
       if (result.success) {
         setShowAddModal(false);
         setAddForm({ name: '' });
         fetchCountries();
       } else {
-        setFormError(result.error || 'Failed to add country');
+        setFormError(result.message || result.error || 'Failed to add country');
       }
     } catch (err) {
       console.error(err);
@@ -100,20 +89,14 @@ const Country = () => {
     setFormError('');
     try {
       setEditSubmitting(true);
-      const response = await fetch(`${BASE_URL}/countries/${editForm.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: editForm.name.trim() })
-      });
-      const result = await response.json();
+      const result = await apiClient.put(`countries/${editForm.id}`, { name: editForm.name.trim() });
 
       if (result.success) {
         setShowEditModal(false);
         setEditForm({ id: null, name: '' });
         fetchCountries();
       } else {
-        setFormError(result.error || 'Failed to update country');
+        setFormError(result.message || result.error || 'Failed to update country');
       }
     } catch (err) {
       console.error(err);

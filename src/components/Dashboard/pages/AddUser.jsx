@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import API from '../../../utils/api';
+import apiClient from '@/lib/api/client';
 import './AddUser.css';
 
 const AddUser = () => {
@@ -31,7 +31,7 @@ const AddUser = () => {
     setLoading(true);
 
     try {
-      const response = await API.post('users', {
+      const response = await apiClient.post('users', {
         username: formData.userName,
         password: formData.userPassword,
         display_name: formData.displayName,

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
-import API from '../../../utils/api';
-import { getPhpApiBase } from '@/lib/config/phpApi';
+import apiClient from '@/lib/api/client';
 import './Category.css';
-
-const BASE_URL = getPhpApiBase();
 
 const Category = () => {
   const [categories, setCategories] = useState([]);
@@ -28,15 +25,12 @@ const Category = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${BASE_URL}/categories`, {
-        credentials: 'include'
-      });
-      const result = await response.json();
+      const result = await apiClient.get('categories');
 
       if (result.success && result.data) {
         setCategories(result.data);
       } else {
-        setError('Failed to load categories');
+        setError(result.message || 'Failed to load categories');
       }
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -68,20 +62,14 @@ const Category = () => {
     setFormError('');
     try {
       setAddSubmitting(true);
-      const response = await fetch(`${BASE_URL}/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: addForm.name.trim() })
-      });
-      const result = await response.json();
+      const result = await apiClient.post('categories', { name: addForm.name.trim() });
 
       if (result.success) {
         setShowAddModal(false);
         setAddForm({ name: '' });
         fetchCategories();
       } else {
-        setFormError(result.error || 'Failed to add category');
+        setFormError(result.message || result.error || 'Failed to add category');
       }
     } catch (err) {
       console.error(err);
@@ -101,20 +89,14 @@ const Category = () => {
     setFormError('');
     try {
       setEditSubmitting(true);
-      const response = await fetch(`${BASE_URL}/categories/${editForm.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ name: editForm.name.trim() })
-      });
-      const result = await response.json();
+      const result = await apiClient.put(`categories/${editForm.id}`, { name: editForm.name.trim() });
 
       if (result.success) {
         setShowEditModal(false);
         setEditForm({ id: null, name: '' });
         fetchCategories();
       } else {
-        setFormError(result.error || 'Failed to update category');
+        setFormError(result.message || result.error || 'Failed to update category');
       }
     } catch (err) {
       console.error(err);

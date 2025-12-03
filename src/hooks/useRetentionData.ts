@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { buildRetentionUrl } from '@/lib/config/phpApi';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
 
 interface RetentionCohort {
@@ -37,23 +36,17 @@ export function useRetentionData(
       setError(null);
 
       try {
-        const searchParams = new URLSearchParams();
+        const params: Record<string, string> = {};
 
-        if (appealIds) searchParams.set('appealId', appealIds);
-        if (fundIds) searchParams.set('fundId', fundIds);
-        if (asOf) searchParams.set('asOf', asOf);
+        if (appealIds) params.appealId = appealIds;
+        if (fundIds) params.fundId = fundIds;
+        if (asOf) params.asOf = asOf;
 
-        const url = buildRetentionUrl(searchParams);
-
-        const response = await cachedFetch<{ success: boolean; data: { retentionData: RetentionCohort[] } }>(
-          url,
-          undefined,
-          { ttl: 10 * 60 * 1000 } // 10 minutes cache
-        );
+        const response = await apiClient.get('retention', params);
 
         if (!isMounted) return;
 
-        const normalizedData = (response.data.retentionData || []).map((cohort: any) => ({
+        const normalizedData = (response.data?.retentionData || []).map((cohort: any) => ({
           cohort: String(cohort.cohort || ''),
           count: typeof cohort.count === 'number' ? cohort.count : 0,
           retention: Array.isArray(cohort.retention) ? cohort.retention.map((r: any) => {

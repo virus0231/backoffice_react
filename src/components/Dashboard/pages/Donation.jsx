@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
-import API from '../../../utils/api';
+import apiClient from '@/lib/api/client';
 import './Donation.css';
 
 const Donation = () => {
@@ -82,7 +82,7 @@ const Donation = () => {
       };
 
       // Step 1: Get total count first
-      const countResponse = await API.post('reports/donations', {
+      const countResponse = await apiClient.post('reports/donations', {
         GetReport: 'getReport',
         ...baseRequestData
       });
@@ -105,7 +105,7 @@ const Donation = () => {
       const totalChunks = Math.ceil(totalCount / chunkSize);
 
       // Load first chunk
-      const firstChunkResponse = await API.post('reports/donations', {
+      const firstChunkResponse = await apiClient.post('reports/donations', {
         GetReport: 'getReport',
         loadData: '0',
         chunkSize: chunkSize.toString(),
@@ -153,7 +153,7 @@ const Donation = () => {
       try {
         const offset = chunk * chunkSize;
 
-        const chunkResponse = await API.post('reports/donations', {
+        const chunkResponse = await apiClient.post('reports/donations', {
           GetReport: 'getReport',
           loadData: offset.toString(),
           chunkSize: chunkSize.toString(),
@@ -198,7 +198,7 @@ const Donation = () => {
   const handleExportDetailCSV = async () => {
     setLoadingDetailCSV(true);
     try {
-      const blob = await API.post('reports/donations/export', {
+      const blob = await apiClient.post('reports/donations/export', {
         btnexport: true,
         startDate: filters.fromDate || '',
         endDate: filters.toDate || '',
@@ -214,8 +214,8 @@ const Donation = () => {
         return;
       }
 
-      const dateString = API.getDateString();
-      API.downloadFile(blob, `ForgottenWomen_DonationDetailReport_${dateString}.csv`);
+      const dateString = apiClient.getDateString();
+      apiClient.downloadFile(blob, `ForgottenWomen_DonationDetailReport_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting detail CSV:', error);
       alert('Failed to export detail CSV: ' + error.message);
@@ -227,7 +227,7 @@ const Donation = () => {
   const handleExportSummaryCSV = async () => {
     setLoadingSummaryCSV(true);
     try {
-      const blob = await API.post('reports/donations/export', {
+      const blob = await apiClient.post('reports/donations/export', {
         btnexport_summary: true,
         startDate: filters.fromDate || '',
         endDate: filters.toDate || '',
@@ -243,8 +243,8 @@ const Donation = () => {
         return;
       }
 
-      const dateString = API.getDateString();
-      API.downloadFile(blob, `ForgottenWomen_DonationSummaryReport_${dateString}.csv`);
+      const dateString = apiClient.getDateString();
+      apiClient.downloadFile(blob, `ForgottenWomen_DonationSummaryReport_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting summary CSV:', error);
       alert('Failed to export summary CSV: ' + error.message);

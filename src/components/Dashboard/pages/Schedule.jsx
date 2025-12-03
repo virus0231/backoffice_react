@@ -1,12 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
-import API from '../../../utils/api';
+import apiClient from '@/lib/api/client';
 import './Schedule.css';
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 const CHUNK_SIZE = 500;
 
 const Schedule = () => {
@@ -69,17 +65,16 @@ const Schedule = () => {
   };
 
   const fetchSchedulesChunk = async (cursor = null, limit = CHUNK_SIZE) => {
-    const params = new URLSearchParams();
-    if (filters.status) params.append('status', filters.status);
-    if (filters.frequency) params.append('frequency', filters.frequency);
-    if (filters.fromDate) params.append('from_date', filters.fromDate);
-    if (filters.toDate) params.append('to_date', filters.toDate);
-    if (filters.search) params.append('search', filters.search);
-    if (cursor) params.append('cursor', cursor.toString());
-    params.append('limit', limit.toString());
+    const params = {};
+    if (filters.status) params.status = filters.status;
+    if (filters.frequency) params.frequency = filters.frequency;
+    if (filters.fromDate) params.from_date = filters.fromDate;
+    if (filters.toDate) params.to_date = filters.toDate;
+    if (filters.search) params.search = filters.search;
+    if (cursor) params.cursor = cursor.toString();
+    params.limit = limit.toString();
 
-    const response = await fetch(`${API_BASE}/schedules?${params.toString()}`);
-    const result = await response.json();
+    const result = await apiClient.get('schedules', params);
 
     if (!result?.success) {
       throw new Error(result?.error || 'Failed to load schedules');
@@ -156,28 +151,22 @@ const Schedule = () => {
   const handleExportCSV = async () => {
     setLoadingCSV(true);
     try {
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.frequency) params.append('frequency', filters.frequency);
-      if (filters.fromDate) params.append('from_date', filters.fromDate);
-      if (filters.toDate) params.append('to_date', filters.toDate);
-      if (filters.search) params.append('search', filters.search);
+      const params = {};
+      if (filters.status) params.status = filters.status;
+      if (filters.frequency) params.frequency = filters.frequency;
+      if (filters.fromDate) params.from_date = filters.fromDate;
+      if (filters.toDate) params.to_date = filters.toDate;
+      if (filters.search) params.search = filters.search;
 
-      const response = await fetch(`${API_BASE}/schedules/export?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to export CSV');
-      }
-
-      const blob = await response.blob();
+      const blob = await apiClient.get('schedules/export', params);
 
       if (blob.size === 0) {
         alert('No data to export. Please adjust your filters.');
         return;
       }
 
-      const dateString = API.getDateString();
-      API.downloadFile(blob, `ForgottenWomen_Schedules_${dateString}.csv`);
+      const dateString = apiClient.getDateString();
+      apiClient.downloadFile(blob, `ForgottenWomen_Schedules_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
       alert('Failed to export CSV: ' + error.message);

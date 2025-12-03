@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import API from '../../../utils/api';
+import apiClient from '@/lib/api/client';
 import './AddCategory.css';
 
 const AddCategory = () => {
@@ -17,7 +17,7 @@ const AddCategory = () => {
     setLoading(true);
 
     try {
-      const response = await API.post('categories', { name: categoryName }, { responseType: 'json' });
+      const response = await apiClient.post('categories', { name: categoryName });
 
       if (response.success) {
         alert('Category added successfully!');

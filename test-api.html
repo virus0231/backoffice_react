@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+
+    <div class="card">
+        <h2>Test Configuration</h2>
+        <p><strong>API URL:</strong> <span id="apiUrl">http://192.168.200.134:8000/api/v1</span></p>
+        <p><strong>Test Endpoint:</strong> /auth/login</p>
+    </div>
+
+    <div class="card">
+        <h2>Step 1: Test Direct API Connection</h2>
+        <p>This will test if the API is reachable from this device</p>
+        <button onclick="testAPIConnection()">Test API Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+
+    <div class="card">
+        <h2>Step 2: Test Login Endpoint</h2>
+        <p>This will attempt to call the login endpoint (will fail auth, but confirms connection works)</p>
+        <button onclick="testLoginEndpoint()">Test Login Endpoint</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="card">
+        <h2>Network Information</h2>
+        <p><strong>Your IP:</strong> <span id="clientIp">Loading...</span></p>
+        <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://192.168.200.134:8000/api/v1';
+
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+
+        // Get client IP
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('clientIp').textContent = data.ip;
+            })
+            .catch(() => {
+                document.getElementById('clientIp').textContent = 'Unable to detect';
+            });
+
+        async function testAPIConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.innerHTML = '<div class="result info">Testing connection...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                resultDiv.innerHTML = `<div class="result success">
+✓ SUCCESS: API is reachable!
+Status: ${response.status}
+Headers: ${JSON.stringify([...response.headers.entries()], null, 2)}
+                </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+✗ ERROR: Cannot reach API
+Error: ${error.message}
+
+Possible causes:
+1. Firewall is blocking port 8000
+2. Laravel server is not running
+3. Server is not listening on 0.0.0.0
+                </div>`;
+            }
+        }
+
+        async function testLoginEndpoint() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '<div class="result info">Testing login endpoint...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username_val: 'test',
+                        password_val: 'test'
+                    })
+                });
+
+                const data = await response.json();
+
+                resultDiv.innerHTML = `<div class="result ${response.ok ? 'success' : 'info'}">
+Status: ${response.status}
+Response: ${JSON.stringify(data, null, 2)}
+
+${response.ok ? '✓ API is working correctly!' : '✓ API is reachable! (Auth failed as expected)'}
+                </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+✗ ERROR: Cannot connect to API
+Error: ${error.message}
+
+This means the API endpoint is not accessible from this device.
+
+Solutions:
+1. Run 'add-firewall-rules.bat' as Administrator on the server
+2. Make sure Laravel is running with: php artisan serve --host=0.0.0.0 --port=8000
+3. Check if Windows Firewall is blocking port 8000
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

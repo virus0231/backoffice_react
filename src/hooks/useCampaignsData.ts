@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildFundsDataUrl } from '@/lib/config/phpApi';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
 
 interface CampaignRawData {
@@ -87,25 +86,24 @@ export function useCampaignsData(
         const startDate = format(dateRange.startDate, 'yyyy-MM-dd');
         const endDate = format(dateRange.endDate, 'yyyy-MM-dd');
 
-        const chartParams = new URLSearchParams({
+        const chartParams: Record<string, string> = {
           startDate,
           endDate,
-          granularity
-        });
-        if (appealIds) chartParams.set('appealId', appealIds);
+          granularity,
+          metric: 'chart'
+        };
+        if (appealIds) chartParams.appealId = appealIds;
 
-        const tableParams = new URLSearchParams({
+        const tableParams: Record<string, string> = {
           startDate,
-          endDate
-        });
-        if (appealIds) tableParams.set('appealId', appealIds);
-
-        const chartUrl = buildFundsDataUrl('chart', chartParams);
-        const tableUrl = buildFundsDataUrl('table', tableParams);
+          endDate,
+          metric: 'table'
+        };
+        if (appealIds) tableParams.appealId = appealIds;
 
         const [chartResponse, tableResponse] = await Promise.all([
-          cachedFetch<{ success: boolean; data: { chartData: CampaignChartDataPoint[] } }>(chartUrl, undefined, { ttl: 5 * 60 * 1000 }),
-          cachedFetch<{ success: boolean; data: { tableData: CampaignRawData[] } }>(tableUrl, undefined, { ttl: 5 * 60 * 1000 })
+          apiClient.get('funds', chartParams),
+          apiClient.get('funds', tableParams)
         ]);
 
         if (!isMounted) return;
@@ -122,8 +120,8 @@ export function useCampaignsData(
           return Number.isFinite(n) ? n : fallback;
         };
 
-        const transformedChartData = transformChartData(
-          (chartResponse.data.chartData || []).map((d: any) => ({
+          const transformedChartData = transformChartData(
+          (chartResponse.data?.chartData || []).map((d: any) => ({
             date: String(d.date || ''),
             appeal_id: toNum(d.appeal_id, 0),
             appeal_name: String(d.appeal_name || ''),
@@ -132,7 +130,7 @@ export function useCampaignsData(
         );
 
         const processedTableData = processTableData(
-          (tableResponse.data.tableData || []).map((r: any) => ({
+          (tableResponse.data?.tableData || []).map((r: any) => ({
             appeal_id: toNum(r.appeal_id, 0),
             appeal_name: String(r.appeal_name || ''),
             donation_count: r.donation_count === null ? 0 : toNum(r.donation_count, 0),

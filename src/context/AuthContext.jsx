@@ -1,113 +1,98 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import API from '../utils/api';
-
-const STORAGE_KEY = 'backoffice-auth';
+import { createContext, useContext, useEffect, useState } from 'react';
+import apiClient from '../lib/api/client';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
-  const hydrateFromStorage = useCallback(() => {
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.user) {
-          setUser(parsed.user);
-        }
+      const token = apiClient.getToken();
+      if (!token) {
+        setLoading(false);
+        return;
       }
-    } catch {}
-  }, []);
 
-  const persistUser = useCallback((u) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: u }));
-    } catch {}
-  }, []);
-
-  const clearPersisted = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-  }, []);
-
-  const checkSession = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const resp = await API.post('auth/status');
-      if (resp?.success && resp?.user) {
-        setUser(resp.user);
-        persistUser(resp.user);
-        return true;
+      const response = await apiClient.post('auth/status', {});
+      if (response.success && response.user) {
+        setUser(response.user);
+      } else {
+        apiClient.setToken(null);
+        setUser(null);
       }
-      setUser(null);
-      clearPersisted();
-      return false;
     } catch (err) {
+      console.error('Auth check failed:', err);
+      apiClient.setToken(null);
       setUser(null);
-      clearPersisted();
-      return false;
     } finally {
       setLoading(false);
     }
-  }, [persistUser, clearPersisted]);
+  };
 
-  useEffect(() => {
-    hydrateFromStorage();
-    checkSession();
-  }, [hydrateFromStorage, checkSession]);
-
-  const login = useCallback(async (username, password) => {
-    setError('');
+  const login = async (username, password) => {
     try {
-      const resp = await API.post('auth/login', {
-        username_val: username,
-        password_val: password,
-      });
-      if (resp?.success && resp?.user) {
-        setUser(resp.user);
-        persistUser(resp.user);
-        return true;
+      setError(null);
+      setLoading(true);
+
+      const response = await apiClient.post(
+        'auth/login',
+        {
+          username_val: username,
+          password_val: password,
+        }
+      );
+
+      if (response.success && response.token) {
+        apiClient.setToken(response.token);
+        setUser(response.user);
+        return { success: true };
       }
-      setError(resp?.message || 'Login failed');
-      return false;
+
+      throw new Error(response.message || 'Login failed');
     } catch (err) {
-      setError('Login failed. Please try again.');
-      return false;
+      const errorMessage = err.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      return { success: false, message: errorMessage };
+    } finally {
+      setLoading(false);
     }
-  }, [persistUser]);
+  };
 
-  const logout = useCallback(async () => {
+  const logout = async () => {
     try {
-      await API.post('auth/logout');
-    } catch {}
-    setUser(null);
-    clearPersisted();
-  }, [clearPersisted]);
+      await apiClient.post('auth/logout', {});
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      apiClient.setToken(null);
+      setUser(null);
+    }
+  };
 
-  const value = useMemo(() => ({
+  const value = {
     user,
-    isAuthenticated: !!user,
     loading,
     error,
     login,
     logout,
-    refreshSession: checkSession,
-  }), [user, loading, error, login, logout, checkSession]);
+    isAuthenticated: !!user,
+    checkAuth,
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
 };

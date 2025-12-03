@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { buildCountriesDataUrl } from '@/lib/config/phpApi';
-import { cachedFetch } from '@/lib/cache/apiCache';
+import apiClient from '@/lib/api/client';
 import { logError } from '@/lib/utils/errorHandling';
 
 interface CountryRawData {
@@ -105,27 +104,26 @@ export function useCountriesData(
         const startDate = format(dateRange.startDate, 'yyyy-MM-dd');
         const endDate = format(dateRange.endDate, 'yyyy-MM-dd');
 
-        const chartParams = new URLSearchParams({
+        const chartParams: Record<string, string> = {
           startDate,
           endDate,
-          granularity
-        });
-        if (appealIds) chartParams.set('appealId', appealIds);
-        if (fundIds) chartParams.set('fundId', fundIds);
+          granularity,
+          metric: 'chart'
+        };
+        if (appealIds) chartParams.appealId = appealIds;
+        if (fundIds) chartParams.fundId = fundIds;
 
-        const tableParams = new URLSearchParams({
+        const tableParams: Record<string, string> = {
           startDate,
-          endDate
-        });
-        if (appealIds) tableParams.set('appealId', appealIds);
-        if (fundIds) tableParams.set('fundId', fundIds);
-
-        const chartUrl = buildCountriesDataUrl('chart', chartParams);
-        const tableUrl = buildCountriesDataUrl('table', tableParams);
+          endDate,
+          metric: 'table'
+        };
+        if (appealIds) tableParams.appealId = appealIds;
+        if (fundIds) tableParams.fundId = fundIds;
 
         const [chartResponse, tableResponse] = await Promise.all([
-          cachedFetch<{ success: boolean; data: { chartData: CountryChartDataPoint[] } }>(chartUrl, undefined, { ttl: 5 * 60 * 1000 }),
-          cachedFetch<{ success: boolean; data: { tableData: CountryRawData[] } }>(tableUrl, undefined, { ttl: 5 * 60 * 1000 })
+          apiClient.get('countries', chartParams),
+          apiClient.get('countries', tableParams)
         ]);
 
         if (!isMounted) return;
@@ -143,7 +141,7 @@ export function useCountriesData(
         };
 
         const transformedChartData = transformChartData(
-          (chartResponse.data.chartData || []).map((d: any) => ({
+          (chartResponse.data?.chartData || []).map((d: any) => ({
             date: String(d.date || ''),
             country_code: String(d.country_code || ''),
             amount: toNum(d.amount, 0)
@@ -151,7 +149,7 @@ export function useCountriesData(
         );
 
         const processedTableData = processTableData(
-          (tableResponse.data.tableData || []).map((r: any) => ({
+          (tableResponse.data?.tableData || []).map((r: any) => ({
             country_code: String(r.country_code || ''),
             donation_count: r.donation_count === null ? 0 : toNum(r.donation_count, 0),
             total_raised: r.total_raised === null ? 0 : toNum(r.total_raised, 0),

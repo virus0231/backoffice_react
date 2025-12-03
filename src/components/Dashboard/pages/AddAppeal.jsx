@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import API from '../../../utils/api';
+import apiClient from '@/lib/api/client';
 import './AddAppeal.css';
 
 const AddAppeal = () => {
@@ -95,7 +95,7 @@ const AddAppeal = () => {
         appealType: formData.appealType
       };
 
-      const response = await API.post('appeals', requestData);
+      const response = await apiClient.post('appeals', requestData);
 
       if (response.success) {
         alert('Appeal added successfully!');

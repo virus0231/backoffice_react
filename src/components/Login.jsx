@@ -18,7 +18,6 @@ const Login = () => {
     if (authError) setError(authError);
   }, [authError]);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
@@ -30,15 +29,16 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    const ok = await login(username, password);
-    if (ok) {
-      // Navigate immediately after successful login
+    const result = await login(username, password);
+    if (result.success) {
       navigate('/', { replace: true });
     } else {
+      const message = result.message || 'Invalid username or password. Please try again.';
+      setError(message);
       setModalConfig({
         title: 'Error!',
-        message: 'Invalid username or password. Please try again.',
-        type: 'error'
+        message,
+        type: 'error',
       });
       setModalOpen(true);
     }
@@ -71,7 +71,7 @@ const Login = () => {
               <h2 className="panel-title">Welcome back</h2>
               <p className="panel-subtitle">Sign in to continue</p>
             </div>
-            <div className="panel-badge">Secure • YOC</div>
+            <div className="panel-badge">Secure ƒ?› YOC</div>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
