@@ -15,6 +15,7 @@ use App\Repositories\Contracts\AmountRepositoryInterface;
 use App\Repositories\Contracts\FundRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\CountryRepositoryInterface;
+use App\Repositories\Contracts\CountryAnalyticsRepositoryInterface;
 use App\Repositories\Contracts\FeaturedAmountRepositoryInterface;
 use App\Repositories\AppealRepository;
 use App\Repositories\AnalyticsRepository;
@@ -29,6 +30,7 @@ use App\Repositories\AmountRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\CountryRepository;
 use App\Repositories\FeaturedAmountRepository;
+use App\Repositories\CountryAnalyticsRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -50,6 +52,7 @@ class RepositoryServiceProvider extends ServiceProvider
             CountryRepositoryInterface::class => CountryRepository::class,
             AppealRepositoryInterface::class => AppealRepository::class,
             FeaturedAmountRepositoryInterface::class => FeaturedAmountRepository::class,
+            CountryAnalyticsRepositoryInterface::class => CountryAnalyticsRepository::class,
         ];
 
         foreach ($bindings as $abstract => $concrete) {

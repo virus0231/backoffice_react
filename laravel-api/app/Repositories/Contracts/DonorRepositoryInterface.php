@@ -2,16 +2,15 @@
 
 namespace App\Repositories\Contracts;
 
-use App\Models\Donor;
-use App\Repositories\Contracts\RepositoryInterface;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 interface DonorRepositoryInterface extends RepositoryInterface
 {
-    public function paginateWithFilters(array $filters = [], int $perPage = 50): LengthAwarePaginator;
+    public function getPaginatedDonors(int $offset, int $limit, ?string $search): array;
 
-    public function search(string $term, int $limit = 25): Collection;
+    public function findDonorById(int $id): ?object;
 
-    public function findByEmail(string $email): ?Donor;
+    public function createDonor(array $data): int;
+
+    public function updateDonor(int $id, array $data): bool;
 }
