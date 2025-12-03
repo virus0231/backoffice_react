@@ -14,6 +14,7 @@ use App\Repositories\Contracts\DonationExportRepositoryInterface;
 use App\Repositories\Contracts\AmountRepositoryInterface;
 use App\Repositories\Contracts\FundRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Repositories\Contracts\CountryRepositoryInterface;
 use App\Repositories\AnalyticsRepository;
 use App\Repositories\DonorRepository;
 use App\Repositories\FiltersRepository;
@@ -24,6 +25,7 @@ use App\Repositories\UserManagementRepository;
 use App\Repositories\FundRepository;
 use App\Repositories\AmountRepository;
 use App\Repositories\CategoryRepository;
+use App\Repositories\CountryRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -42,6 +44,7 @@ class RepositoryServiceProvider extends ServiceProvider
             FundRepositoryInterface::class => FundRepository::class,
             AmountRepositoryInterface::class => AmountRepository::class,
             CategoryRepositoryInterface::class => CategoryRepository::class,
+            CountryRepositoryInterface::class => CountryRepository::class,
             AppealRepositoryInterface::class => 'App\Repositories\AppealRepository',
         ];
 

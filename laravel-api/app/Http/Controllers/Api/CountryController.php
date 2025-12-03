@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\CountryService;
 use App\Support\TableResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,26 @@ use Illuminate\Support\Facades\DB;
 
 class CountryController extends Controller
 {
+    public function __construct(private readonly CountryService $countryService)
+    {
+    }
+
+    public function index(): JsonResponse
+    {
+        $result = $this->countryService->getAllCountries();
+        $status = $result['success'] ? 200 : 400;
+
+        return response()->json($result, $status);
+    }
+
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $result = $this->countryService->bulkUpdateCountries($request->all());
+        $status = $result['error'] === 'validation' ? 400 : 200;
+
+        return response()->json($result, $status);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $name = trim((string)$request->input('name', ''));
