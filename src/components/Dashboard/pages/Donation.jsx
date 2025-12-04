@@ -27,6 +27,8 @@ const Donation = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const [showDonationDetail, setShowDonationDetail] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -254,8 +256,55 @@ const Donation = () => {
   };
 
   const handleAction = (donation) => {
-    console.log('Action for donation:', donation);
-    // Implement view details modal or navigation
+    setSelectedDonation(donation);
+    setShowDonationDetail(true);
+  };
+
+  const closeDonationDetail = () => {
+    setShowDonationDetail(false);
+    setSelectedDonation(null);
+  };
+
+  const formatCurrency = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num)
+      ? num.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })
+      : (value ?? 'N/A');
+  };
+
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  };
+
+  const formatFrequency = (value) => {
+    const map = { '0': 'One-Off', '1': 'Monthly', '2': 'Yearly', '3': 'Daily' };
+    return map[value] || value || 'N/A';
+  };
+
+  const buildAddress = (donation) => {
+    const parts = [
+      donation.add1 || donation.address,
+      donation.city,
+      donation.add2 || donation.state,
+      donation.country,
+      donation.postcode
+    ].filter(Boolean);
+    return parts.length ? parts.join(', ') : 'N/A';
+  };
+
+  const getLineItems = (donation) => {
+    if (!donation) return [];
+    const details = Array.isArray(donation.details) ? donation.details : (Array.isArray(donation.items) ? donation.items : []);
+    return details.map((item, idx) => ({
+      sno: idx + 1,
+      name: item.appeal_name || item.name || item.donation_name || 'Donation',
+      otherAmount: item.other_amount ?? item.amount ?? item.value ?? 0,
+      quantity: item.quantity ?? 1,
+      frequency: formatFrequency(String(item.frequency ?? item.freq ?? '')),
+      amount: item.total ?? item.amount ?? item.charge_amount ?? 0,
+    }));
   };
 
   // Pagination helpers
@@ -292,6 +341,8 @@ const Donation = () => {
     }
     return range;
   };
+
+  const lineItems = showDonationDetail && selectedDonation ? getLineItems(selectedDonation) : [];
 
   return (
     <div className="donation-page">
@@ -537,6 +588,135 @@ const Donation = () => {
           )}
         </div>
       </div>
+
+      {showDonationDetail && selectedDonation && (
+        <div className="detail-modal-overlay" role="dialog" aria-modal="true">
+          <div className="detail-modal-card donation-detail-card">
+            <div className="detail-modal-header">
+              <div>
+                <p className="detail-modal-eyebrow">Donation Information</p>
+                <h3 className="detail-modal-title">
+                  {selectedDonation.firstname || selectedDonation.lastname
+                    ? `${selectedDonation.firstname || ''} ${selectedDonation.lastname || ''}`.trim()
+                    : 'Donation'}
+                </h3>
+                <p className="detail-modal-subtitle">Order: {selectedDonation.order_id || 'N/A'} · Transaction: {selectedDonation.TID || 'N/A'}</p>
+              </div>
+              <button className="detail-modal-close" onClick={closeDonationDetail} aria-label="Close detail modal">
+                ×
+              </button>
+            </div>
+
+            <div className="detail-amount-row">
+              <div className="detail-amount">{formatCurrency(selectedDonation.charge_amount ?? selectedDonation.totalamount ?? selectedDonation.amount)}</div>
+            </div>
+
+            <div className="detail-section grid-2col">
+              <div className="detail-modal-grid">
+                <div className="detail-item">
+                  <span>Name</span>
+                  <strong>{`${selectedDonation.firstname || ''} ${selectedDonation.lastname || ''}`.trim() || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Address</span>
+                  <strong>{buildAddress(selectedDonation)}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Email</span>
+                  <strong>{selectedDonation.email || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Phone</span>
+                  <strong>{selectedDonation.phone || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Notes</span>
+                  <strong>{selectedDonation.notes || 'N/A'}</strong>
+                </div>
+              </div>
+
+              <div className="detail-modal-grid">
+                <div className="detail-item">
+                  <span>Date</span>
+                  <strong>{formatDate(selectedDonation.date)}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Status</span>
+                  <strong>
+                    <span className={`status-badge status-${(selectedDonation.status || 'pending').toLowerCase()}`}>
+                      {selectedDonation.status || 'Pending'}
+                    </span>
+                  </strong>
+                </div>
+                <div className="detail-item">
+                  <span>Order Number</span>
+                  <strong>{selectedDonation.order_id || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Reference Number</span>
+                  <strong>{selectedDonation.reference_number || selectedDonation.ref_number || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Transaction</span>
+                  <strong>{selectedDonation.TID || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Payment Type</span>
+                  <strong>{selectedDonation.paymenttype || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Frequency</span>
+                  <strong>{formatFrequency(String(selectedDonation.freq ?? selectedDonation.frequency ?? ''))}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Card Fee</span>
+                  <strong>{formatCurrency(selectedDonation.card_fee)}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="detail-section">
+              <h4>Original Donation Details</h4>
+              <div className="detail-lineitems-table-wrapper">
+                <table className="detail-lineitems-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Donation Name</th>
+                      <th>Other Amount</th>
+                      <th>QTY</th>
+                      <th>Frequency</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="detail-lineitems-empty">No line items available.</td>
+                      </tr>
+                    ) : (
+                      lineItems.map(item => (
+                        <tr key={`line-${item.sno}`}>
+                          <td>{item.sno}</td>
+                          <td>{item.name}</td>
+                          <td>{formatCurrency(item.otherAmount)}</td>
+                          <td>{item.quantity}</td>
+                          <td>{item.frequency}</td>
+                          <td>{formatCurrency(item.amount)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="detail-modal-footer">
+              <button className="detail-modal-close-btn" onClick={closeDonationDetail}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

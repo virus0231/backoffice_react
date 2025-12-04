@@ -40,10 +40,16 @@ class ScheduleRepository implements ScheduleRepositoryInterface
               td.freq,
               t.status,
               t.paymenttype as donation_type,
+              t.paymenttype as payment_method,
               d.firstname,
               d.lastname,
               d.email,
               d.phone,
+              d.add1,
+              d.city,
+              d.add2,
+              d.country,
+              d.postcode,
               CASE
                 WHEN td.freq = 0 THEN 'One-Time'
                 WHEN td.freq = 1 THEN 'Monthly'
@@ -55,7 +61,8 @@ class ScheduleRepository implements ScheduleRepositoryInterface
             LEFT JOIN `{$tables['details']}` td ON t.id = td.TID
             LEFT JOIN `{$tables['donors']}` d ON d.id = t.did
             WHERE {$whereClause}
-            GROUP BY t.id, t.order_id, t.date, t.totalamount, td.freq, t.status, t.paymenttype, d.firstname, d.lastname, d.email, d.phone
+            GROUP BY t.id, t.order_id, t.date, t.totalamount, td.freq, t.status, t.paymenttype,
+                     d.firstname, d.lastname, d.email, d.phone, d.add1, d.city, d.add2, d.country, d.postcode
             ORDER BY t.date DESC
             LIMIT ? OFFSET ?
         ";
@@ -96,6 +103,46 @@ class ScheduleRepository implements ScheduleRepositoryInterface
         ";
 
         return collect(DB::select($sql, $params));
+    }
+
+    public function getDetailsForSchedules(array $filters, array $scheduleIds): Collection
+    {
+        if (empty($scheduleIds)) {
+            return collect();
+        }
+
+        $tables = $this->getTables();
+        $tables['appeal'] = TableResolver::prefixed('appeal');
+        $tables['amount'] = TableResolver::prefixed('amount');
+        $tables['fundlist'] = TableResolver::prefixed('fundlist');
+
+        $detail = $tables['details'];
+        $tx = $tables['transactions'];
+
+        return DB::table($detail)
+            ->whereIn("{$detail}.TID", $scheduleIds)
+            ->leftJoin($tables['appeal'], "{$tables['appeal']}.id", '=', "{$detail}.appeal_id")
+            ->leftJoin($tables['amount'], "{$tables['amount']}.id", '=', "{$detail}.amount_id")
+            ->leftJoin($tables['fundlist'], "{$tables['fundlist']}.id", '=', "{$detail}.fundlist_id")
+            ->leftJoin($tx, "{$tx}.id", '=', "{$detail}.TID")
+            ->select([
+                "{$detail}.id",
+                "{$detail}.TID as transaction_id",
+                "{$tx}.date",
+                "{$tx}.order_id",
+                "{$tx}.status",
+                "{$tx}.paymenttype as payment_method",
+                "{$detail}.freq",
+                "{$detail}.quantity",
+                "{$detail}.amount as other_amount",
+                DB::raw("({$detail}.amount * {$detail}.quantity) as line_total"),
+                "{$tables['appeal']}.name as donation_type",
+                "{$tables['amount']}.name as amount_name",
+                "{$tables['fundlist']}.name as fund_name",
+            ])
+            ->orderBy("{$detail}.TID", 'DESC')
+            ->orderBy("{$detail}.id")
+            ->get();
     }
 
     public function createSchedule(array $data): int

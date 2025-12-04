@@ -17,7 +17,21 @@ class ScheduleService
         $filters = $this->mapFilters($queryParams);
 
         $result = $this->scheduleRepository->getPaginatedSchedules($filters);
-        $data = $result['data']->map(fn ($r) => $this->formatRow($r));
+        $rows = $result['data'];
+
+        $detailsBySchedule = collect();
+        if ($rows->isNotEmpty()) {
+            $ids = $rows->pluck('id')->unique()->values()->all();
+            $detailsBySchedule = $this->scheduleRepository
+                ->getDetailsForSchedules($filters, $ids)
+                ->groupBy('transaction_id');
+        }
+
+        $data = $rows->map(function ($r) use ($detailsBySchedule) {
+            $row = $this->formatRow($r);
+            $row['details'] = $detailsBySchedule[$r->id]?->values()->all() ?? [];
+            return $row;
+        });
 
         return [
             'data' => $data,
@@ -64,6 +78,7 @@ class ScheduleService
     {
         return [
             'id' => (int) $r->id,
+            'transaction_id' => (int) $r->id,
             'order_id' => $r->order_id,
             'donationType' => $r->donation_type ?? 'N/A',
             'startDate' => $r->start_date,
@@ -73,6 +88,24 @@ class ScheduleService
             'amount' => (float) $r->amount,
             'frequency' => $r->frequency_name,
             'status' => $r->status,
+            'paymentMethod' => $r->payment_method ?? $r->donation_type ?? '',
+            'address' => $this->formatAddress($r),
+            'rawFrequency' => $r->freq,
         ];
+    }
+
+    protected function formatAddress(object $r): string
+    {
+        $parts = [
+            $r->add1 ?? null,
+            $r->city ?? null,
+            $r->add2 ?? null,
+            $r->country ?? null,
+            $r->postcode ?? null,
+        ];
+
+        $clean = array_values(array_filter($parts, fn ($v) => $v !== null && $v !== ''));
+
+        return $clean ? implode(', ', $clean) : 'N/A';
     }
 }

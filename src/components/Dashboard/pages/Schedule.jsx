@@ -26,6 +26,8 @@ const Schedule = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(50);
+  const [showScheduleDetail, setShowScheduleDetail] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -176,8 +178,52 @@ const Schedule = () => {
   };
 
   const handleDetail = (schedule) => {
-    alert(`Order ID: ${schedule.order_id}\nName: ${schedule.name}\nEmail: ${schedule.email}\nAmount: $${schedule.amount}\nFrequency: ${schedule.frequency}`);
+    setSelectedSchedule(schedule);
+    setShowScheduleDetail(true);
   };
+
+  const closeScheduleDetail = () => {
+    setShowScheduleDetail(false);
+    setSelectedSchedule(null);
+  };
+
+  const formatCurrency = (value) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' }) : (value ?? 'N/A');
+  };
+
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  };
+
+  const formatFrequency = (value) => {
+    const map = { '0': 'One-Off', '1': 'Monthly', '2': 'Yearly', '3': 'Daily' };
+    return map[value] || value || 'N/A';
+  };
+
+  const buildAddress = (schedule) => {
+    if (!schedule) return 'N/A';
+    if (schedule.address) return schedule.address;
+    const parts = [schedule.add1, schedule.city, schedule.add2, schedule.country, schedule.postcode].filter(Boolean);
+    return parts.length ? parts.join(', ') : 'N/A';
+  };
+
+  const lineItems = useMemo(() => {
+    if (!selectedSchedule || !Array.isArray(selectedSchedule.details)) return [];
+    return selectedSchedule.details.map((item, idx) => ({
+      id: item.id ?? idx + 1,
+      date: item.date,
+      donationType: item.donation_type || item.fund_name || 'Donation',
+      amountName: item.amount_name || 'N/A',
+      otherAmount: item.other_amount ?? 0,
+      orderId: item.order_id || selectedSchedule.order_id || 'N/A',
+      status: item.status || selectedSchedule.status || 'N/A',
+      amount: item.line_total ?? item.other_amount ?? 0,
+      frequency: formatFrequency(String(item.freq ?? '')),
+    }));
+  }, [selectedSchedule]);
 
   // Pagination helpers
   const totalPages = Math.max(1, Math.ceil(schedules.length / itemsPerPage));
@@ -447,6 +493,115 @@ const Schedule = () => {
           )}
         </div>
       </div>
+
+      {showScheduleDetail && selectedSchedule && (
+        <div className="detail-modal-overlay" role="dialog" aria-modal="true">
+          <div className="detail-modal-card schedule-detail-card">
+            <div className="detail-modal-header">
+              <div>
+                <p className="detail-modal-eyebrow">Schedule Details</p>
+                <h3 className="detail-modal-title">{selectedSchedule.name || 'Schedule'}</h3>
+                <p className="detail-modal-subtitle">Order: {selectedSchedule.order_id || 'N/A'} · Transaction: {selectedSchedule.transaction_id || 'N/A'}</p>
+              </div>
+              <button className="detail-modal-close" onClick={closeScheduleDetail} aria-label="Close detail modal">
+                ×
+              </button>
+            </div>
+
+            <div className="detail-amount-row">
+              <div className="detail-amount">{formatCurrency(selectedSchedule.amount)}</div>
+            </div>
+
+            <div className="detail-section grid-2col">
+              <div className="detail-modal-grid">
+                <div className="detail-item">
+                  <span>Name</span>
+                  <strong>{selectedSchedule.name || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Address</span>
+                  <strong>{buildAddress(selectedSchedule)}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Email</span>
+                  <strong>{selectedSchedule.email || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Phone</span>
+                  <strong>{selectedSchedule.phone || 'N/A'}</strong>
+                </div>
+              </div>
+
+              <div className="detail-modal-grid">
+                <div className="detail-item">
+                  <span>Start Date</span>
+                  <strong>{formatDate(selectedSchedule.startDate)}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Frequency</span>
+                  <strong>{formatFrequency(String(selectedSchedule.rawFrequency ?? selectedSchedule.frequency ?? ''))}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Order Number</span>
+                  <strong>{selectedSchedule.order_id || 'N/A'}</strong>
+                </div>
+                <div className="detail-item">
+                  <span>Status</span>
+                  <strong>
+                    <span className={`status-badge status-${(selectedSchedule.status || 'pending').toLowerCase()}`}>
+                      {selectedSchedule.status || 'Pending'}
+                    </span>
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="detail-section">
+              <h4>Transaction Details</h4>
+              <div className="detail-lineitems-table-wrapper">
+                <table className="detail-lineitems-table">
+                  <thead>
+                    <tr>
+                      <th>Id</th>
+                      <th>Date</th>
+                      <th>Donation Type</th>
+                      <th>Amount Name</th>
+                      <th>Other Amount</th>
+                      <th>Order Id</th>
+                      <th>Status</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="detail-lineitems-empty">No transaction details available.</td>
+                      </tr>
+                    ) : (
+                      lineItems.map(item => (
+                        <tr key={`sched-line-${item.id}`}>
+                          <td>{item.id}</td>
+                          <td>{formatDate(item.date)}</td>
+                          <td>{item.donationType}</td>
+                          <td>{item.amountName}</td>
+                          <td>{formatCurrency(item.otherAmount)}</td>
+                          <td>{item.orderId}</td>
+                          <td>{item.status}</td>
+                          <td>{formatCurrency(item.amount)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="detail-modal-footer">
+              <button className="detail-modal-close-btn" onClick={closeScheduleDetail}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

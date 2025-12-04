@@ -13,4 +13,6 @@ interface DonationExportRepositoryInterface extends RepositoryInterface
     public function getSummaryData(array $filters): Collection;
 
     public function getDetailData(array $filters): Collection;
+
+    public function getDetailsForTransactions(array $filters, array $transactionIds): Collection;
 }

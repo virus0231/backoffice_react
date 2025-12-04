@@ -63,8 +63,10 @@ class DonationExportRepository implements DonationExportRepositoryInterface
 
     public function getDetailData(array $filters): Collection
     {
+        // Build the base query first so $filters gets populated with table names
+        $q = $this->baseQuery($filters);
         $tables = $filters['tables'];
-        $q = $this->baseQuery($filters)
+        $q = $q
             ->join($tables['appeal'], "{$tables['appeal']}.id", '=', "{$tables['details']}.appeal_id")
             ->join($tables['amount'], "{$tables['amount']}.id", '=', "{$tables['details']}.amount_id")
             ->join($tables['fundlist'], "{$tables['fundlist']}.id", '=', "{$tables['details']}.fundlist_id");
@@ -95,6 +97,36 @@ class DonationExportRepository implements DonationExportRepositoryInterface
             "{$tables['transactions']}.status",
         ])
             ->orderBy("{$tables['details']}.TID", 'DESC')
+            ->get();
+    }
+
+    public function getDetailsForTransactions(array $filters, array $transactionIds): Collection
+    {
+        if (empty($transactionIds)) {
+            return collect();
+        }
+
+        // Populate table names
+        $this->baseQuery($filters);
+        $tables = $filters['tables'];
+        $detail = $tables['details'];
+        $tx = $tables['transactions'];
+
+        return DB::table($detail)
+            ->whereIn("{$detail}.TID", $transactionIds)
+            ->leftJoin($tables['appeal'], "{$tables['appeal']}.id", '=', "{$detail}.appeal_id")
+            ->leftJoin($tables['amount'], "{$tables['amount']}.id", '=', "{$detail}.amount_id")
+            ->leftJoin($tables['fundlist'], "{$tables['fundlist']}.id", '=', "{$detail}.fundlist_id")
+            ->select([
+                "{$detail}.TID as transaction_id",
+                "{$detail}.freq",
+                "{$detail}.quantity",
+                "{$detail}.amount",
+                "{$tables['appeal']}.name as appeal_name",
+                "{$tables['amount']}.name as amount_name",
+                "{$tables['fundlist']}.name as fund_name",
+            ])
+            ->orderBy("{$detail}.TID", 'DESC')
             ->get();
     }
 

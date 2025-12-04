@@ -23,4 +23,12 @@ interface ScheduleRepositoryInterface extends RepositoryInterface
     public function getAllSchedulesForExport(array $filters): Collection;
 
     public function createSchedule(array $data): int;
+
+    /**
+     * Fetch schedule line-items for given schedule/transaction IDs.
+     *
+     * @param array $scheduleIds
+     * @return Collection
+     */
+    public function getDetailsForSchedules(array $filters, array $scheduleIds): Collection;
 }

@@ -18,7 +18,21 @@ class DonationExportService
         if (array_key_exists('loadData', $params)) {
             $offset = (int) $params['loadData'];
             $limit = min((int) ($params['chunkSize'] ?? 50), 1000);
-            return $this->donationExportRepository->getPaginatedData($filters, $offset, $limit);
+            $data = $this->donationExportRepository->getPaginatedData($filters, $offset, $limit);
+
+            if ($data instanceof \Illuminate\Support\Collection && $data->isNotEmpty()) {
+                $ids = $data->pluck('id')->unique()->values()->all();
+                $details = $this->donationExportRepository
+                    ->getDetailsForTransactions($filters, $ids)
+                    ->groupBy('transaction_id');
+
+                $data = $data->map(function ($item) use ($details) {
+                    $item->details = ($details[$item->id] ?? collect())->values()->all();
+                    return $item;
+                });
+            }
+
+            return $data;
         }
 
         return $this->donationExportRepository->getCountWithFilters($filters);
