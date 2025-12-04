@@ -136,9 +136,19 @@ const Amount = () => {
       } else {
         setError('Failed to update amounts: ' + (result.error || 'Unknown error'));
       }
-    } catch (err) {
-      console.error('Error updating amounts:', err);
-      setError('Failed to update amounts. Please try again.');
+    } catch (error) {
+      console.error('Error updating amounts:', error);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => setError(msg));
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getPhpApiBase } from '@/lib/config/phpApi';
+import { useToast } from '../../ToastContainer';
 import './DonorReport.css';
 
 const BASE_URL = getPhpApiBase();
 
 const DonorReport = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [lybuntDonors, setLybuntDonors] = useState([]);
   const [sybuntDonors, setSybuntDonors] = useState([]);
   const [topLevelDonors, setTopLevelDonors] = useState([]);
@@ -45,7 +47,7 @@ const DonorReport = () => {
   };
 
   const handleExport = (section) => {
-    alert(`Export functionality for ${section} donors will be implemented`);
+    showWarning(`Export functionality for ${section} donors will be implemented`);
   };
 
   return (

@@ -78,14 +78,17 @@ class AppealController extends Controller
             $intervals = explode(',', (string)$intervals);
         }
 
+        $category = $request->input('category');
+        $country = $request->input('appealCountry');
+
         return [
             'name' => trim((string)$request->input('appealName', $request->input('name', ''))),
-            'description' => $request->input('description', ''),
-            'image' => $request->input('image', ''),
+            'description' => $request->input('description'),
+            'image' => $request->input('image') ?? '',
             'ishome_v' => $request->boolean('onHome') ? 1 : 0,
-            'country' => $request->input('appealCountry', ''),
-            'cause' => $request->input('appealCause', ''),
-            'category' => $request->input('category', ''),
+            'country' => (int)$country,
+            'cause' => $request->input('appealCause', 'NA'),
+            'category' => ($category && $category !== '') ? (int)$category : null,
             'goal' => (float)($request->input('appealGoal', 0)),
             'sort' => (int)($request->input('sort', 0)),
             'isfooter' => $request->boolean('onFooter') ? 1 : 0,

@@ -71,9 +71,19 @@ const Category = () => {
       } else {
         setFormError(result.message || result.error || 'Failed to add category');
       }
-    } catch (err) {
-      console.error(err);
-      setFormError('Unable to add category. Please try again.');
+    } catch (error) {
+      console.error('Error adding category:', error);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => setFormError(msg));
+      } else if (error.message) {
+        setFormError(error.message);
+      } else {
+        setFormError('An error occurred. Please try again.');
+      }
     } finally {
       setAddSubmitting(false);
     }
@@ -98,9 +108,19 @@ const Category = () => {
       } else {
         setFormError(result.message || result.error || 'Failed to update category');
       }
-    } catch (err) {
-      console.error(err);
-      setFormError('Unable to update category. Please try again.');
+    } catch (error) {
+      console.error('Error updating category:', error);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => setFormError(msg));
+      } else if (error.message) {
+        setFormError(error.message);
+      } else {
+        setFormError('An error occurred. Please try again.');
+      }
     } finally {
       setEditSubmitting(false);
     }

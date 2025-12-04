@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../ToastContainer';
 import './Configuration.css';
 
 const Configuration = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +40,7 @@ const Configuration = () => {
 
   const handleAddService = () => {
     console.log('Add new service');
-    alert('Add Service functionality');
+    showWarning('Add Service functionality');
   };
 
   const handleToggleStatus = (id) => {
@@ -51,7 +53,7 @@ const Configuration = () => {
 
   const handleEdit = (service) => {
     console.log('Edit service:', service);
-    alert(`Edit service: ${service.name}`);
+    showWarning(`Edit service: ${service.name}`);
   };
 
   return (

@@ -2,10 +2,12 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
 import apiClient from '@/lib/api/client';
+import { useToast } from '../../ToastContainer';
 import './Schedule.css';
 const CHUNK_SIZE = 500;
 
 const Schedule = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [filters, setFilters] = useState({
     status: '',
     frequency: '',
@@ -163,7 +165,7 @@ const Schedule = () => {
       const blob = await apiClient.get('schedules/export', params);
 
       if (blob.size === 0) {
-        alert('No data to export. Please adjust your filters.');
+        showWarning('No data to export. Please adjust your filters.');
         return;
       }
 
@@ -171,7 +173,7 @@ const Schedule = () => {
       apiClient.downloadFile(blob, `ForgottenWomen_Schedules_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert('Failed to export CSV: ' + error.message);
+      showError('Failed to export CSV: ' + error.message);
     } finally {
       setLoadingCSV(false);
     }

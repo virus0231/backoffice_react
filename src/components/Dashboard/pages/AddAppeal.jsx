@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import apiClient from '@/lib/api/client';
+import { useToast } from '../../ToastContainer';
 import './AddAppeal.css';
 
 const AddAppeal = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [formData, setFormData] = useState({
     status: 'Enabled',
     appealName: '',
@@ -98,7 +100,7 @@ const AddAppeal = () => {
       const response = await apiClient.post('appeals', requestData);
 
       if (response.success) {
-        alert('Appeal added successfully!');
+        showSuccess('Appeal added successfully!');
         // Reset form
         setFormData({
           status: 'Enabled',
@@ -128,11 +130,21 @@ const AddAppeal = () => {
         });
         setImageFile(null);
       } else {
-        alert('Failed to add appeal. Please try again.');
+        showError('Failed to add appeal. Please try again.');
       }
     } catch (error) {
       console.error('Error adding appeal:', error);
-      alert('An error occurred. Please try again.');
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -188,7 +200,7 @@ const AddAppeal = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="description">Description</label>
+              <label htmlFor="description">Description *</label>
               <textarea
                 id="description"
                 placeholder="Description"
@@ -196,6 +208,7 @@ const AddAppeal = () => {
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 className="form-textarea"
                 rows="3"
+                required
               />
             </div>
           </div>

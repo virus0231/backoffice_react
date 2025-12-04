@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import apiClient from '@/lib/api/client';
+import { useToast } from '../../ToastContainer';
 import './AddCategory.css';
 
 const AddCategory = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -10,7 +12,7 @@ const AddCategory = () => {
     e.preventDefault();
 
     if (!categoryName.trim()) {
-      alert('Please enter a category name');
+      showWarning('Please enter a category name');
       return;
     }
 
@@ -20,14 +22,24 @@ const AddCategory = () => {
       const response = await apiClient.post('categories', { name: categoryName });
 
       if (response.success) {
-        alert('Category added successfully!');
+        showSuccess('Category added successfully!');
         setCategoryName('');
       } else {
-        alert('Failed to add category. Please try again.');
+        showError('Failed to add category. Please try again.');
       }
     } catch (error) {
       console.error('Error adding category:', error);
-      alert('An error occurred. Please try again.');
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

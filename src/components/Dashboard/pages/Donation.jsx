@@ -2,9 +2,11 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { format } from 'date-fns';
 import DateRangePicker from '@/components/filters/DateRangePicker';
 import apiClient from '@/lib/api/client';
+import { useToast } from '../../ToastContainer';
 import './Donation.css';
 
 const Donation = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [filters, setFilters] = useState({
     fromDate: '',
     toDate: '',
@@ -97,7 +99,7 @@ const Donation = () => {
       }
 
       if (totalCount === 0) {
-        alert('No data found. Try adjusting your filters.');
+        showWarning('No data found. Try adjusting your filters.');
         setLoadingReport(false);
         return;
       }
@@ -138,7 +140,18 @@ const Donation = () => {
 
     } catch (error) {
       console.error('Error fetching report:', error);
-      alert('Failed to fetch report data: ' + error.message);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
+    } finally {
       setLoadingReport(false);
     }
   };
@@ -212,7 +225,7 @@ const Donation = () => {
       }, { responseType: 'blob' });
 
       if (blob.size === 0) {
-        alert('No data to export. Please adjust your filters.');
+        showWarning('No data to export. Please adjust your filters.');
         return;
       }
 
@@ -220,7 +233,17 @@ const Donation = () => {
       apiClient.downloadFile(blob, `ForgottenWomen_DonationDetailReport_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting detail CSV:', error);
-      alert('Failed to export detail CSV: ' + error.message);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
     } finally {
       setLoadingDetailCSV(false);
     }
@@ -241,7 +264,7 @@ const Donation = () => {
       }, { responseType: 'blob' });
 
       if (blob.size === 0) {
-        alert('No data to export. Please adjust your filters.');
+        showWarning('No data to export. Please adjust your filters.');
         return;
       }
 
@@ -249,7 +272,17 @@ const Donation = () => {
       apiClient.downloadFile(blob, `ForgottenWomen_DonationSummaryReport_${dateString}.csv`);
     } catch (error) {
       console.error('Error exporting summary CSV:', error);
-      alert('Failed to export summary CSV: ' + error.message);
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
     } finally {
       setLoadingSummaryCSV(false);
     }

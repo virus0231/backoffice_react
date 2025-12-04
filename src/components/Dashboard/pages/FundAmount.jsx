@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getPhpApiBase } from '@/lib/config/phpApi';
+import { useToast } from '../../ToastContainer';
 import './FundAmount.css';
 
 const BASE_URL = getPhpApiBase();
 
 const FundAmount = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [selectedAppeal, setSelectedAppeal] = useState('');
   const [appeals, setAppeals] = useState([]);
   const [amounts, setAmounts] = useState([]);
@@ -104,7 +106,7 @@ const FundAmount = () => {
       const result = await response.json();
 
       if (result.success) {
-        alert('Amount association updated successfully');
+        showSuccess('Amount association updated successfully');
         handleSubmit();
       } else {
         setError(result.error || 'Failed to update association');

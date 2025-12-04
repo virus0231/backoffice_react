@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getPhpApiBase } from '@/lib/config/phpApi';
+import { useToast } from '../../ToastContainer';
 import './FundList.css';
 
 const BASE_URL = getPhpApiBase();
 
 const FundList = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [selectedAppeal, setSelectedAppeal] = useState('');
   const [appeals, setAppeals] = useState([]);
   const [fundRows, setFundRows] = useState([
@@ -135,7 +137,7 @@ const FundList = () => {
       const result = await response.json();
 
       if (result.success) {
-        alert('Fundlist updated successfully');
+        showSuccess('Fundlist updated successfully');
         fetchFunds(selectedAppeal); // Reload funds
       } else {
         setError(result.error || 'Failed to update fundlist');

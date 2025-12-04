@@ -152,7 +152,7 @@ class DonorService
         $transactions = DB::table($transactionsTable)
             ->where('DID', $donorId)
             ->orderByDesc('date')
-            ->get(['id', 'order_id', 'totalamount', 'paymenttype', 'status', 'date', 'currency']);
+            ->get(['id', 'order_id', 'totalamount', 'paymenttype', 'status', 'date']);
 
         return $transactions->map(function ($t) use ($transactionDetailsTable, $appealTable, $amountTable, $fundlistTable) {
             $details = DB::table($transactionDetailsTable . ' as td')
@@ -191,7 +191,7 @@ class DonorService
                 'paymentType' => $t->paymenttype ?? '',
                 'status' => $t->status ?? '',
                 'date' => $t->date ?? '',
-                'currency' => $t->currency ?? 'USD',
+                'currency' => 'USD',
                 'details' => $details,
             ];
         });
@@ -298,7 +298,7 @@ class DonorService
             'country' => $value('country'),
             'postcode' => $value('postcode'),
             'phone' => $value('phone'),
-            'organization' => $value('organization'),
+            'organization' => $value('organization') ?? '',
             'Date_Added' => $value('Date_Added', ['dateAdded']) ?? ($existing?->Date_Added ?? now()->toDateTimeString()),
         ];
     }

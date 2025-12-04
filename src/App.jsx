@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ToastProvider } from "./components/ToastContainer";
 import Login from "./components/Login";
 import Dashboard from "./components/dashboard/dashboard";
 import { APP_ROUTES } from "./config/routes";
@@ -26,34 +27,36 @@ function PublicRoute({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<InsightsPageLayout />} />
-          {APP_ROUTES.map((route) => (
-            <Route
-              key={route.id}
-              path={route.path}
-              element={<route.component />}
-            />
-          ))}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<InsightsPageLayout />} />
+            {APP_ROUTES.map((route) => (
+              <Route
+                key={route.id}
+                path={route.path}
+                element={<route.component />}
+              />
+            ))}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </ToastProvider>
     </AuthProvider>
   );
 }

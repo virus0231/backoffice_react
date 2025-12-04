@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useToast } from '../../ToastContainer';
 import apiClient from '@/lib/api/client';
 import './AddUser.css';
 
 const AddUser = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [formData, setFormData] = useState({
     userName: '',
     userPassword: '',
@@ -24,7 +26,7 @@ const AddUser = () => {
     e.preventDefault();
 
     if (!formData.userName || !formData.userPassword || !formData.userEmail) {
-      alert('Please fill in all required fields');
+      showWarning('Please fill in all required fields');
       return;
     }
 
@@ -40,7 +42,7 @@ const AddUser = () => {
       });
 
       if (response?.success) {
-        alert('User added successfully!');
+        showSuccess('User added successfully!');
         // Reset form
         setFormData({
           userName: '',
@@ -50,11 +52,21 @@ const AddUser = () => {
           userRole: ''
         });
       } else {
-        alert('Failed to add user. Please try again.');
+        showError('Failed to add user. Please try again.');
       }
     } catch (error) {
       console.error('Error adding user:', error);
-      alert('An error occurred. Please try again.');
+
+      // Handle validation errors (422)
+      if (error.status === 422 && error.errors) {
+        // Display all validation errors
+        const errorMessages = Object.values(error.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+      } else if (error.message) {
+        showError(error.message);
+      } else {
+        showError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

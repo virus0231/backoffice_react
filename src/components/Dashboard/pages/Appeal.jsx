@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../../ToastContainer';
 import { getPhpApiBase } from '@/lib/config/phpApi';
 import './Appeal.css';
 
@@ -28,6 +29,7 @@ const defaultForm = () => ({
 });
 
 const Appeal = () => {
+  const { showSuccess, showError, showWarning } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [page, setPage] = useState(1);
@@ -159,9 +161,9 @@ const Appeal = () => {
       description: form.description || '',
       image: form.image || '',
       onHome: form.onHome,
-      appealCountry: form.appealCountry || '',
+      appealCountry: form.appealCountry ? parseInt(form.appealCountry, 10) : null,
       appealCause: form.appealCause || '',
-      category: form.category || '',
+      category: form.category ? parseInt(form.category, 10) : null,
       appealGoal: form.appealGoal || 0,
       sort: form.sort || 0,
       onFooter: form.onFooter,
@@ -191,6 +193,17 @@ const Appeal = () => {
     });
 
     const result = await response.json();
+
+    if (!response.ok) {
+      // Handle validation errors (422)
+      if (response.status === 422 && result.errors) {
+        const errorMessages = Object.values(result.errors).flat();
+        errorMessages.forEach(msg => showError(msg));
+        throw new Error(result.message || 'Validation failed');
+      }
+      throw new Error(result.error || result.message || 'Request failed');
+    }
+
     if (!result.success) {
       throw new Error(result.error || 'Request failed');
     }
@@ -233,19 +246,30 @@ const Appeal = () => {
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!addForm.appealName.trim()) {
-      setFormError('Appeal name is required.');
+      showWarning('Appeal name is required.');
+      return;
+    }
+    if (!addForm.description.trim()) {
+      showWarning('Description is required.');
+      return;
+    }
+    if (!addForm.appealCountry) {
+      showWarning('Country is required.');
       return;
     }
     setFormError('');
     try {
       setAddSubmitting(true);
       await submitAppealForm(false, addForm);
+      showSuccess('Appeal added successfully!');
       setShowAddModal(false);
       setAddForm(defaultForm());
       fetchAppeals();
     } catch (err) {
       console.error(err);
-      setFormError('Unable to add appeal. Please try again.');
+      if (err.message && !err.message.includes('Validation failed')) {
+        showError(err.message);
+      }
     } finally {
       setAddSubmitting(false);
     }
@@ -254,19 +278,30 @@ const Appeal = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editForm.appealName.trim()) {
-      setFormError('Appeal name is required.');
+      showWarning('Appeal name is required.');
+      return;
+    }
+    if (!editForm.description.trim()) {
+      showWarning('Description is required.');
+      return;
+    }
+    if (!editForm.appealCountry) {
+      showWarning('Country is required.');
       return;
     }
     setFormError('');
     try {
       setEditSubmitting(true);
       await submitAppealForm(true, editForm);
+      showSuccess('Appeal updated successfully!');
       setShowEditModal(false);
       setEditForm(defaultForm());
       fetchAppeals();
     } catch (err) {
       console.error(err);
-      setFormError('Unable to update appeal. Please try again.');
+      if (err.message && !err.message.includes('Validation failed')) {
+        showError(err.message);
+      }
     } finally {
       setEditSubmitting(false);
     }

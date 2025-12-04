@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useToast } from '../../ToastContainer';
 import './Donors.css';
 
 const API_BASE =
@@ -6,6 +7,7 @@ const API_BASE =
   (import.meta.env.DEV ? '/api/v1' : 'https://forgottenwomen.youronlineconversation.com/api/v1');
 
 const Donors = () => {
+  const { showSuccess, showError } = useToast();
   const [searchEmail, setSearchEmail] = useState('');
   const [donors, setDonors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -85,11 +87,11 @@ const Donors = () => {
       if (result.success && result.data) {
         setDonorDetails(result.data);
       } else {
-        alert('Failed to load donor details');
+        showError('Failed to load donor details');
       }
     } catch (err) {
       console.error('Error fetching donor details:', err);
-      alert('Failed to load donor details');
+      showError('Failed to load donor details');
     } finally {
       setModalLoading(false);
     }
@@ -104,11 +106,11 @@ const Donors = () => {
       if (result.success) {
         setDonations(result.data || []);
       } else {
-        alert('Failed to load donations');
+        showError('Failed to load donations');
       }
     } catch (err) {
       console.error('Error fetching donations:', err);
-      alert('Failed to load donations');
+      showError('Failed to load donations');
     } finally {
       setModalLoading(false);
     }
@@ -123,11 +125,11 @@ const Donors = () => {
       if (result.success) {
         setSubscriptions(result.data || []);
       } else {
-        alert('Failed to load subscriptions');
+        showError('Failed to load subscriptions');
       }
     } catch (err) {
       console.error('Error fetching subscriptions:', err);
-      alert('Failed to load subscriptions');
+      showError('Failed to load subscriptions');
     } finally {
       setModalLoading(false);
     }
@@ -159,15 +161,15 @@ const Donors = () => {
       const result = await response.json();
 
       if (result.success) {
-        alert('Donor updated successfully!');
+        showSuccess('Donor updated successfully!');
         setShowEditModal(false);
         fetchDonors(searchEmail.trim(), pagination.currentPage);
       } else {
-        alert('Failed to update donor: ' + (result.meta?.message || 'Unknown error'));
+        showError('Failed to update donor: ' + (result.message || 'Unknown error'));
       }
     } catch (err) {
       console.error('Error updating donor:', err);
-      alert('Failed to update donor. Please try again.');
+      showError('Failed to update donor. Please try again.');
     } finally {
       setUpdateLoading(false);
     }
