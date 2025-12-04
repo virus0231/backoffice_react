@@ -18,7 +18,7 @@ class CategoryRepository implements CategoryRepositoryInterface
 
         return DB::table($table)
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'image']);
     }
 
     public function updateCategory(int $id, array $data): bool

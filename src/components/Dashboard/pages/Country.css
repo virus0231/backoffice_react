@@ -8,15 +8,12 @@
   background-color: white;
   padding: 24px 30px;
   border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .country-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
   margin: 0;
 }
 
@@ -39,29 +36,32 @@
 
 .country-content {
   padding: 30px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .add-button {
-  padding: 10px 24px;
+  padding: 12px 24px;
   background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   margin-bottom: 20px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .add-button:hover {
   background: #2563eb;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
 }
 
 .table-container {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -76,17 +76,19 @@
 }
 
 .country-table th {
-  padding: 14px 16px;
+  padding: 16px 18px;
   text-align: left;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #374151;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .country-table tbody tr {
   border-bottom: 1px solid #f3f4f6;
-  transition: background 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .country-table tbody tr:hover {
@@ -94,24 +96,24 @@
 }
 
 .country-table td {
-  padding: 14px 16px;
+  padding: 14px 18px;
   font-size: 14px;
-  color: #6b7280;
+  color: #4b5563;
 }
 
 .country-name {
-  color: #3b82f6;
-  font-weight: 500;
+  color: #111827;
+  font-weight: 600;
 }
 
 .edit-btn {
-  padding: 6px 20px;
+  padding: 8px 16px;
   background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -122,15 +124,22 @@
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
+.edit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
-  .country-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .country-content {
+    padding: 16px;
   }
 
-  .country-content {
-    padding: 15px;
+  .country-header {
+    padding: 20px;
+  }
+
+  .country-title {
+    font-size: 24px;
   }
 
   .table-container {

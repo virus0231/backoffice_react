@@ -85,23 +85,15 @@ const FeaturedAmount = () => {
     <div className="featured-amount-page">
       <div className="featured-amount-header">
         <h1 className="featured-amount-title">Featured Amounts</h1>
-        <div className="featured-amount-breadcrumb">
-          <span>Back Office</span>
-          <span className="breadcrumb-separator">/</span>
-          <span>Causes</span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Featured Amounts</span>
-        </div>
       </div>
 
       <div className="featured-amount-content">
         {error && (
-          <div className="users-error" style={{ marginBottom: 12 }}>
+          <div className="users-error inline-error">
             <strong>Error:</strong> {error}
             <button
               onClick={fetchFeaturedAmounts}
-              className="edit-btn"
-              style={{ marginLeft: 12, padding: '6px 12px' }}
+              className="retry-btn"
             >
               Retry
             </button>
@@ -109,12 +101,9 @@ const FeaturedAmount = () => {
         )}
 
         {loading && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Loading featured amounts...
+          <div className="loading-state">
+            <div className="loading-spinner" />
+            <p>Loading featured amounts...</p>
           </div>
         )}
 
@@ -132,7 +121,7 @@ const FeaturedAmount = () => {
             <tbody>
               {!loading && featuredAmounts.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                  <td colSpan="5" className="empty-row">
                     No featured amounts available.
                   </td>
                 </tr>

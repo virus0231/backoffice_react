@@ -154,113 +154,185 @@ const FundList = () => {
     <div className="fundlist-page">
       <div className="fundlist-header">
         <h1 className="fundlist-title">Fund List</h1>
-        <div className="fundlist-breadcrumb">
-          <span>Back Office</span>
-          <span className="breadcrumb-separator">/</span>
-          <span>Causes</span>
-          <span className="breadcrumb-separator">/</span>
-          <span>Appeals</span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Fund</span>
-        </div>
       </div>
 
       <div className="fundlist-content">
-        <div className="appeal-selector">
-          <select
-            value={selectedAppeal}
-            onChange={(e) => setSelectedAppeal(e.target.value)}
-            className="appeal-select"
-          >
-            <option value="">Select Appeal</option>
-            {appeals.map((appeal) => (
-              <option key={appeal.id} value={appeal.id}>
-                {appeal.appeal_name}
-              </option>
-            ))}
-          </select>
-          <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Loading...' : 'Submit'}
-          </button>
+        <div className="appeal-selector-card">
+          <label className="appeal-label">Select Appeal</label>
+          <div className="appeal-selector-row">
+            <select
+              value={selectedAppeal}
+              onChange={(e) => setSelectedAppeal(e.target.value)}
+              className="appeal-select"
+            >
+              <option value="">Choose an appeal to manage funds</option>
+              {appeals.map((appeal) => (
+                <option key={appeal.id} value={appeal.id}>
+                  {appeal.appeal_name}
+                </option>
+              ))}
+            </select>
+            <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="btn-spinner" />
+                  Loading...
+                </>
+              ) : (
+                'Load Funds'
+              )}
+            </button>
+          </div>
+          <p className="appeal-helper">Load funds for the selected appeal to edit the list.</p>
         </div>
 
         {error && (
-          <div className="users-error" style={{ marginTop: 12 }}>
+          <div className="users-error inline-error" style={{ marginTop: 12 }}>
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {loading && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Loading funds...
+          <div className="loading-state">
+            <div className="loading-spinner" />
+            <p>Loading funds...</p>
+          </div>
+        )}
+
+        {!loading && !selectedAppeal && (
+          <div className="empty-state">
+            <svg className="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            <h3>No Appeal Selected</h3>
+            <p>Select an appeal above and click Load Funds to manage the fund list.</p>
           </div>
         )}
 
         {!loading && selectedAppeal && (
           <>
-            <div className="form-container">
-              <div className="form-header-row">
-                <div className="form-col">Fund Name</div>
-                <div className="form-col">Sort</div>
-                <div className="form-col">Status</div>
-                <div className="form-col">Action</div>
-              </div>
-
-              {fundRows.map((row, index) => (
-                <div key={index} className="form-data-row">
-                  <div className="form-col">
-                    <input
-                      type="text"
-                      placeholder="Fund Name"
-                      value={row.fundName}
-                      onChange={(e) => handleRowChange(index, 'fundName', e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-col">
-                    <input
-                      type="number"
-                      value={row.sort}
-                      onChange={(e) => handleRowChange(index, 'sort', e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-col">
-                    <select
-                      value={row.status}
-                      onChange={(e) => handleRowChange(index, 'status', e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="Enable">Enable</option>
-                      <option value="Disable">Disable</option>
-                    </select>
-                  </div>
-                  <div className="form-col action-col">
-                    <button className="add-row-btn" onClick={handleAddRow}>+</button>
-                    <button className="remove-row-btn" onClick={() => handleRemoveRow(index)}>-</button>
-                  </div>
-                </div>
-              ))}
+            <div className="table-container">
+              <table className="fundlist-table">
+                <thead>
+                  <tr>
+                    <th>Fund Name</th>
+                    <th>Sort</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fundRows.map((row, index) => (
+                    <tr key={row.id || `fund-${index}`}>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Fund Name"
+                          value={row.fundName}
+                          onChange={(e) => handleRowChange(index, 'fundName', e.target.value)}
+                          className="table-input"
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          value={row.sort}
+                          onChange={(e) => handleRowChange(index, 'sort', e.target.value)}
+                          className="table-input sort-input"
+                        />
+                      </td>
+                      <td>
+                        <label className="toggle-switch">
+                          <input
+                            id={`status-toggle-${index}`}
+                            type="checkbox"
+                            className="toggle-input"
+                            checked={row.status === 'Enable'}
+                            onChange={(e) =>
+                              handleRowChange(index, 'status', e.target.checked ? 'Enable' : 'Disable')
+                            }
+                            aria-label="Toggle fund status"
+                          />
+                          <span className="toggle-slider" aria-hidden />
+                          <span className={`toggle-label ${row.status === 'Enable' ? 'on' : 'off'}`}>
+                            {row.status === 'Enable' ? 'Enable' : 'Disable'}
+                          </span>
+                        </label>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            className="action-btn add-btn"
+                            onClick={handleAddRow}
+                            type="button"
+                            title="Add new row"
+                          >
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            className="action-btn remove-btn"
+                            onClick={() => handleRemoveRow(index)}
+                            disabled={fundRows.length === 1}
+                            type="button"
+                            title="Remove row"
+                          >
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <button className="update-btn" onClick={handleUpdateFundlist} disabled={updating}>
-              {updating ? 'Updating...' : 'Update Fundlist'}
-            </button>
+            <div className="form-footer">
+              <div className="footer-info">
+                <p>
+                  {fundRows.length} fund {fundRows.length === 1 ? 'entry' : 'entries'} for this appeal
+                </p>
+              </div>
+              <button className="update-btn" onClick={handleUpdateFundlist} disabled={updating}>
+                {updating ? (
+                  <>
+                    <span className="btn-spinner" />
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </>
-        )}
-
-        {!loading && !selectedAppeal && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Please select an appeal and click Submit to load funds.
-          </div>
         )}
       </div>
     </div>

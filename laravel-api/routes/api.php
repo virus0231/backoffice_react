@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ComponentController;
 use App\Http\Controllers\Api\ConfigurationController;
+use App\Http\Controllers\Api\DatabaseInspectorController;
 
 Route::prefix('v1')->group(function () {
     // Public routes
@@ -65,6 +66,7 @@ Route::prefix('v1')->group(function () {
         Route::post('appeals/bulk', [AppealController::class, 'bulkUpdate']);
         Route::post('appeals', [AppealController::class, 'store']);
         Route::put('appeals/{id}', [AppealController::class, 'update']);
+        Route::post('appeals/{id}/toggle', [AppealController::class, 'toggle']);
 
         // Amounts & featured amounts
         Route::get('amounts', [AmountController::class, 'index']);
@@ -134,5 +136,14 @@ Route::prefix('v1')->group(function () {
         Route::post('funds/bulk', [FundController::class, 'bulkUpdate']);
         Route::get('fund-amount-associations', [FundAmountAssociationController::class, 'index']);
         Route::post('fund-amount-associations', [FundAmountAssociationController::class, 'update']);
+
+        // Database Inspector (development/debugging tool)
+        Route::prefix('db')->group(function () {
+            Route::get('tables', [DatabaseInspectorController::class, 'listTables']);
+            Route::get('tables/{table}/inspect', [DatabaseInspectorController::class, 'inspectTable']);
+            Route::get('tables/{table}/columns', [DatabaseInspectorController::class, 'getColumns']);
+            Route::get('tables/{table}/sample', [DatabaseInspectorController::class, 'getSampleData']);
+            Route::get('search/column', [DatabaseInspectorController::class, 'findTablesWithColumn']);
+        });
     });
 });

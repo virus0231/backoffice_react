@@ -134,36 +134,44 @@ const FundAmount = () => {
 
       <div className="fund-amount-content">
         <div className="appeal-selector">
-          <select
-            value={selectedAppeal}
-            onChange={(e) => setSelectedAppeal(e.target.value)}
-            className="appeal-select"
-          >
-            <option value="">Select Appeal</option>
-            {appeals.map((appeal) => (
-              <option key={appeal.id} value={appeal.id}>
-                {appeal.appeal_name}
-              </option>
-            ))}
-          </select>
-          <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Loading...' : 'Submit'}
-          </button>
+          <label className="appeal-label">Select Appeal</label>
+          <div className="appeal-selector-row">
+            <select
+              value={selectedAppeal}
+              onChange={(e) => setSelectedAppeal(e.target.value)}
+              className="appeal-select"
+            >
+              <option value="">Choose an appeal to manage matching</option>
+              {appeals.map((appeal) => (
+                <option key={appeal.id} value={appeal.id}>
+                  {appeal.appeal_name}
+                </option>
+              ))}
+            </select>
+            <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="btn-spinner" />
+                  Loading...
+                </>
+              ) : (
+                'Load Data'
+              )}
+            </button>
+          </div>
+          <p className="appeal-helper">Load matching funds and amounts for the selected appeal.</p>
         </div>
 
         {error && (
-          <div className="users-error" style={{ marginTop: 12 }}>
+          <div className="users-error inline-error">
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {loading && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Loading associations...
+          <div className="loading-state">
+            <div className="loading-spinner" />
+            <p>Loading associations...</p>
           </div>
         )}
 
@@ -192,7 +200,7 @@ const FundAmount = () => {
                       <h3 className="column-title">Amount Name</h3>
                       <div className="column-content">
                         {amounts.map(amount => (
-                          <div key={amount.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                          <div key={amount.id} style={{ paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
                             <strong>{amount.name}</strong> (${amount.amount})
                           </div>
                         ))}
@@ -202,9 +210,9 @@ const FundAmount = () => {
                       <h3 className="column-title">Fund List</h3>
                       <div className="column-content">
                         {amounts.map(amount => (
-                          <div key={amount.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                          <div key={amount.id} style={{ paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
                             {funds.map(fund => (
-                              <label key={fund.id} style={{ display: 'block', marginBottom: '4px' }}>
+                              <label key={fund.id} style={{ display: 'block', marginBottom: 6 }}>
                                 <input
                                   type="checkbox"
                                   checked={isAssociated(amount.id, fund.id)}
@@ -224,7 +232,7 @@ const FundAmount = () => {
                       <h3 className="column-title">Fund Name</h3>
                       <div className="column-content">
                         {funds.map(fund => (
-                          <div key={fund.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                          <div key={fund.id} style={{ paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
                             <strong>{fund.name}</strong>
                           </div>
                         ))}
@@ -234,9 +242,9 @@ const FundAmount = () => {
                       <h3 className="column-title">Amount List</h3>
                       <div className="column-content">
                         {funds.map(fund => (
-                          <div key={fund.id} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                          <div key={fund.id} style={{ paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
                             {amounts.map(amount => (
-                              <label key={amount.id} style={{ display: 'block', marginBottom: '4px' }}>
+                              <label key={amount.id} style={{ display: 'block', marginBottom: 6 }}>
                                 <input
                                   type="checkbox"
                                   checked={isAssociated(amount.id, fund.id)}
@@ -261,24 +269,36 @@ const FundAmount = () => {
         )}
 
         {!loading && selectedAppeal && (amounts.length === 0 || funds.length === 0) && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            {amounts.length === 0 && 'No amounts found for this appeal. '}
-            {funds.length === 0 && 'No funds found for this appeal. '}
-            Please add amounts and funds first.
+          <div className="empty-state">
+            <svg className="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            <h3>No data found</h3>
+            <p>
+              {amounts.length === 0 && 'No amounts found for this appeal. '}
+              {funds.length === 0 && 'No funds found for this appeal. '}
+              Please add amounts and funds first.
+            </p>
           </div>
         )}
 
         {!selectedAppeal && !loading && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Please select an appeal and click Submit to manage associations.
+          <div className="empty-state">
+            <svg className="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            <h3>No Appeal Selected</h3>
+            <p>Select an appeal above and click Load Data to manage associations.</p>
           </div>
         )}
       </div>

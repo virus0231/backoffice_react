@@ -102,12 +102,12 @@ const Causes = () => {
 
       <div className="causes-content">
         {error && (
-          <div className="users-error" style={{ marginBottom: 12 }}>
+          <div className="users-error inline-error">
             <strong>Error:</strong> {error}
             <button
               onClick={() => fetchCauses()}
               className="edit-btn"
-              style={{ marginLeft: 12, padding: '6px 12px' }}
+              style={{ marginLeft: 12 }}
             >
               Retry
             </button>

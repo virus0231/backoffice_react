@@ -19,6 +19,7 @@ class CategoryService
             return [
                 'id' => (int) $r->id,
                 'name' => $r->name ?? '',
+                'image' => $r->image ?? '',
             ];
         })->all();
 

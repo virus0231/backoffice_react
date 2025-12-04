@@ -134,12 +134,66 @@ const Appeal = () => {
     if (page > totalPages) setPage(totalPages);
   };
 
-  const handleToggle = (id, field) => {
+  const handleToggle = async (id, field) => {
+    const appeal = appeals.find(a => a.id === id);
+    if (!appeal) return;
+
+    // Calculate new value
+    const newValue = field === 'status'
+      ? (appeal.status === 'enabled' ? 'disabled' : 'enabled')
+      : !appeal[field];
+
+    // Optimistically update UI
     setAppeals((prev) =>
-      prev.map((appeal) =>
-        appeal.id === id ? { ...appeal, [field]: !appeal[field] } : appeal
+      prev.map((a) =>
+        a.id === id ? { ...a, [field]: newValue } : a
       )
     );
+
+    try {
+      // Use the lightweight toggle API
+      const response = await fetch(`${BASE_URL}/appeals/${id}/toggle`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          field: field,
+          value: field === 'status' ? (newValue === 'enabled') : newValue
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        // Handle validation errors
+        if (response.status === 422 && result.errors) {
+          const errorMessages = Object.values(result.errors).flat();
+          errorMessages.forEach(msg => showError(msg));
+          throw new Error(result.message || 'Validation failed');
+        }
+        throw new Error(result.error || result.message || 'Failed to update appeal');
+      }
+
+      // Show success message
+      const fieldName = field === 'visibleHome' ? 'Visible on Home'
+        : field === 'visibleDonate' ? 'Visible on Donate'
+        : field === 'visibleFooter' ? 'Visible on Footer'
+        : 'Status';
+      showSuccess(`${fieldName} updated successfully!`);
+    } catch (err) {
+      console.error('Error updating appeal:', err);
+      // Revert the change on error
+      if (!err.message.includes('Validation failed')) {
+        setAppeals((prev) =>
+          prev.map((a) =>
+            a.id === id ? { ...a, [field]: appeal[field] } : a
+          )
+        );
+      }
+      if (err.message && !err.message.includes('Validation failed')) {
+        showError(err.message);
+      }
+    }
   };
 
   const filteredAppeals = appeals.filter((appeal) =>
@@ -326,7 +380,7 @@ const Appeal = () => {
         </button>
 
         {error && (
-          <div className="users-error" style={{ marginTop: 12 }}>
+          <div className="users-error inline-error">
             <strong>Error:</strong> {error}
             <button
               onClick={fetchAppeals}
@@ -338,18 +392,15 @@ const Appeal = () => {
           </div>
         )}
         {metaError && (
-          <div className="users-error" style={{ marginTop: 12 }}>
+          <div className="users-error inline-error">
             {metaError}
           </div>
         )}
 
         {loading && (
-          <div style={{
-            padding: '24px',
-            textAlign: 'center',
-            color: '#666'
-          }}>
-            Loading appeals...
+          <div className="loading-state">
+            <div className="loading-spinner" />
+            <p>Loading appeals...</p>
           </div>
         )}
 

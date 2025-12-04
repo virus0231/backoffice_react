@@ -22,7 +22,6 @@ class AmountService
 
         $data = $rows->map(function ($r) {
             $disable = (int) ($r->disable ?? 0);
-            $featured = (int) ($r->featured ?? 0);
             return [
                 'id' => (int) $r->id,
                 'appeal_id' => (int) $r->appeal_id,
@@ -30,7 +29,7 @@ class AmountService
                 'amount' => $r->amount ?? '',
                 'donationtype' => $r->donationtype ?? '',
                 'sort' => isset($r->sort) ? (int) $r->sort : 0,
-                'featured' => $featured === 1 ? 'enabled' : 'disabled',
+                'fundlist_id' => isset($r->fundlist_id) ? (int) $r->fundlist_id : null,
                 'status' => $disable === 0 ? 'enabled' : 'disabled',
             ];
         })->all();
@@ -60,7 +59,7 @@ class AmountService
                 'amount' => $row['amount'],
                 'donationtype' => $row['donationtype'],
                 'sort' => $row['sort'],
-                'featured' => $row['featured'] === 'enabled' ? 1 : 0,
+                'fundlist_id' => $row['fundlist_id'],
                 'disable' => $row['status'] === 'enabled' ? 0 : 1,
             ];
 
@@ -129,7 +128,7 @@ class AmountService
                 'amount' => $a['amount'] ?? '',
                 'donationtype' => $a['donationtype'] ?? '',
                 'sort' => isset($a['sort']) ? (int) $a['sort'] : 0,
-                'featured' => ($a['featured'] ?? 'disabled') === 'enabled' ? 'enabled' : 'disabled',
+                'fundlist_id' => isset($a['fundlist_id']) && $a['fundlist_id'] ? (int) $a['fundlist_id'] : null,
                 'status' => ($a['status'] ?? 'disabled') === 'enabled' ? 'enabled' : 'disabled',
             ];
         })->all();

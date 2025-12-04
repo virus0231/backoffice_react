@@ -38,14 +38,21 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
         $name = trim((string) ($validated['name'] ?? ''));
+        $image = trim((string) ($validated['image'] ?? ''));
+        if ($image === '') {
+            $image = '#';
+        }
 
         $table = TableResolver::prefixed('category');
-        $id = DB::table($table)->insertGetId(['name' => $name]);
+        $id = DB::table($table)->insertGetId([
+            'name' => $name,
+            'image' => $image,
+        ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Category created',
-            'data' => ['id' => $id, 'name' => $name],
+            'data' => ['id' => $id, 'name' => $name, 'image' => $image],
         ]);
     }
 
@@ -53,14 +60,22 @@ class CategoryController extends Controller
     {
         $validated = $request->validated();
         $name = trim((string) ($validated['name'] ?? ''));
+        $image = array_key_exists('image', $validated)
+            ? trim((string) ($validated['image'] ?? ''))
+            : null;
+
+        $payload = ['name' => $name];
+        if ($image !== null && $image !== '') {
+            $payload['image'] = $image;
+        }
 
         $table = TableResolver::prefixed('category');
-        DB::table($table)->where('id', $id)->update(['name' => $name]);
+        DB::table($table)->where('id', $id)->update($payload);
 
         return response()->json([
             'success' => true,
             'message' => 'Category updated',
-            'data' => ['id' => $id, 'name' => $name],
+            'data' => ['id' => $id, 'name' => $name, 'image' => $payload['image'] ?? null],
         ]);
     }
 }
